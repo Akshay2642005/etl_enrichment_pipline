@@ -10,7 +10,6 @@ from etl_enrichment_pipeline.agents.business_role_agent import business_role_nod
 from etl_enrichment_pipeline.agents.description_agent import description_node
 from etl_enrichment_pipeline.agents.domain_agent import domain_node
 from etl_enrichment_pipeline.agents.entity_discovery_agent import entity_discovery_node
-from etl_enrichment_pipeline.agents.extraction_agent import extraction_node
 from etl_enrichment_pipeline.agents.pattern_detection_agent import (
     pattern_detection_node,
 )
@@ -28,7 +27,6 @@ __all__ = [
     "description_node",
     "domain_node",
     "entity_discovery_node",
-    "extraction_node",
     "pattern_detection_node",
     "relationship_intelligence_node",
     "RuleEngine",

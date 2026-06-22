@@ -72,12 +72,12 @@ def extract_postgres_schema(creds: dict, rules: dict) -> dict:
             FROM information_schema.columns
             WHERE table_schema='public';
         """)
-        for row in cursor.fetchall():
+        for table_name, column_name, data_type, max_length in cursor.fetchall():
             result["columns"].append({
-                "table_name": row[0],
-                "column_name": row[1],
-                "data_type": row[2],
-                "max_length": row[3],
+                "table_name": table_name,
+                "column_name": column_name,
+                "data_type": data_type,
+                "max_length": max_length,
             })
 
     if rules.get("extract_ddl_views"):
@@ -86,10 +86,10 @@ def extract_postgres_schema(creds: dict, rules: dict) -> dict:
             FROM information_schema.views
             WHERE table_schema='public';
         """)
-        for row in cursor.fetchall():
+        for view_name, definition in cursor.fetchall():
             result["views"].append({
-                "view_name": row[0],
-                "definition": row[1],
+                "view_name": view_name,
+                "definition": definition,
             })
 
     conn.close()
@@ -131,12 +131,12 @@ def extract_mysql_schema(creds: dict, rules: dict) -> dict:
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_SCHEMA='{creds["database"]}';
         """)
-        for row in cursor.fetchall():
+        for table_name, column_name, data_type, max_length in cursor.fetchall():
             result["columns"].append({
-                "table_name": row[0],
-                "column_name": row[1],
-                "data_type": row[2],
-                "max_length": row[3],
+                "table_name": table_name,
+                "column_name": column_name,
+                "data_type": data_type,
+                "max_length": max_length,
             })
 
     if rules.get("extract_relations"):
@@ -147,12 +147,14 @@ def extract_mysql_schema(creds: dict, rules: dict) -> dict:
             WHERE REFERENCED_TABLE_NAME IS NOT NULL
             AND TABLE_SCHEMA='{creds["database"]}';
         """)
-        for row in cursor.fetchall():
+        for source_table, source_column, target_table, target_column in (
+            cursor.fetchall()
+        ):
             result["relationships"].append({
-                "source_table": row[0],
-                "source_column": row[1],
-                "target_table": row[2],
-                "target_column": row[3],
+                "source_table": source_table,
+                "source_column": source_column,
+                "target_table": target_table,
+                "target_column": target_column,
             })
 
     conn.close()
