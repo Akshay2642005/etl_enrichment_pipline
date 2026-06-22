@@ -8,7 +8,7 @@ Corresponds to master plan §Agent Responsibilities (agents 1-11).
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from etl_enrichment_pipeline.models.canonical import CanonicalSchema
 
@@ -40,6 +40,8 @@ class BusinessRoleOutput(BaseModel):
     Classifies tables into roles such as master_data, transactional, reference, etc.
     """
 
+    model_config = ConfigDict(extra="ignore")
+
     roles: dict[str, str] = Field(default_factory=dict)
 
 
@@ -48,6 +50,8 @@ class DomainOutput(BaseModel):
 
     Detects the business domain of tables (Healthcare, Banking, Retail, etc.).
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     domains: dict[str, str] = Field(default_factory=dict)
 
@@ -58,6 +62,8 @@ class SemanticTypeOutput(BaseModel):
     Detects business meaning of columns (EMAIL, PHONE, ADDRESS, etc.).
     """
 
+    model_config = ConfigDict(extra="ignore")
+
     semantic_types: dict[str, str] = Field(default_factory=dict)
 
 
@@ -66,6 +72,8 @@ class EntityDiscoveryOutput(BaseModel):
 
     Converts schema objects into business entity names.
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     entities: list[str] = Field(default_factory=list)
 

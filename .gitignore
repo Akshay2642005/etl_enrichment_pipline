@@ -15,6 +15,9 @@ build/
 
 # Project-specific
 connector_output.json
+
+# Environment
+.env
 .codegraph/
 
 # Tooling
