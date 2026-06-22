@@ -16,6 +16,7 @@ dependencies = [
     "mysql-connector-python>=9.7.0",
     "psycopg2-binary>=2.9.12",
     "pydantic>=2.13.4",
+    "python-dotenv>=1.2.2",
     "pyyaml>=6.0.3",
     "simple-ddl-parser>=1.13.0",
     "sqlglot>=30.11.0",

@@ -23,11 +23,8 @@ from __future__ import annotations
 import json
 import os
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+from dotenv import load_dotenv
+load_dotenv()
 
 # import mysql.connector
 import psycopg2
