@@ -21,8 +21,12 @@ Public API
 from __future__ import annotations
 
 import json
+import os
 
-import mysql.connector
+from dotenv import load_dotenv
+load_dotenv()
+
+# import mysql.connector
 import psycopg2
 
 from etl_enrichment_pipeline.config.config_global import (
@@ -33,7 +37,7 @@ from etl_enrichment_pipeline.config.config_mysql import MYSQL_DBS
 from etl_enrichment_pipeline.config.config_postgres import POSTGRES_DBS
 
 # Combine all imported database configs into one master list
-ALL_DATABASES = POSTGRES_DBS + MYSQL_DBS
+ALL_DATABASES = POSTGRES_DBS # + MYSQL_DBS
 OUTPUT_FILE = CONNECTOR_SETTINGS["output_file"]
 
 
@@ -55,42 +59,98 @@ def extract_postgres_schema(creds: dict, rules: dict) -> dict:
     Returns
     -------
     dict
-        Keys ``columns`` (list), ``views`` (list), ``relationships`` (empty
-        list — placeholder for future use).
+        Matches the format in raw_metadata.json with tables, columns, constraints, and relationships.
     """
-    result: dict[str, list[dict]] = {
-        "columns": [],
-        "views": [],
-        "relationships": [],
-    }
-    conn = psycopg2.connect(**creds)
+    pg_creds = creds.copy()
+    if "username" in pg_creds:
+        pg_creds["user"] = pg_creds.pop("username")
+    conn = psycopg2.connect(**pg_creds)
     cursor = conn.cursor()
+
+    result_tables = []
 
     if rules.get("extract_table_info"):
         cursor.execute("""
-            SELECT table_name, column_name, data_type, character_maximum_length
-            FROM information_schema.columns
-            WHERE table_schema='public';
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema='public' AND table_type='BASE TABLE';
         """)
-        for table_name, column_name, data_type, max_length in cursor.fetchall():
-            result["columns"].append({
-                "table_name": table_name,
-                "column_name": column_name,
-                "data_type": data_type,
-                "max_length": max_length,
+        tables = [row[0] for row in cursor.fetchall()]
+
+        for table in tables:
+            # Columns
+            cursor.execute(f"""
+                SELECT column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema='public' AND table_name='{table}';
+            """)
+            columns = []
+            for row in cursor.fetchall():
+                columns.append({
+                    "column_name": row[0],
+                    "data_type": row[1],
+                    "nullable": row[2] == 'YES'
+                })
+
+            # Constraints
+            cursor.execute(f"""
+                SELECT
+                    tc.constraint_name,
+                    tc.constraint_type,
+                    kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                WHERE tc.table_schema = 'public'
+                  AND tc.table_name = '{table}'
+                  AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY', 'UNIQUE');
+            """)
+            constraints = []
+            for row in cursor.fetchall():
+                constraints.append({
+                    "constraint_name": row[0],
+                    "constraint_type": row[1],
+                    "column_name": row[2]
+                })
+
+            # Relationships
+            cursor.execute(f"""
+                SELECT
+                    kcu.column_name AS child_column,
+                    ccu.table_name AS parent_table,
+                    ccu.column_name AS parent_column
+                FROM information_schema.table_constraints AS tc
+                JOIN information_schema.key_column_usage AS kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage AS ccu
+                  ON ccu.constraint_name = tc.constraint_name
+                  AND ccu.table_schema = tc.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_schema = 'public'
+                  AND tc.table_name = '{table}';
+            """)
+            relationships = []
+            for row in cursor.fetchall():
+                relationships.append({
+                    "child_column": row[0],
+                    "parent_table": row[1],
+                    "parent_column": row[2]
+                })
+
+            result_tables.append({
+                "table_name": table,
+                "columns": columns,
+                "constraints": constraints,
+                "relationships": relationships
             })
 
-    if rules.get("extract_ddl_views"):
-        cursor.execute("""
-            SELECT table_name, view_definition
-            FROM information_schema.views
-            WHERE table_schema='public';
-        """)
-        for view_name, definition in cursor.fetchall():
-            result["views"].append({
-                "view_name": view_name,
-                "definition": definition,
-            })
+    result = {
+        "database_type": "postgresql",
+        "schema": "public",
+        "tables": result_tables
+    }
 
     conn.close()
     return result
@@ -100,65 +160,63 @@ def extract_postgres_schema(creds: dict, rules: dict) -> dict:
 # Helper: MySQL schema extraction
 # ---------------------------------------------------------------------------
 
-def extract_mysql_schema(creds: dict, rules: dict) -> dict:
-    """Connect to a MySQL database and extract schema metadata.
-
-    Parameters
-    ----------
-    creds :
-        Connection parameters (host, port, database, username, password).
-    rules :
-        Extraction-rules dict with boolean flags such as
-        ``extract_table_info`` and ``extract_relations``.
-
-    Returns
-    -------
-    dict
-        Keys ``columns`` (list), ``relationships`` (list), ``views`` (empty
-        list — placeholder for future use).
-    """
-    result: dict[str, list[dict]] = {
-        "columns": [],
-        "views": [],
-        "relationships": [],
-    }
-    conn = mysql.connector.connect(**creds)
-    cursor = conn.cursor()
-
-    if rules.get("extract_table_info"):
-        cursor.execute(f"""
-            SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA='{creds["database"]}';
-        """)
-        for table_name, column_name, data_type, max_length in cursor.fetchall():
-            result["columns"].append({
-                "table_name": table_name,
-                "column_name": column_name,
-                "data_type": data_type,
-                "max_length": max_length,
-            })
-
-    if rules.get("extract_relations"):
-        cursor.execute(f"""
-            SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME,
-                   REFERENCED_COLUMN_NAME
-            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-            WHERE REFERENCED_TABLE_NAME IS NOT NULL
-            AND TABLE_SCHEMA='{creds["database"]}';
-        """)
-        for source_table, source_column, target_table, target_column in (
-            cursor.fetchall()
-        ):
-            result["relationships"].append({
-                "source_table": source_table,
-                "source_column": source_column,
-                "target_table": target_table,
-                "target_column": target_column,
-            })
-
-    conn.close()
-    return result
+# def extract_mysql_schema(creds: dict, rules: dict) -> dict:
+#     """Connect to a MySQL database and extract schema metadata.
+# 
+#     Parameters
+#     ----------
+#     creds :
+#         Connection parameters (host, port, database, username, password).
+#     rules :
+#         Extraction-rules dict with boolean flags such as
+#         ``extract_table_info`` and ``extract_relations``.
+# 
+#     Returns
+#     -------
+#     dict
+#         Keys ``columns`` (list), ``relationships`` (list), ``views`` (empty
+#         list — placeholder for future use).
+#     """
+#     result: dict[str, list[dict]] = {
+#         "columns": [],
+#         "views": [],
+#         "relationships": [],
+#     }
+#     # conn = mysql.connector.connect(**creds)
+#     # cursor = conn.cursor()
+# 
+#     # if rules.get("extract_table_info"):
+#     #     cursor.execute(f"""
+#     #         SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+#     #         FROM INFORMATION_SCHEMA.COLUMNS
+#     #         WHERE TABLE_SCHEMA='{creds["database"]}';
+#     #     """)
+#     #     for row in cursor.fetchall():
+#     #         result["columns"].append({
+#     #             "table_name": row[0],
+#     #             "column_name": row[1],
+#     #             "data_type": row[2],
+#     #             "max_length": row[3],
+#     #         })
+# 
+#     # if rules.get("extract_relations"):
+#     #     cursor.execute(f"""
+#     #         SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME,
+#     #                REFERENCED_COLUMN_NAME
+#     #         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+#     #         WHERE REFERENCED_TABLE_NAME IS NOT NULL
+#     #         AND TABLE_SCHEMA='{creds["database"]}';
+#     #     """)
+#     #     for row in cursor.fetchall():
+#     #         result["relationships"].append({
+#     #             "source_table": row[0],
+#     #             "source_column": row[1],
+#     #             "target_table": row[2],
+#     #             "target_column": row[3],
+#     #         })
+# 
+#     # conn.close()
+#     # return result
 
 
 # ---------------------------------------------------------------------------
@@ -204,15 +262,21 @@ def main() -> None:
         try:
             if db_type == "postgres":
                 extracted = extract_postgres_schema(creds, rules)
-                system_data["columns"] = extracted["columns"]
-                system_data["views"] = extracted["views"]
-                print("   [OK] Postgres Extraction Complete.\n")
+                system_data["tables"] = extracted.get("tables", [])
+                
+                import os
+                os.makedirs("sqlj_son", exist_ok=True)
+                db_name = creds.get("database", "unknown")
+                output_path = os.path.join("sqlj_son", f"metadata_{db_name}.json")
+                with open(output_path, "w") as f:
+                    json.dump(extracted, f, indent=2)
+                print(f"   [OK] Postgres Extraction for {db_name} saved to {output_path}.\n")
 
-            elif db_type == "mysql":
-                extracted = extract_mysql_schema(creds, rules)
-                system_data["columns"] = extracted["columns"]
-                system_data["relationships"] = extracted["relationships"]
-                print("   [OK] MySQL Extraction Complete.\n")
+            # elif db_type == "mysql":
+            #     extracted = extract_mysql_schema(creds, rules)
+            #     system_data["columns"] = extracted["columns"]
+            #     system_data["relationships"] = extracted["relationships"]
+            #     print("   [OK] MySQL Extraction Complete.\n")
 
         except Exception as e:
             print(f"   [!] FAILED to connect or extract from {system_name}.")
@@ -220,11 +284,11 @@ def main() -> None:
             system_data["error"] = str(e)
 
     # Dump the completed dictionary into a formatted JSON file
-    with open(OUTPUT_FILE, "w") as json_file:
-        json.dump(master_json_data, json_file, indent=4)
+    # with open(OUTPUT_FILE, "w") as json_file:
+    #     json.dump(master_json_data, json_file, indent=4)
 
     print("=======================================")
-    print(f"*** PIPELINE FINISHED. JSON saved to '{OUTPUT_FILE}'.")
+    print(f"*** PIPELINE FINISHED. Database extractions saved to 'sqlj_son/'.")
     print("=======================================")
 
 
