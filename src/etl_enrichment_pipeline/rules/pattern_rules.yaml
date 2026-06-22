@@ -1,0 +1,18 @@
+# Schema pattern detection rules
+
+patterns:
+  audit_trail:
+    description: "Columns tracking creation and modification timestamps and users"
+    indicators: ["created_at", "updated_at", "created_by", "updated_by"]
+  soft_delete:
+    description: "Rows are marked as deleted rather than removed"
+    indicators: ["deleted_at", "is_deleted", "deleted_flag"]
+  multi_tenancy:
+    description: "Data is isolated by tenant identifier"
+    indicators: ["tenant_id", "organization_id", "company_id"]
+  versioning:
+    description: "Rows track version history"
+    indicators: ["version", "version_number", "revision"]
+  state_machine:
+    description: "Rows transition through defined states"
+    indicators: ["status", "state", "lifecycle_stage"]

@@ -1,0 +1,24 @@
+# Semantic type detection rules (rule-based, no LLM)
+# Column name patterns mapped to semantic types
+
+semantic_types:
+  - pattern: "email"
+    type: "EMAIL"
+  - pattern: "phone|mobile|telephone"
+    type: "PHONE"
+  - pattern: "first_name|fname|firstname"
+    type: "FIRST_NAME"
+  - pattern: "last_name|lname|lastname"
+    type: "LAST_NAME"
+  - pattern: "dob|date_of_birth"
+    type: "DATE_OF_BIRTH"
+  - pattern: "country"
+    type: "COUNTRY"
+  - pattern: "city"
+    type: "CITY"
+  - pattern: "state|province"
+    type: "STATE"
+  - pattern: "status"
+    type: "STATUS"
+  - pattern: "created_at|updated_at"
+    type: "TIMESTAMP"

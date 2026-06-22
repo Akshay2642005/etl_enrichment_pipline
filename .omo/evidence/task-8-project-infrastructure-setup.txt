@@ -1,0 +1,35 @@
+Task 8 — Project Infrastructure Setup
+======================================
+Date: 2026-06-22
+Refactored: root extractor.py → src/etl_enrichment_pipeline/
+
+Changes Made
+------------
+1. Root extractor.py → thin CLI shim (19 lines)
+   - Imports main() from new package
+   - Adds src/ to sys.path for direct invocation
+
+2. src/etl_enrichment_pipeline/config/ — config files migrated from root config/
+   - config_global.py: GLOBAL_PIPELINE, CONNECTOR_SETTINGS
+   - config_postgres.py: POSTGRES_DBS (3 databases)
+   - config_mysql.py: MYSQL_DBS (4 databases)
+   - __init__.py: re-exports all four dicts
+   - Config semantics unchanged
+
+3. src/etl_enrichment_pipeline/agents/extraction_agent.py — extraction logic
+   - extract_postgres_schema(creds, rules) → dict
+   - extract_mysql_schema(creds, rules) → dict
+   - main() — CLI entry point preserving original behavior
+   - extraction_node(state) — LangGraph placeholder (NotImplementedError)
+
+4. enrichment/ — already deleted (directory did not exist)
+
+Verification Results
+--------------------
+- Config imports: OK (POSTGRES_DBS=3, MYSQL_DBS=4)
+- Config __init__.py re-exports: OK
+- extraction_agent imports: OK
+- extraction_node raises NotImplementedError: OK
+- extractor.py CLI shim exists: OK
+- python extractor.py — runs to database connection (expected timeout)
+- enrichment/ — does not exist, confirmed deleted

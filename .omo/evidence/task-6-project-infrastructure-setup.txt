@@ -1,0 +1,25 @@
+# Task 6: Project Infrastructure Setup — Evidence
+
+## Files Created/Updated
+
+### `src/etl_enrichment_pipeline/rules/pii_rules.yaml`
+PII column detection rules (6 entries): email, phone, mobile, aadhaar, pan, passport
+- Classifications: EMAIL, PHONE, GOVT_ID
+- All entries have `pattern`, `classification`, `confidence` fields
+
+### `src/etl_enrichment_pipeline/rules/semantic_type_rules.yaml`
+Semantic type patterns (10 entries): email, phone/mobile/telephone, first_name, last_name, dob, country, city, state/province, status, timestamps
+- All entries have `pattern`, `type` fields
+
+### `src/etl_enrichment_pipeline/rules/pattern_rules.yaml`
+Schema pattern detection rules (5 patterns): audit_trail, soft_delete, multi_tenancy, versioning, state_machine
+- Each has `description` and `indicators` list
+
+### `src/etl_enrichment_pipeline/rules/__init__.py`
+Exports `RULES_DIR` constant pointing to the rules directory.
+
+## Verification
+All 3 YAML files parse correctly via `yaml.safe_load()`:
+- pii_rules.yaml → top keys: ['pii_columns']
+- semantic_type_rules.yaml → top keys: ['semantic_types']
+- pattern_rules.yaml → top keys: ['patterns']
