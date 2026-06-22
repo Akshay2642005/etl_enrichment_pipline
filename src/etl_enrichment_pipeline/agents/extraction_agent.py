@@ -267,15 +267,13 @@ def main() -> None:
                 extracted = extract_postgres_schema(creds, rules)
                 system_data["tables"] = extracted.get("tables", [])
                 
-                if creds.get("database") == "crew":
-                    import os
-                    os.makedirs("sqlj_son", exist_ok=True)
-                    output_path = os.path.join("sqlj_son", "metadata_crew.json")
-                    with open(output_path, "w") as f:
-                        json.dump(extracted, f, indent=2)
-                    print(f"   [OK] Postgres Extraction for crew saved to {output_path}.\n")
-                else:
-                    print("   [OK] Postgres Extraction Complete.\n")
+                import os
+                os.makedirs("sqlj_son", exist_ok=True)
+                db_name = creds.get("database", "unknown")
+                output_path = os.path.join("sqlj_son", f"metadata_{db_name}.json")
+                with open(output_path, "w") as f:
+                    json.dump(extracted, f, indent=2)
+                print(f"   [OK] Postgres Extraction for {db_name} saved to {output_path}.\n")
 
             # elif db_type == "mysql":
             #     extracted = extract_mysql_schema(creds, rules)
@@ -289,11 +287,11 @@ def main() -> None:
             system_data["error"] = str(e)
 
     # Dump the completed dictionary into a formatted JSON file
-    with open(OUTPUT_FILE, "w") as json_file:
-        json.dump(master_json_data, json_file, indent=4)
+    # with open(OUTPUT_FILE, "w") as json_file:
+    #     json.dump(master_json_data, json_file, indent=4)
 
     print("=======================================")
-    print(f"*** PIPELINE FINISHED. JSON saved to '{OUTPUT_FILE}'.")
+    print(f"*** PIPELINE FINISHED. Database extractions saved to 'sqlj_son/'.")
     print("=======================================")
 
 
