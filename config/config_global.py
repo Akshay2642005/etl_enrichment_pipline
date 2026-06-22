@@ -9,5 +9,5 @@ GLOBAL_PIPELINE = {
 
 CONNECTOR_SETTINGS = {
     "output_format": "json",
-    "output_file": "sqlj_son/metadata_ground.json"
+    "output_file": "connector_output.json"
 }

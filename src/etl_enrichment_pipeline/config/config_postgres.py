@@ -56,38 +56,38 @@ POSTGRES_DBS = [
     #         "extract_relations": True
     #     }
     # },
-    # {
-    #     "system_name": "Crew Management System",
-    #     "connection_name": "postgres_crew",
-    #     "db_type": "postgres",
-    #     "credentials": {
-    #         "host": os.getenv("DB_CREW_HOST", "localhost"),
-    #         "port": int(os.getenv("DB_CREW_PORT", "5432")),
-    #         "database": os.getenv("DB_CREW_NAME", "crew"),
-    #         "username": os.getenv("DB_CREW_USER", "postgres"),
-    #         "password": os.getenv("DB_CREW_PASSWORD", "")
-    #     },
-    #     "extraction_rules": {
-    #         "extract_table_info": True,
-    #         "extract_ddl_views": True,
-    #         "extract_relations": True
-    #     }
-    # },
     {
-        "system_name": "Ground Resource System",
-        "connection_name": "postgres_ground",
+        "system_name": "Crew Management System",
+        "connection_name": "postgres_crew",
         "db_type": "postgres",
         "credentials": {
-            "host": os.getenv("DB_GROUND_HOST", "localhost"),
-            "port": int(os.getenv("DB_GROUND_PORT", "5432")),
-            "database": os.getenv("DB_GROUND_NAME", "ground_ops_db"),
-            "username": os.getenv("DB_GROUND_USER", "postgres"),
-            "password": os.getenv("DB_GROUND_PASSWORD", "")
+            "host": os.getenv("DB_CREW_HOST", "localhost"),
+            "port": int(os.getenv("DB_CREW_PORT", "5432")),
+            "database": os.getenv("DB_CREW_NAME", "crew"),
+            "username": os.getenv("DB_CREW_USER", "postgres"),
+            "password": os.getenv("DB_CREW_PASSWORD", "")
         },
         "extraction_rules": {
             "extract_table_info": True,
             "extract_ddl_views": True,
             "extract_relations": True
         }
-    }
+    },
+    # {
+    #     "system_name": "Ground Resource System",
+    #     "connection_name": "postgres_ground",
+    #     "db_type": "postgres",
+    #     "credentials": {
+    #         "host": os.getenv("DB_GROUND_HOST", "localhost"),
+    #         "port": int(os.getenv("DB_GROUND_PORT", "5432")),
+    #         "database": os.getenv("DB_GROUND_NAME", "ground_ops_db"),
+    #         "username": os.getenv("DB_GROUND_USER", "postgres"),
+    #         "password": os.getenv("DB_GROUND_PASSWORD", "")
+    #     },
+    #     "extraction_rules": {
+    #         "extract_table_info": True,
+    #         "extract_ddl_views": True,
+    #         "extract_relations": True
+    #     }
+    # }
 ]
