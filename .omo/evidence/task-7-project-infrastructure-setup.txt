@@ -1,0 +1,17 @@
+Task: Create minimal FastAPI application skeleton with /health endpoint
+Date: 2026-06-22
+
+Files created/modified:
+- src/etl_enrichment_pipeline/api/main.py — FastAPI app with GET /health (returns 200)
+- src/etl_enrichment_pipeline/api/__init__.py — re-exports app (unchanged, was correct)
+- src/etl_enrichment_pipeline/__init__.py — fixed import names (GLOBAL_PIPELINE, etc.)
+
+Verification:
+  $ curl http://127.0.0.1:18765/health
+  {"status":"ok","service":"etl-enrichment-pipeline","version":"0.1.0"}
+
+Expected response:
+  status_code: 200
+  body: {"status": "ok", "service": "etl-enrichment-pipeline", "version": "0.1.0"}
+
+Result: PASS

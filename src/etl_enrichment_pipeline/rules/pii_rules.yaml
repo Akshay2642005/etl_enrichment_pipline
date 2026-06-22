@@ -1,0 +1,22 @@
+# PII / sensitive column detection rules (rule-based, no LLM)
+# format: column_name_pattern -> classification
+
+pii_columns:
+  - pattern: "email"
+    classification: "EMAIL"
+    confidence: 0.95
+  - pattern: "phone"
+    classification: "PHONE"
+    confidence: 0.95
+  - pattern: "mobile"
+    classification: "PHONE"
+    confidence: 0.90
+  - pattern: "aadhaar"
+    classification: "GOVT_ID"
+    confidence: 0.98
+  - pattern: "pan"
+    classification: "GOVT_ID"
+    confidence: 0.98
+  - pattern: "passport"
+    classification: "GOVT_ID"
+    confidence: 0.98

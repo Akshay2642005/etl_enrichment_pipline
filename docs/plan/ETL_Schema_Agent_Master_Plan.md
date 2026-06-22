@@ -866,4 +866,260 @@ Build:
 * Plugin System
 
 ```
+
+---
+
+# Current Project Structure
+
+```text
+etl_enrichment_pipline/
+│
+├── config/                          # Database connector configurations
+│   ├── __init__.py                  # Empty package init
+│   ├── config_global.py             # Global pipeline settings (env, log level, output)
+│   ├── config_postgres.py           # PostgreSQL database connections (3 systems)
+│   └── config_mysql.py              # MySQL database connections (4 systems)
+│
+├── docs/
+│   └── plan/
+│       └── ETL_Schema_Agent_Master_Plan.md   # This file — architecture master plan
+│
+├── enrichment/                      # Future enrichment agents (empty, Phase 2+)
+│
+├── .codegraph/                      # Codebase indexing (auto-generated)
+│
+├── extractor.py                     # Phase 1 — Schema Extraction Agent (rule-based)
+├── README.md                        # Project overview
+└── connector_output.json            # Extraction output (gitignored, generated at runtime)
+```
+
+---
+
+# MVP (Minimum Viable Product)
+
+The **current codebase is an MVP of Phase 1** from the implementation plan above.
+
+## What MVP Delivers
+
+| Capability | Status |
+|---|---|
+| Multi-vendor schema extraction (PostgreSQL + MySQL) | ✅ Done |
+| Rule-based extraction (direct SQL queries via information_schema) | ✅ Done |
+| Canonical JSON output structure | ✅ Done |
+| Config-driven database connections | ✅ Done |
+| Extraction rules per database (toggle columns/views/relations) | ✅ Done |
+| Error handling with in-JSON error logging per system | ✅ Done |
+| Airline/aviation domain — 7 production-like systems | ✅ Done |
+
+## MVP Connected Systems
+
+| System Name | DB Type | Business Domain |
+|---|---|---|
+| Departure Control System (DCS) | PostgreSQL | Flight operations |
+| Passenger Service System (PSS) | PostgreSQL | Passenger management |
+| Revenue Management System (RMS) | PostgreSQL | Pricing & analytics |
+| Maintenance Management System (MRO) | MySQL | Aircraft maintenance |
+| Crew Management System | MySQL | Crew rostering |
+| Loyalty Program | MySQL | Frequent flyer |
+| Ground Resource System | MySQL | Ground operations |
+
+## MVP Extraction Output Shape
+
+```json
+{
+  "metadata": {
+    "environment": "development",
+    "status": "success"
+  },
+  "systems": {
+    "<system_name>": {
+      "database_type": "postgres|mysql",
+      "columns": [
+        {
+          "table_name": "",
+          "column_name": "",
+          "data_type": "",
+          "max_length": null
+        }
+      ],
+      "views": [
+        {
+          "view_name": "",
+          "definition": ""
+        }
+      ],
+      "relationships": [
+        {
+          "source_table": "",
+          "source_column": "",
+          "target_table": "",
+          "target_column": ""
+        }
+      ]
+    }
+  }
+}
+```
+
+## What MVP Does NOT Yet Cover (Deferred to Later Phases)
+
+| Feature | Planned Phase |
+|---|---|
+| LangGraph workflow orchestration | Phase 1 |
+| sqlglot DDL parsing (direct SQL used instead) | Phase 1 |
+| AI-based description generation | Phase 2 |
+| Business role classification | Phase 2 |
+| Domain detection | Phase 2 |
+| Semantic type detection | Phase 3 |
+| Entity discovery | Phase 3 |
+| Relationship intelligence | Phase 3 |
+| Use case generation | Phase 4 |
+| Sample query generation | Phase 4 |
+| Pattern detection | Phase 4 |
+| Validation agent | Phase 5 |
+| FastAPI service layer | Phase 5 |
+| PostgreSQL persistent storage | Future |
+| YAML rule engine (PII, patterns) | Phase 2-3 |
+
+---
+
+# File Structure & Responsibility Breakdown
+
+## Root: `extractor.py`
+
+**Role**: Schema Extraction Agent — Phase 1 MVP entry point.
+
+**Responsibilities**:
+- Iterates over all configured databases (PostgreSQL + MySQL)
+- Connects using credentials from `config/` module
+- Executes `information_schema` queries to extract columns, views, and foreign key relationships
+- Aggregates all extracted data into a unified JSON structure
+- Writes output to `connector_output.json`
+- Handles per-database connection failures gracefully (logs error in JSON, continues)
+
+**Database Handling**:
+- **PostgreSQL**: queries `information_schema.columns` and `information_schema.views` (public schema)
+- **MySQL**: queries `INFORMATION_SCHEMA.COLUMNS` and `INFORMATION_SCHEMA.KEY_COLUMN_USAGE` (foreign keys)
+- Extraction rules toggle which queries run per database
+
+**Planned Evolution**: Will be refactored into a LangGraph node as the first step in the pipeline. Rule-based extraction logic will be extended to use sqlglot/simple-ddl-parser for offline DDL file processing.
+
+---
+
+## `config/` Module
+
+### `config_global.py`
+
+**Role**: Global pipeline configuration.
+
+```python
+GLOBAL_PIPELINE = {
+    "environment": "development",
+    "log_level": "info"
+}
+
+CONNECTOR_SETTINGS = {
+    "output_format": "json",
+    "output_file": "connector_output.json"
+}
+```
+
+**Planned Evolution**: Will grow to include schema versioning, LLM provider configs, agent timeouts, and LangGraph thread configuration.
+
+### `config_postgres.py`
+
+**Role**: PostgreSQL database definitions.
+
+Contains `POSTGRES_DBS` — a list of 3 aviation-domain PostgreSQL databases:
+- **Departure Control System** (dcs_prod)
+- **Passenger Service System** (pss_core)
+- **Revenue Management System** (rms_analytics)
+
+Each entry defines:
+- `system_name` — business identifier
+- `connection_name` — internal routing key
+- `db_type` — `"postgres"` for connector dispatch
+- `credentials` — host, port, database, username, password
+- `extraction_rules` — boolean toggles for `extract_table_info`, `extract_ddl_views`, `extract_relations`
+
+### `config_mysql.py`
+
+**Role**: MySQL database definitions.
+
+Contains `MYSQL_DBS` — a list of 4 aviation-domain MySQL databases:
+- **Maintenance Management System** (mro_db)
+- **Crew Management System** (crew_roster_db)
+- **Loyalty Program** (frequent_flyer_db)
+- **Ground Resource System** (ground_ops_db)
+
+Same structure as PostgreSQL config but MySQL-specific extraction rules (no view extraction since MySQL views are not extracted in the MVP).
+
+### `__init__.py`
+
+**Role**: Package marker. Empty.
+
+---
+
+## `enrichment/` (Directory)
+
+**Role**: Location for all future enrichment agents (Phases 2–5).
+
+**Current state**: Empty directory.
+
+**Planned files**:
+- `description_agent.py` — Generates table/column descriptions (LLM)
+- `business_role_agent.py` — Classifies tables as master/transactional/fact/dimension etc.
+- `domain_agent.py` — Detects business domain
+- `semantic_type_agent.py` — Detects PII, email, phone, IDs etc.
+- `entity_discovery_agent.py` — Maps tables to business entities
+- `relationship_intelligence_agent.py` — Infers business relationships
+- `use_case_agent.py` — Generates business use cases
+- `sample_query_agent.py` — Generates sample SQL queries
+- `pattern_detection_agent.py` — Detects audit trail, soft delete, multi-tenancy
+- `validation_agent.py` — Validates extraction and enrichment quality
+- `rule_engine.py` — YAML-driven rule-based classification (PII, semantic types)
+- `pipeline.py` — LangGraph workflow definition and state management
+
+---
+
+## `docs/plan/`
+
+**Role**: Architecture and planning documentation.
+
+Contains the master plan document (`ETL_Schema_Agent_Master_Plan.md`) — the single source of truth for architecture decisions, agent definitions, implementation phases, and project structure.
+
+---
+
+## Root Files
+
+| File | Role |
+|---|---|
+| `extractor.py` | Phase 1 MVP — rule-based schema extractor (entry point) |
+| `connector_output.json` | Runtime output — extracted schema JSON (not committed) |
+| `README.md` | Project overview (minimal — 1 line) |
+
+---
+
+## `connector_output.json` (Runtime)
+
+**Role**: The final output of the MVP extraction phase. Consumed by Phase 2+ enrichment agents.
+
+**Structure**: Matches the `"systems"`-keyed JSON format defined in `extractor.py`:
+
+```json
+{
+  "metadata": { "environment": "...", "status": "success|partial_failure" },
+  "systems": {
+    "<system_name>": {
+      "database_type": "postgres|mysql",
+      "columns": [...],
+      "views": [...],
+      "relationships": [...],
+      "error": "..."  // only present on connection failure
+    }
+  }
+}
+```
+
+**Planned Evolution**: Will be replaced by the **Final Intelligence JSON** format defined in the architecture section above once all enrichment agents are implemented.
 ```
