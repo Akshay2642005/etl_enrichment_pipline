@@ -31,3 +31,6 @@ Thumbs.db
 
 # Environment Variables
 .env
+
+# remove drafts
+.omo/
