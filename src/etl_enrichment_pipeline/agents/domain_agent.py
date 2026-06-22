@@ -66,9 +66,7 @@ def _format_tables(schema: CanonicalSchema) -> str:
     """Format all tables and their columns into a readable string for the prompt."""
     lines: list[str] = []
     for tbl in schema.tables:
-        cols = ", ".join(
-            f"{c.column_name} ({c.data_type})" for c in tbl.columns
-        )
+        cols = ", ".join(f"{c.column_name} ({c.data_type})" for c in tbl.columns)
         lines.append(f"  - {tbl.table_name}: [{cols}]")
     if not lines:
         return "(no tables)"
@@ -111,23 +109,41 @@ def domain_node(state: PipelineState) -> PipelineState:
     try:
         llm = get_llm()
 
-        structured_llm = llm.with_structured_output(DomainOutput)
+        structured_llm = llm.with_structured_output(
+            DomainOutput, method="function_calling"
+        )
 
         system_prompt = _DOMAIN_SYSTEM_PROMPT.format(domain_hints=_DOMAIN_HINTS)
         user_prompt = _DOMAIN_USER_PROMPT.format(schema_tables=tables_str)
 
-        result = cast("DomainOutput", structured_llm.invoke([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]))
+        result = cast(
+            "DomainOutput",
+            structured_llm.invoke(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+            ),
+        )
 
         state.domains = result.domains
-        logger.info("Detected domains for %d table(s)", len(result.domains))
+
+        # If the LLM returned an empty dict or a list instead of the
+        # expected mapping, build a fallback from the schema.
+        if not state.domains and state.canonical_schema is not None:
+            logger.warning(
+                "LLM returned no valid domains — using fallback for %d table(s)",
+                len(state.canonical_schema.tables),
+            )
+            state.domains = {
+                tbl.table_name: "Unknown"
+                for tbl in state.canonical_schema.tables
+            }
+
+        logger.info("Detected domains for %d table(s)", len(state.domains))
 
     except Exception:
-        logger.exception(
-            "Domain detection failed — falling back to empty domain map"
-        )
+        logger.exception("Domain detection failed — falling back to empty domain map")
         state.domains = {}
 
     return state

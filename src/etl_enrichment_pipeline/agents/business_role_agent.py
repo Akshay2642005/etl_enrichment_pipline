@@ -76,9 +76,11 @@ def business_role_node(state: PipelineState) -> PipelineState:
         from etl_enrichment_pipeline.core.llm import get_llm
 
         llm = get_llm()
-        structured_llm = llm.with_structured_output(BusinessRoleOutput)
+        structured_llm = llm.with_structured_output(
+            BusinessRoleOutput, method="function_calling"
+        )
         result = cast("BusinessRoleOutput", structured_llm.invoke(prompt))
-        state.business_roles = result.roles
+        state.business_roles = result.roles if result is not None else {}
     except Exception:
         # Graceful degradation — if API key is missing or any error occurs,
         # return state unchanged so the pipeline can continue without crashing

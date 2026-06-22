@@ -13,16 +13,16 @@ from etl_enrichment_pipeline.models.pipeline_state import PipelineState
 # Structured-output schema for the LLM
 # ---------------------------------------------------------------------------
 
+
 class TableDescriptions(BaseModel):
     """Schema for the LLM to fill with table and column descriptions."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     table_descriptions: dict[str, str] = Field(
         default_factory=dict,
         description=(
-            "Maps each table_name to a concise business description"
-            " (1-2 sentences)."
+            "Maps each table_name to a concise business description (1-2 sentences)."
         ),
     )
     column_descriptions: dict[str, dict[str, str]] = Field(
@@ -89,8 +89,7 @@ def _format_tables(state: PipelineState) -> tuple[str, str]:
             nullable = "NULL" if col.is_nullable else "NOT NULL"
             pk = " PK" if col.is_primary_key else ""
             table_lines.append(
-                f"  - {col.column_name}: {col.data_type}"
-                f" ({nullable}{pk})"
+                f"  - {col.column_name}: {col.data_type} ({nullable}{pk})"
             )
     tables_text = "".join(table_lines)
 
@@ -134,17 +133,22 @@ def description_node(state: PipelineState) -> PipelineState:
     # --- call the LLM with structured output -----------------------------
     try:
         llm = get_llm()
-        structured_llm = llm.with_structured_output(TableDescriptions)
-        result = cast("TableDescriptions", structured_llm.invoke(
-            [
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": user_message},
-            ]
-        ))
+        structured_llm = llm.with_structured_output(
+            TableDescriptions, method="function_calling"
+        )
+        result = cast(
+            "TableDescriptions",
+            structured_llm.invoke(
+                [
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message},
+                ]
+            ),
+        )
 
         state.descriptions = {
-            "table_descriptions": result.table_descriptions,
-            "column_descriptions": result.column_descriptions,
+            "table_descriptions": result.table_descriptions if result is not None else {},
+            "column_descriptions": result.column_descriptions if result is not None else {},
         }
 
     except Exception:

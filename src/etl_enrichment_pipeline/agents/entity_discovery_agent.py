@@ -99,8 +99,7 @@ def _format_relationships(schema: CanonicalSchema) -> str:
     lines: list[str] = []
     for rel in schema.relationships:
         lines.append(
-            f"  - {rel.from_table}.{rel.from_column} → "
-            f"{rel.to_table}.{rel.to_column}"
+            f"  - {rel.from_table}.{rel.from_column} → {rel.to_table}.{rel.to_column}"
         )
     return "\n".join(lines)
 
@@ -151,7 +150,9 @@ def entity_discovery_node(state: PipelineState) -> PipelineState:
     try:
         llm = get_llm()
 
-        structured_llm = llm.with_structured_output(EntityDiscoveryOutput)
+        structured_llm = llm.with_structured_output(
+            EntityDiscoveryOutput, method="function_calling"
+        )
 
         system_prompt = _ENTITY_SYSTEM_PROMPT
         user_prompt = _ENTITY_USER_PROMPT.format(
@@ -159,15 +160,25 @@ def entity_discovery_node(state: PipelineState) -> PipelineState:
             schema_relationships=relationships_str,
         )
 
-        result = cast("EntityDiscoveryOutput", structured_llm.invoke([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]))
+        result = cast(
+            "EntityDiscoveryOutput",
+            structured_llm.invoke(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+            ),
+        )
+
+        if result is None:
+            logger.warning("LLM returned None — falling back to empty entities")
+            state.entities = None
+            return state
 
         # Deduplicate while preserving order
         seen: set[str] = set()
         deduped: list[str] = []
-        for entity in result.entities:
+        for entity in (result.entities or []):
             if entity not in seen:
                 seen.add(entity)
                 deduped.append(entity)
@@ -176,9 +187,7 @@ def entity_discovery_node(state: PipelineState) -> PipelineState:
         logger.info("Discovered %d entity/ies", len(deduped))
 
     except Exception:
-        logger.exception(
-            "Entity discovery failed — falling back to empty entities"
-        )
+        logger.exception("Entity discovery failed — falling back to empty entities")
         state.entities = None
 
     return state

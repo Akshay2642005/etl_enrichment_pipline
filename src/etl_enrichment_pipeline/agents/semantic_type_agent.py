@@ -36,7 +36,7 @@ _SYSTEM_PROMPT = (
     "Use only the following semantic type labels:\n"
     "{type_labels}\n"
     "\n"
-    "Return a mapping of \"table.column\" identifiers to their semantic type labels."
+    'Return a mapping of "table.column" identifiers to their semantic type labels.'
 )
 
 _USER_PROMPT = (
@@ -110,24 +110,36 @@ def semantic_type_node(state: PipelineState) -> PipelineState:
     if unclassified:
         try:
             llm = get_llm()
-            structured_llm = llm.with_structured_output(SemanticTypeOutput)
+            structured_llm = llm.with_structured_output(
+                SemanticTypeOutput, method="function_calling"
+            )
 
             system_prompt = _SYSTEM_PROMPT.format(type_labels=_SEMANTIC_TYPE_LABELS)
             user_prompt = _USER_PROMPT.format(
                 unclassified_columns=_format_unclassified(unclassified)
             )
 
-            llm_result = cast("SemanticTypeOutput", structured_llm.invoke([
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]))
-
-            result.update(llm_result.semantic_types)
-            logger.info(
-                "LLM classified %d column(s); %d total semantic types",
-                len(llm_result.semantic_types),
-                len(result),
+            llm_result = cast(
+                "SemanticTypeOutput",
+                structured_llm.invoke(
+                    [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ]
+                ),
             )
+
+            if llm_result is not None and llm_result.semantic_types:
+                result.update(llm_result.semantic_types)
+                logger.info(
+                    "LLM classified %d column(s); %d total semantic types",
+                    len(llm_result.semantic_types),
+                    len(result),
+                )
+            else:
+                logger.warning(
+                    "LLM returned None or empty — using only rule-based results"
+                )
 
         except Exception:
             logger.exception(
@@ -138,6 +150,7 @@ def semantic_type_node(state: PipelineState) -> PipelineState:
 
     state.semantic_types = result
     logger.info(
-        "Semantic types detected for %d column(s)", len(result),
+        "Semantic types detected for %d column(s)",
+        len(result),
     )
     return state

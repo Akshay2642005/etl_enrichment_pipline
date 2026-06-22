@@ -21,23 +21,25 @@ logger = logging.getLogger(__name__)
 class QueryItem(BaseModel):
     """A single sample business query with natural-language question and SQL."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
-    question: str = Field(description="Natural-language question the query answers")
-    sql: str = Field(description="SQL query that answers the question")
+    question: str = Field(
+        default="", description="Natural-language question the query answers"
+    )
+    sql: str = Field(default="", description="SQL query that answers the question")
     category: str = Field(
-        description=(
-            "One of: Lookup, Reporting, Analytics, Aggregation, Relationship"
-        ),
+        default="",
+        description=("One of: Lookup, Reporting, Analytics, Aggregation, Relationship"),
     )
 
 
 class SampleQueries(BaseModel):
     """Container returned by the LLM."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     queries: list[QueryItem] = Field(
+        default_factory=list,
         description="3-5 sample business queries across different categories",
     )
 
@@ -126,9 +128,7 @@ def _format_schema(state: PipelineState) -> tuple[str, str]:
                 f"{c.column_name} ({c.data_type}){sem_str}"
                 f"{' PK' if c.is_primary_key else ''}"
             )
-        table_lines.append(
-            f"  - {table.table_name}: [{', '.join(col_lines)}]"
-        )
+        table_lines.append(f"  - {table.table_name}: [{', '.join(col_lines)}]")
     tables_info = "\n".join(table_lines) if table_lines else "(no tables)"
 
     # Relationships
@@ -188,9 +188,7 @@ def sample_query_node(state: PipelineState) -> PipelineState:
         return state
 
     # --- Build the prompt ----------------------------------------------------
-    system_prompt = _SAMPLE_QUERY_SYSTEM_PROMPT.format(
-        domain_hints=_SAMPLE_QUERY_HINTS
-    )
+    system_prompt = _SAMPLE_QUERY_SYSTEM_PROMPT.format(domain_hints=_SAMPLE_QUERY_HINTS)
     user_prompt = _SAMPLE_QUERY_USER_PROMPT.format(
         tables_info=tables_info,
         relationships_info=relationships_info,
@@ -199,11 +197,23 @@ def sample_query_node(state: PipelineState) -> PipelineState:
     # --- Call the LLM with structured output ---------------------------------
     try:
         llm = get_llm()
-        structured_llm = llm.with_structured_output(SampleQueries)
-        result = cast("SampleQueries", structured_llm.invoke([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]))
+        structured_llm = llm.with_structured_output(
+            SampleQueries, method="function_calling"
+        )
+        result = cast(
+            "SampleQueries",
+            structured_llm.invoke(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+            ),
+        )
+
+        if result is None:
+            logger.warning("LLM returned None — falling back to empty sample queries")
+            state.sample_queries = []
+            return state
 
         # Convert to state-compatible format (list[dict[str, str]])
         state.sample_queries = [
@@ -212,7 +222,7 @@ def sample_query_node(state: PipelineState) -> PipelineState:
                 "sql": q.sql,
                 "category": q.category,
             }
-            for q in result.queries
+            for q in (result.queries or [])
         ]
         logger.info("Generated %d sample query(ies)", len(state.sample_queries))
 

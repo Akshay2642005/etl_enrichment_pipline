@@ -21,27 +21,27 @@ logger = logging.getLogger(__name__)
 class EntityRelationshipItem(BaseModel):
     """A single entity-level relationship inferred from FK constraints."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
-    entity: str = Field(
-        description="Source business entity name (PascalCase)"
-    )
+    entity: str = Field(default="", description="Source business entity name (PascalCase)")
     related_entities: str = Field(
-        description="Comma-separated list of related entity names"
+        default="", description="Comma-separated list of related entity names"
     )
     business_meaning: str = Field(
+        default="",
         description="Natural-language description of the relationship "
-        "including cardinality (e.g. 'An employee belongs to one department')"
+        "including cardinality (e.g. 'An employee belongs to one department')",
     )
 
 
 class EntityRelationships(BaseModel):
     """Container returned by the LLM."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     entity_relationships: list[EntityRelationshipItem] = Field(
-        description="Entity-level relationships with business meaning"
+        default_factory=list,
+        description="Entity-level relationships with business meaning",
     )
 
 
@@ -154,20 +154,20 @@ def relationship_intelligence_node(state: PipelineState) -> PipelineState:
     """
     # --- Early exit when there is no schema to analyse -----------------------
     if state.canonical_schema is None:
-        logger.warning(
-            "canonical_schema is None — skipping relationship intelligence"
-        )
+        logger.warning("canonical_schema is None — skipping relationship intelligence")
         return state
 
     # --- Physical relationships: extract from FK constraints (no LLM) --------
     physical: list[dict[str, str]] = []
     for rel in state.canonical_schema.relationships:
-        physical.append({
-            "from_table": rel.from_table,
-            "to_table": rel.to_table,
-            "from_column": rel.from_column,
-            "to_column": rel.to_column,
-        })
+        physical.append(
+            {
+                "from_table": rel.from_table,
+                "to_table": rel.to_table,
+                "from_column": rel.from_column,
+                "to_column": rel.to_column,
+            }
+        )
 
     logger.debug("Extracted %d physical FK relationship(s)", len(physical))
 
@@ -179,7 +179,9 @@ def relationship_intelligence_node(state: PipelineState) -> PipelineState:
             physical_str = _format_physical_relationships(physical)
 
             llm = get_llm()
-            structured_llm = llm.with_structured_output(EntityRelationships)
+            structured_llm = llm.with_structured_output(
+                EntityRelationships, method="function_calling"
+            )
 
             system_prompt = _RELATIONSHIP_SYSTEM_PROMPT
             user_prompt = _RELATIONSHIP_USER_PROMPT.format(
@@ -187,22 +189,32 @@ def relationship_intelligence_node(state: PipelineState) -> PipelineState:
                 physical_relationships=physical_str,
             )
 
-            result = cast("EntityRelationships", structured_llm.invoke([
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]))
-
-            entity_rels = [
-                {
-                    "entity": item.entity,
-                    "related_entities": item.related_entities,
-                    "business_meaning": item.business_meaning,
-                }
-                for item in result.entity_relationships
-            ]
-            logger.info(
-                "Inferred %d entity-level relationship(s)", len(entity_rels)
+            result = cast(
+                "EntityRelationships",
+                structured_llm.invoke(
+                    [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ]
+                ),
             )
+
+            if result is not None:
+                entity_rels = [
+                    {
+                        "entity": item.entity,
+                        "related_entities": item.related_entities,
+                        "business_meaning": item.business_meaning,
+                    }
+                    for item in (result.entity_relationships or [])
+                ]
+                logger.info(
+                    "Inferred %d entity-level relationship(s)", len(entity_rels)
+                )
+            else:
+                logger.warning(
+                    "LLM returned None — no entity-level relationships inferred"
+                )
 
         except Exception:
             logger.exception(

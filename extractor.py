@@ -19,6 +19,7 @@ if _src not in sys.path:
 
 def main() -> None:
     from etl_enrichment_pipeline.agents.extraction_agent import main as extract_main
+
     extract_main()
 
 

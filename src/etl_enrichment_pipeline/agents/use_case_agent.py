@@ -21,23 +21,25 @@ logger = logging.getLogger(__name__)
 class UseCaseItem(BaseModel):
     """A single business use case identified from the schema."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
-    name: str = Field(description="Short business name for the use case")
+    name: str = Field(default="", description="Short business name for the use case")
     description: str = Field(
-        description="Brief description of the use case in 1-2 sentences"
+        default="", description="Brief description of the use case in 1-2 sentences"
     )
     involved_tables: list[str] = Field(
-        description="Table names that participate in this use case"
+        default_factory=list,
+        description="Table names that participate in this use case",
     )
 
 
 class BusinessUseCases(BaseModel):
     """Container returned by the LLM."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     use_cases: list[UseCaseItem] = Field(
+        default_factory=list,
         description="3-5 business use cases derived from the schema",
     )
 
@@ -180,8 +182,7 @@ def use_case_node(state: PipelineState) -> PipelineState:
 
     if not tables_info or tables_info == "(no tables)":
         logger.warning(
-            "canonical_schema contains no tables \u2014 "
-            "skipping use case generation"
+            "canonical_schema contains no tables \u2014 skipping use case generation"
         )
         state.use_cases = []
         return state
@@ -197,11 +198,23 @@ def use_case_node(state: PipelineState) -> PipelineState:
     # --- Call the LLM with structured output ---------------------------------
     try:
         llm = get_llm()
-        structured_llm = llm.with_structured_output(BusinessUseCases)
-        result = cast("BusinessUseCases", structured_llm.invoke([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]))
+        structured_llm = llm.with_structured_output(
+            BusinessUseCases, method="function_calling"
+        )
+        result = cast(
+            "BusinessUseCases",
+            structured_llm.invoke(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+            ),
+        )
+
+        if result is None:
+            logger.warning("LLM returned None — falling back to empty use cases")
+            state.use_cases = []
+            return state
 
         # Convert to state-compatible format (list[dict[str, str]])
         # involved_tables is a list[str] in the model but must be stored as a
@@ -212,14 +225,12 @@ def use_case_node(state: PipelineState) -> PipelineState:
                 "description": uc.description,
                 "involved_tables": json.dumps(uc.involved_tables),
             }
-            for uc in result.use_cases
+            for uc in (result.use_cases or [])
         ]
         logger.info("Generated %d business use case(s)", len(state.use_cases))
 
     except Exception:
-        logger.exception(
-            "Use case generation failed \u2014 falling back to empty list"
-        )
+        logger.exception("Use case generation failed \u2014 falling back to empty list")
         state.use_cases = []
 
     return state

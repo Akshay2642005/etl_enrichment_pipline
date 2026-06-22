@@ -64,7 +64,7 @@ def get_llm() -> ChatOpenAI:
         "model": model,
         "temperature": 0,
         "timeout": timeout_s * 1000,
-        "max_retries": 0,
+        "max_retries": 2,
     }
     if base_url:
         kwargs["base_url"] = base_url
