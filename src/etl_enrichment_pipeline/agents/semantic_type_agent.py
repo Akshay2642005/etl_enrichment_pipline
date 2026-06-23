@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import cast
 
@@ -108,25 +109,28 @@ def semantic_type_node(state: PipelineState) -> PipelineState:
 
     # --- Pass 2: LLM for remaining unclassified columns -----------------------
     if unclassified:
+        system_prompt = _SYSTEM_PROMPT.format(type_labels=_SEMANTIC_TYPE_LABELS)
+        user_prompt = _USER_PROMPT.format(
+            unclassified_columns=_format_unclassified(unclassified)
+        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        llm = get_llm()
+
+        # Try structured output first (via function calling). If the LLM
+        # returns a JSON *string* instead of a parsed dict (common with
+        # Ollama-compatible APIs), fall back to a raw call + json.loads.
         try:
-            llm = get_llm()
             structured_llm = llm.with_structured_output(
                 SemanticTypeOutput, method="function_calling"
             )
 
-            system_prompt = _SYSTEM_PROMPT.format(type_labels=_SEMANTIC_TYPE_LABELS)
-            user_prompt = _USER_PROMPT.format(
-                unclassified_columns=_format_unclassified(unclassified)
-            )
-
             llm_result = cast(
                 "SemanticTypeOutput",
-                structured_llm.invoke(
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ]
-                ),
+                structured_llm.invoke(messages),
             )
 
             if llm_result is not None and llm_result.semantic_types:
@@ -136,14 +140,46 @@ def semantic_type_node(state: PipelineState) -> PipelineState:
                     len(llm_result.semantic_types),
                     len(result),
                 )
+                state.semantic_types = result
+                logger.info("Semantic types detected for %d column(s)", len(result))
+                return state
             else:
                 logger.warning(
                     "LLM returned None or empty — using only rule-based results"
                 )
 
+        except Exception as exc:
+            logger.warning(
+                "Structured output failed (%s: %s) — trying raw LLM call",
+                type(exc).__name__,
+                exc,
+            )
+
+            # Fallback: raw LLM call with JSON-in-prompt, parse manually
+        try:
+            raw_result = llm.invoke(messages)
+            content = raw_result.content if hasattr(raw_result, "content") else str(raw_result)
+
+            # Try to extract JSON from the response (handles markdown fences)
+            json_str = content
+            if "```json" in json_str:
+                json_str = json_str.split("```json")[1].split("```")[0].strip()
+            elif "```" in json_str:
+                json_str = json_str.split("```")[1].split("```")[0].strip()
+
+            parsed = json.loads(json_str)
+            # The LLM might return the dict directly under "semantic_types"
+            # or at the top level as a flat mapping
+            if isinstance(parsed, dict):
+                if "semantic_types" in parsed and isinstance(parsed["semantic_types"], dict):
+                    parsed = parsed["semantic_types"]
+                result.update(parsed)
+                logger.info(
+                    "Raw LLM fallback classified %d column(s)", len(parsed)
+                )
         except Exception:
             logger.exception(
-                "Semantic type LLM classification failed — "
+                "Raw LLM fallback also failed — "
                 "using only rule-based results (%d columns classified)",
                 len(result),
             )

@@ -147,8 +147,12 @@ def description_node(state: PipelineState) -> PipelineState:
         )
 
         state.descriptions = {
-            "table_descriptions": result.table_descriptions if result is not None else {},
-            "column_descriptions": result.column_descriptions if result is not None else {},
+            "table_descriptions": result.table_descriptions
+            if result is not None
+            else {},
+            "column_descriptions": result.column_descriptions
+            if result is not None
+            else {},
         }
 
     except Exception:

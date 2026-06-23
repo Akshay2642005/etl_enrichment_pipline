@@ -29,7 +29,7 @@ if _env_path.exists():
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "gpt-4o"
-_DEFAULT_TIMEOUT_MS = 120_000
+_DEFAULT_TIMEOUT_S = 300
 
 
 def get_llm() -> ChatOpenAI:
@@ -44,26 +44,26 @@ def get_llm() -> ChatOpenAI:
     OPENAI_BASE_URL
         Base URL for the API (defaults to OpenAI's ``https://api.openai.com/v1``).
     LLM_TIMEOUT
-        Request timeout in seconds (default ``120``).
+        Request timeout in **seconds** (default ``300``).
 
     A ``.env`` file in the project root is loaded automatically.
     See ``.env.template`` for available provider presets.
     """
     model = os.getenv("LLM_MODEL", _DEFAULT_MODEL)
-    timeout_s = int(os.getenv("LLM_TIMEOUT", str(_DEFAULT_TIMEOUT_MS // 1000)))
+    timeout = float(os.getenv("LLM_TIMEOUT", str(_DEFAULT_TIMEOUT_S)))
     base_url = os.getenv("OPENAI_BASE_URL")
 
     logger.debug(
-        "LLM config: model=%s base_url=%s timeout=%ss",
+        "LLM config: model=%s base_url=%s timeout=%.0fs",
         model,
         base_url or "(OpenAI default)",
-        timeout_s,
+        timeout,
     )
 
     kwargs: dict = {
         "model": model,
         "temperature": 0,
-        "timeout": timeout_s * 1000,
+        "timeout": timeout,
         "max_retries": 2,
     }
     if base_url:

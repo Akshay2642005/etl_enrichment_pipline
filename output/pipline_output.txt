@@ -1,0 +1,48 @@
+(etl-enrichment-pipeline) etl_enrichment_pipline git::(main)
+➜ uv run main.py pipeline sqlj_son/raw_metadata.json
+18:54:15 [INFO] etl_enrichment_pipeline.core.pipeline: ══════════════════════════════════════════════════
+18:54:15 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline started — input: sqlj_son/raw_metadata.json
+18:54:15 [INFO] etl_enrichment_pipeline.core.pipeline: Loaded 30 table(s), 31 relationship(s)
+18:54:15 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline graph compiled — 11 agent nodes
+18:54:16 [INFO] etl_enrichment_pipeline.core.pipeline: [load_json] ▶  started
+18:54:16 [INFO] etl_enrichment_pipeline.core.pipeline: [load_json] ✓  completed (0.0s)
+18:54:16 [INFO] etl_enrichment_pipeline.core.pipeline: [description] ▶  started
+18:58:34 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+18:58:34 [INFO] etl_enrichment_pipeline.core.pipeline: [description] ✓  completed (258.8s)
+18:58:34 [INFO] etl_enrichment_pipeline.core.pipeline: [business_role] ▶  started
+19:01:03 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:01:03 [INFO] etl_enrichment_pipeline.core.pipeline: [business_role] ✓  completed (148.9s)
+19:01:03 [INFO] etl_enrichment_pipeline.core.pipeline: [domain] ▶  started
+19:02:19 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:02:19 [INFO] etl_enrichment_pipeline.agents.domain_agent: Detected domains for 30 table(s)
+19:02:19 [INFO] etl_enrichment_pipeline.core.pipeline: [domain] ✓  completed (76.0s)
+19:02:19 [INFO] etl_enrichment_pipeline.core.pipeline: [semantic_type] ▶  started
+19:06:41 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:06:41 [INFO] etl_enrichment_pipeline.agents.semantic_type_agent: LLM classified 108 column(s); 121 total semantic types
+19:06:41 [INFO] etl_enrichment_pipeline.agents.semantic_type_agent: Semantic types detected for 121 column(s)
+19:06:41 [INFO] etl_enrichment_pipeline.core.pipeline: [semantic_type] ✓  completed (261.4s)
+19:06:41 [INFO] etl_enrichment_pipeline.core.pipeline: [entity_discovery] ▶  started
+19:08:09 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:08:09 [INFO] etl_enrichment_pipeline.agents.entity_discovery_agent: Discovered 14 entity/ies
+19:08:09 [INFO] etl_enrichment_pipeline.core.pipeline: [entity_discovery] ✓  completed (88.2s)
+19:08:09 [INFO] etl_enrichment_pipeline.core.pipeline: [relationship_intelligence] ▶  started
+19:12:54 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:12:54 [INFO] etl_enrichment_pipeline.agents.relationship_intelligence_agent: Inferred 7 entity-level relationship(s)
+19:12:54 [INFO] etl_enrichment_pipeline.core.pipeline: [relationship_intelligence] ✓  completed (284.4s)
+19:12:54 [INFO] etl_enrichment_pipeline.core.pipeline: [use_case] ▶  started
+19:13:49 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:13:49 [INFO] etl_enrichment_pipeline.agents.use_case_agent: Generated 5 business use case(s)
+19:13:49 [INFO] etl_enrichment_pipeline.core.pipeline: [use_case] ✓  completed (55.7s)
+19:13:49 [INFO] etl_enrichment_pipeline.core.pipeline: [sample_query] ▶  started
+19:17:08 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+19:17:08 [INFO] etl_enrichment_pipeline.agents.sample_query_agent: Generated 5 sample query(ies)
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: [sample_query] ✓  completed (198.5s)
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: [pattern_detection] ▶  started
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: [pattern_detection] ✓  completed (0.0s)
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: [validation] ▶  started
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: [validation] ✓  completed (0.0s)
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline finished — 1372.4s total
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: Tables: 30 | Relationships: 31 | Entities: 14 | Patterns: 13
+19:17:08 [INFO] etl_enrichment_pipeline.core.pipeline: ══════════════════════════════════════════════════
+Written to output\enriched_metadata.json
+(etl-enrichment-pipeline) etl_enrichment_pipline git::(main)

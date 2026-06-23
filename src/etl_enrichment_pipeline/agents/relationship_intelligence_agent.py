@@ -23,7 +23,9 @@ class EntityRelationshipItem(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    entity: str = Field(default="", description="Source business entity name (PascalCase)")
+    entity: str = Field(
+        default="", description="Source business entity name (PascalCase)"
+    )
     related_entities: str = Field(
         default="", description="Comma-separated list of related entity names"
     )

@@ -99,3 +99,46 @@ All config is via environment variables (`.env`):
 - `OPENAI_BASE_URL` — API base URL
 - `LLM_MODEL` — Model name
 - `LLM_TIMEOUT` — Request timeout in seconds
+
+## LangSmith Tracing (Optional)
+
+[LangSmith](https://smith.langchain.com) provides observability for LangGraph runs —
+node latencies, LLM call traces, error tracking, and state diffs.
+
+### Setup
+
+```bash
+uv add langsmith
+```
+
+Then uncomment these lines in `.env` with your LangSmith API key:
+
+```env
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+LANGCHAIN_API_KEY=lsv2_pt_...
+LANGCHAIN_PROJECT=etl-enrichment-pipeline
+```
+
+Run the pipeline once and traces will appear at
+[https://smith.langchain.com](https://smith.langchain.com).
+
+### Visualising the Graph Structure
+
+The compiled `StateGraph` has built-in drawing methods:
+
+```python
+from etl_enrichment_pipeline.core.pipeline import build_pipeline
+
+graph = build_pipeline()
+
+# ASCII art (no deps)
+graph.get_graph().print_ascii()
+
+# Mermaid syntax (renders in GitHub/GitLab Markdown)
+print(graph.get_graph().draw_mermaid())
+
+# PNG image (requires: uv add playwright && uv run playwright install chromium)
+png = graph.get_graph().draw_mermaid_png()
+Path("output/graph.png").write_bytes(png)
+```

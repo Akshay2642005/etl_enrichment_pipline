@@ -14,10 +14,33 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
+import sys
 from pathlib import Path
 
 from etl_enrichment_pipeline.api.main import app as _app
 from etl_enrichment_pipeline.core.pipeline import run_pipeline as _run_pipeline
+
+
+def setup_logging(level: str = "INFO") -> None:
+    """Configure root logger so pipeline node logs appear on stderr.
+
+    Reads ``GLOBAL_PIPELINE["log_level"]`` from config if available, otherwise
+    falls back to *level*.
+    """
+    try:
+        from etl_enrichment_pipeline.config.config_global import GLOBAL_PIPELINE
+
+        level = GLOBAL_PIPELINE.get("log_level", level).upper()
+    except Exception:
+        pass
+
+    logging.basicConfig(
+        level=getattr(logging, level, logging.INFO),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+        stream=sys.stderr,
+    )
 
 # ---------------------------------------------------------------
 # Exposed for:  uv run uvicorn main:app
@@ -26,6 +49,7 @@ app = _app
 
 
 def run_api() -> None:
+    setup_logging()
     import uvicorn
 
     uvicorn.run(
@@ -37,6 +61,7 @@ def run_api() -> None:
 
 
 def run_pipeline(file_path: str = "sqlj_son/raw_metadata.json") -> None:
+    setup_logging()
     result = _run_pipeline(file_path)
 
     out_dir = Path("output")
