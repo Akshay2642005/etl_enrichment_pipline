@@ -272,3 +272,65 @@ CREATE TABLE lost_baggage (
     CONSTRAINT lost_baggage_pkey PRIMARY KEY (lost_id),
     CONSTRAINT lost_baggage_baggage_id_fkey FOREIGN KEY (baggage_id) REFERENCES baggage(baggage_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- Views
+-- ---------------------------------------------------------------------------
+
+CREATE VIEW employee_details AS
+SELECT
+    e.employee_id,
+    e.employee_name,
+    d.department_name,
+    r.role_name
+FROM employee e
+LEFT JOIN departmentsss d ON e.department_id = d.department_id
+LEFT JOIN employee_role er ON e.employee_id = er.employee_id
+LEFT JOIN role r ON er.role_id = r.role_id;
+
+CREATE VIEW active_turnaround_summary AS
+SELECT
+    t.turnaround_id,
+    f.flight_number,
+    t.start_time,
+    t.target_departure_time,
+    t.status
+FROM turnaround_operation t
+JOIN flight f ON t.flight_id = f.flight_id
+WHERE t.status = 'IN_PROGRESS';
+
+CREATE VIEW equipment_status AS
+SELECT
+    eq.equipment_id,
+    eq.equipment_name,
+    et.type_name,
+    eq.status,
+    ea.assigned_date,
+    ea.returned_date
+FROM equipment eq
+LEFT JOIN equipment_type et ON eq.equipment_type_id = et.equipment_type_id
+LEFT JOIN equipment_assignment ea ON eq.equipment_id = ea.equipment_id;
+
+CREATE VIEW baggage_tracking AS
+SELECT
+    b.baggage_id,
+    b.tag_number,
+    f.flight_number,
+    b.status,
+    bs.scan_location,
+    bs.scan_time
+FROM baggage b
+JOIN flight f ON b.flight_id = f.flight_id
+LEFT JOIN baggage_scan bs ON b.baggage_id = bs.baggage_id;
+
+CREATE VIEW schedule_detail AS
+SELECT
+    s.schedule_id,
+    e.employee_name,
+    sh.shift_name,
+    sh.start_time,
+    sh.end_time,
+    s.schedule_date
+FROM schedule s
+JOIN employee e ON s.employee_id = e.employee_id
+JOIN shift sh ON s.shift_id = sh.shift_id;

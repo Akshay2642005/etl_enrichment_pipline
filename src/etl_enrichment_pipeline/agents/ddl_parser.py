@@ -1,7 +1,8 @@
 """DDL parser — converts raw SQL DDL statements to structured JSON.
 
-Parses ``.sql`` files containing ``CREATE TABLE`` statements and produces
-a JSON representation matching the ``raw_metadata.json`` structure.
+Parses ``.sql`` files containing ``CREATE TABLE`` and ``CREATE VIEW``
+statements and produces a JSON representation matching the
+``raw_metadata.json`` structure.
 
 Uses ``sqlglot`` as the primary parser (per the master plan).
 
@@ -9,7 +10,8 @@ Public API
 ----------
 - ``ddl_to_json(filepath, database_type, schema)``
     Standalone function. Reads a ``.sql`` file, parses all ``CREATE TABLE``
-    statements, and returns a dict in ``raw_metadata.json`` format.
+    and ``CREATE VIEW`` statements, and returns a dict with ``tables``
+    and ``views`` keys in ``raw_metadata.json`` format.
 """
 
 from __future__ import annotations
@@ -73,6 +75,15 @@ def ddl_to_json(
                             ...
                         ]
                     }
+                ],
+                "views": [
+                    {
+                        "view_name": "employee_details",
+                        "columns": [
+                            {"column_name": ..., "data_type": ..., "nullable": ...},
+                            ...
+                        ]
+                    }
                 ]
             }
     """
@@ -83,19 +94,28 @@ def ddl_to_json(
     statements = sqlglot.parse(sql_text, dialect=dialect)
 
     tables: list[dict] = []
+    views: list[dict] = []
 
     for statement in statements:
         if statement is None:
             continue
-        if isinstance(statement, exp.Create) and isinstance(statement.this, exp.Schema):
-            parsed = _parse_create_table(statement)
-            if parsed is not None:
-                tables.append(parsed)
+        if isinstance(statement, exp.Create):
+            kind_str = statement.kind.upper() if isinstance(statement.kind, str) else ""
+
+            if kind_str.upper() == "VIEW":
+                parsed = _parse_create_view(statement)
+                if parsed is not None:
+                    views.append(parsed)
+            elif isinstance(statement.this, exp.Schema):
+                parsed = _parse_create_table(statement)
+                if parsed is not None:
+                    tables.append(parsed)
 
     result = {
         "database_type": database_type,
         "schema": schema,
         "tables": tables,
+        "views": views,
     }
 
     if output_path:
@@ -148,6 +168,65 @@ def _parse_create_table(create_stmt: exp.Create) -> dict | None:
         "columns": columns,
         "constraints": constraints,
         "relationships": relationships,
+    }
+
+
+def _parse_create_view(create_stmt: exp.Create) -> dict | None:
+    """Extract view metadata from a single ``CREATE VIEW`` AST node.
+
+    Handles two forms::
+
+        CREATE VIEW v (col1 type, …) AS SELECT …   -- explicit column defs
+        CREATE VIEW v AS SELECT a, b, … FROM …     -- columns from projection
+    """
+    this = create_stmt.this
+
+    # --- view name ---
+    if isinstance(this, exp.Schema):
+        view_name = this.this.name if this.this else ""
+    elif isinstance(this, (exp.Table, exp.Identifier)):
+        view_name = this.name
+    else:
+        return None
+
+    if not view_name:
+        return None
+
+    columns: list[dict] = []
+
+    # --- explicit column definitions (CREATE VIEW v (col1, col2) AS ...) ---
+    if isinstance(this, exp.Schema):
+        for expr in this.expressions:
+            if isinstance(expr, exp.ColumnDef):
+                data_type = expr.kind.sql().lower() if expr.kind else "unknown"
+                columns.append({
+                    "column_name": expr.name,
+                    "data_type": data_type,
+                    "nullable": True,
+                })
+
+    # --- columns from SELECT projection ---
+    if not columns and create_stmt.expression:
+        select = create_stmt.expression
+        if isinstance(select, exp.Select):
+            for proj in select.expressions:
+                if isinstance(proj, exp.Star):
+                    continue
+                if isinstance(proj, exp.Alias):
+                    col_name = proj.alias
+                elif isinstance(proj, exp.Column):
+                    col_name = proj.name
+                else:
+                    col_name = proj.sql()
+                columns.append({
+                    "column_name": col_name,
+                    "data_type": "unknown",
+                    "nullable": True,
+                })
+
+    return {
+        "view_name": view_name,
+        "columns": columns,
     }
 
 
