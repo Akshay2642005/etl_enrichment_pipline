@@ -1330,5 +1330,167 @@
         }
       ]
     }
+  ],
+  "views": [
+    {
+      "view_name": "employee_details",
+      "columns": [
+        {
+          "column_name": "employee_id",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "employee_name",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "department_name",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "role_name",
+          "data_type": "unknown",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "view_name": "active_turnaround_summary",
+      "columns": [
+        {
+          "column_name": "turnaround_id",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "flight_number",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "start_time",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "target_departure_time",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "unknown",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "view_name": "equipment_status",
+      "columns": [
+        {
+          "column_name": "equipment_id",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "equipment_name",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "type_name",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "assigned_date",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "returned_date",
+          "data_type": "unknown",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "view_name": "baggage_tracking",
+      "columns": [
+        {
+          "column_name": "baggage_id",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "tag_number",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "flight_number",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "scan_location",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "scan_time",
+          "data_type": "unknown",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "view_name": "schedule_detail",
+      "columns": [
+        {
+          "column_name": "schedule_id",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "employee_name",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "shift_name",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "start_time",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "end_time",
+          "data_type": "unknown",
+          "nullable": true
+        },
+        {
+          "column_name": "schedule_date",
+          "data_type": "unknown",
+          "nullable": true
+        }
+      ]
+    }
   ]
 }
