@@ -40,8 +40,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def load_raw_metadata(filepath: str) -> CanonicalSchema:
-    """Read a ``raw_metadata.json`` file and convert it to a ``CanonicalSchema``.
+def load_raw_metadata_from_dict(raw: dict) -> CanonicalSchema:
+    """Convert a raw metadata dictionary to a ``CanonicalSchema``.
 
     The expected JSON format is::
 
@@ -57,18 +57,7 @@ def load_raw_metadata(filepath: str) -> CanonicalSchema:
                 }
             ]
         }
-
-    Mapping rules
-    -------------
-    * ``database_type`` → ``database_info.vendor``
-    * ``schema`` → ``database_info.name``
-    * Each table entry → ``TableSchema`` with its columns and PK flags
-    * ``nullable: false`` → ``is_nullable = False``
-    * Constraints of type ``PRIMARY KEY`` → ``is_primary_key = True``
-    * Each relationship entry → ``RelationshipSchema``
     """
-    raw = json.loads(Path(filepath).read_text(encoding="utf-8"))
-
     db_info = DatabaseInfo(
         name=raw.get("schema"),
         vendor=raw.get("database_type"),
@@ -131,6 +120,12 @@ def load_raw_metadata(filepath: str) -> CanonicalSchema:
         tables=tables,
         relationships=relationships,
     )
+
+
+def load_raw_metadata(filepath: str) -> CanonicalSchema:
+    """Read a ``raw_metadata.json`` file and convert it to a ``CanonicalSchema``."""
+    raw = json.loads(Path(filepath).read_text(encoding="utf-8"))
+    return load_raw_metadata_from_dict(raw)
 
 
 # ---------------------------------------------------------------------------
@@ -475,9 +470,56 @@ def run_pipeline(input_path: str) -> dict[str, Any]:
     return output
 
 
+def run_pipeline_from_dict(raw: dict) -> dict[str, Any]:
+    """Run the pipeline entirely in memory from a metadata dictionary."""
+    logger.info("═" * 50)
+    logger.info("Pipeline started — input: in-memory dictionary")
+
+    # 1. Load raw metadata into canonical schema
+    schema = load_raw_metadata_from_dict(raw)
+    logger.info(
+        "Loaded %d table(s), %d relationship(s)",
+        len(schema.tables),
+        len(schema.relationships),
+    )
+
+    # 2. Create initial state
+    initial_state = PipelineState(
+        raw_input="",
+        canonical_schema=schema,
+    )
+
+    # 3. Build and compile the graph
+    graph = build_pipeline()
+    logger.info("Pipeline graph compiled — 11 agent nodes")
+
+    # 4. Run the pipeline
+    t0 = time.time()
+    result_state = graph.invoke(initial_state)
+    total = time.time() - t0
+
+    if isinstance(result_state, dict):
+        final_state = PipelineState(**result_state)
+    else:
+        final_state = result_state
+
+    # 5. Assemble output
+    output = assemble_final_output(final_state)
+    logger.info("Pipeline finished — %.1fs total", total)
+    logger.info("Tables: %d | Relationships: %d | Entities: %d | Patterns: %d",
+                len(output.get("tables", [])),
+                len(output.get("relationships", [])),
+                len(output.get("entities", [])),
+                len(output.get("schema_patterns", [])))
+    logger.info("═" * 50)
+    return output
+
+
 __all__ = [
     "assemble_final_output",
     "build_pipeline",
     "load_raw_metadata",
+    "load_raw_metadata_from_dict",
     "run_pipeline",
+    "run_pipeline_from_dict",
 ]

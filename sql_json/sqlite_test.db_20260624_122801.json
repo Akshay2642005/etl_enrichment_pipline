@@ -1,0 +1,29 @@
+{
+  "database_type": "sqlite",
+  "schema": "main",
+  "tables": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "INTEGER",
+          "nullable": true
+        },
+        {
+          "column_name": "name",
+          "data_type": "TEXT",
+          "nullable": false
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "pk_users",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        }
+      ],
+      "relationships": []
+    }
+  ]
+}

@@ -5,8 +5,6 @@ __version__ = "0.1.0"
 from etl_enrichment_pipeline.config import (
     CONNECTOR_SETTINGS,
     GLOBAL_PIPELINE,
-    MYSQL_DBS,
-    POSTGRES_DBS,
 )
 from etl_enrichment_pipeline.models import (
     CanonicalSchema,
@@ -22,7 +20,5 @@ __all__ = [
     "FinalOutput",
     "GLOBAL_PIPELINE",
     "CONNECTOR_SETTINGS",
-    "POSTGRES_DBS",
-    "MYSQL_DBS",
     "RULES_DIR",
 ]
