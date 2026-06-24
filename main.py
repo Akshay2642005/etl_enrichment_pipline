@@ -2,9 +2,11 @@
 """Entry point — run the API server or execute the enrichment pipeline directly.
 
 Usage:
-    uv run main.py                   # start the API server (default)
-    uv run main.py api               # same as above
-    uv run main.py pipeline <file>   # run the pipeline on a metadata JSON file
+    uv run main.py                       # start the API server (default)
+    uv run main.py api                   # same as above
+    uv run main.py pipeline <file>       # run the pipeline on a metadata JSON file
+    uv run main.py --sql-file <path>     # run the pipeline from a SQL DDL file
+    uv run main.py --db-connect <name>   # run the pipeline from a live database
 
 For uvicorn directly:
     uv run uvicorn main:app
@@ -19,6 +21,7 @@ import sys
 from pathlib import Path
 
 from etl_enrichment_pipeline.api.main import app as _app
+from etl_enrichment_pipeline.core.orchestrator import run_pipeline_from_db, run_pipeline_from_sql
 from etl_enrichment_pipeline.core.pipeline import run_pipeline as _run_pipeline
 
 
@@ -76,6 +79,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="ETL Schema Intelligence — API server or CLI pipeline runner",
     )
+
+    # Mutually-exclusive source flags (standalone modes)
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument(
+        "--sql-file",
+        type=str,
+        help="Path to a SQL DDL file to parse and enrich",
+        metavar="PATH",
+    )
+    source.add_argument(
+        "--db-connect",
+        type=str,
+        help="Database system name (from config) to extract and enrich",
+        metavar="NAME",
+    )
+
     parser.add_argument(
         "command",
         nargs="?",
@@ -92,7 +111,27 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.command == "pipeline":
+    # --sql-file / --db-connect are standalone modes — check first
+    if args.sql_file:
+        sql_path = Path(args.sql_file)
+        if not sql_path.exists():
+            parser.error(f"--sql-file: {args.sql_file!r} does not exist")
+        setup_logging()
+        result = run_pipeline_from_sql(str(sql_path))
+        out_dir = Path("output")
+        out_dir.mkdir(exist_ok=True)
+        out_path = out_dir / "enriched_metadata.json"
+        out_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+        print(f"Written to {out_path}")
+    elif args.db_connect:
+        setup_logging()
+        result = run_pipeline_from_db(args.db_connect)
+        out_dir = Path("output")
+        out_dir.mkdir(exist_ok=True)
+        out_path = out_dir / "enriched_metadata.json"
+        out_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+        print(f"Written to {out_path}")
+    elif args.command == "pipeline":
         run_pipeline(args.file)
     else:
         run_api()
