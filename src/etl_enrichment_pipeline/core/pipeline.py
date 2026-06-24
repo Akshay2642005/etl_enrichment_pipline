@@ -57,15 +57,6 @@ def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
                 }
             ]
         }
-
-    Mapping rules
-    -------------
-    * ``database_type`` → ``database_info.vendor``
-    * ``schema`` → ``database_info.name``
-    * Each table entry → ``TableSchema`` with its columns and PK flags
-    * ``nullable: false`` → ``is_nullable = False``
-    * Constraints of type ``PRIMARY KEY`` → ``is_primary_key = True``
-    * Each relationship entry → ``RelationshipSchema``
     """
     db_info = DatabaseInfo(
         name=raw.get("schema"),
