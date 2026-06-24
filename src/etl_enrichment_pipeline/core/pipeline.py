@@ -208,11 +208,13 @@ def build_pipeline() -> CompiledStateGraph:
     workflow.add_node("load_json", _logged_node("load_json", _load_json_node))
     workflow.add_node("description", _logged_node("description", description_node))
     workflow.add_node(
-        "business_role", _logged_node("business_role", business_role_node),
+        "business_role",
+        _logged_node("business_role", business_role_node),
     )
     workflow.add_node("domain", _logged_node("domain", domain_node))
     workflow.add_node(
-        "semantic_type", _logged_node("semantic_type", semantic_type_node),
+        "semantic_type",
+        _logged_node("semantic_type", semantic_type_node),
     )
     workflow.add_node(
         "entity_discovery",
@@ -269,9 +271,7 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
         metadata["database_type"] = schema.database_info.vendor or ""
         metadata["schema"] = schema.database_info.name or ""
         metadata["tables_count"] = len(schema.tables)
-        metadata["columns_count"] = sum(
-            len(t.columns) for t in schema.tables
-        )
+        metadata["columns_count"] = sum(len(t.columns) for t in schema.tables)
         metadata["relationships_count"] = len(schema.relationships)
 
     # --- tables (enriched with descriptions, business_roles, domains) -------
@@ -297,44 +297,52 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
             enriched_columns: list[dict[str, Any]] = []
             for col in tbl.columns:
                 col_key = f"{tbl.table_name}.{col.column_name}"
-                enriched_columns.append({
-                    "column_name": col.column_name,
-                    "data_type": col.data_type,
-                    "is_nullable": col.is_nullable,
-                    "is_primary_key": col.is_primary_key,
-                    "description": (
-                        column_descs.get(tbl.table_name, {}).get(col.column_name)
-                    ),
-                    "semantic_type": semantic_types.get(col_key),
-                })
+                enriched_columns.append(
+                    {
+                        "column_name": col.column_name,
+                        "data_type": col.data_type,
+                        "is_nullable": col.is_nullable,
+                        "is_primary_key": col.is_primary_key,
+                        "description": (
+                            column_descs.get(tbl.table_name, {}).get(col.column_name)
+                        ),
+                        "semantic_type": semantic_types.get(col_key),
+                    }
+                )
 
-            tables.append({
-                "table_name": tbl.table_name,
-                "description": table_descs.get(tbl.table_name),
-                "business_role": business_roles.get(tbl.table_name),
-                "domain": domains.get(tbl.table_name),
-                "columns": enriched_columns,
-            })
+            tables.append(
+                {
+                    "table_name": tbl.table_name,
+                    "description": table_descs.get(tbl.table_name),
+                    "business_role": business_roles.get(tbl.table_name),
+                    "domain": domains.get(tbl.table_name),
+                    "columns": enriched_columns,
+                }
+            )
 
     # --- views --------------------------------------------------------------
     views: list[dict[str, Any]] = []
     if schema:
         for v in schema.views:
-            views.append({
-                "view_name": v.view_name,
-                "definition": v.definition,
-            })
+            views.append(
+                {
+                    "view_name": v.view_name,
+                    "definition": v.definition,
+                }
+            )
 
     # --- relationships ------------------------------------------------------
     relationships: list[dict[str, str]] = []
     if schema:
         for rel in schema.relationships:
-            relationships.append({
-                "from_table": rel.from_table,
-                "from_column": rel.from_column,
-                "to_table": rel.to_table,
-                "to_column": rel.to_column,
-            })
+            relationships.append(
+                {
+                    "from_table": rel.from_table,
+                    "from_column": rel.from_column,
+                    "to_table": rel.to_table,
+                    "to_column": rel.to_column,
+                }
+            )
 
     # --- entities -----------------------------------------------------------
     entities: list[dict[str, str]] = []
@@ -358,10 +366,12 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
         for tbl_name, domain_label in domains.items():
             domain_groups.setdefault(domain_label, []).append(tbl_name)
         for domain_label, tbl_list in domain_groups.items():
-            business_processes.append({
-                "domain": domain_label,
-                "tables": ", ".join(tbl_list),
-            })
+            business_processes.append(
+                {
+                    "domain": domain_label,
+                    "tables": ", ".join(tbl_list),
+                }
+            )
 
     # --- use_cases ----------------------------------------------------------
     use_cases: list[dict[str, str]] = state.use_cases or []
@@ -373,28 +383,32 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     schema_patterns: list[dict[str, str]] = []
     if state.patterns:
         for p in state.patterns:
-            schema_patterns.append({
-                "pattern": p.get("pattern", ""),
-                "table": p.get("table", ""),
-                "evidence": (
-                    ", ".join(p["evidence"])
-                    if isinstance(p.get("evidence"), list)
-                    else str(p.get("evidence", ""))
-                ),
-                "description": p.get("description", ""),
-            })
+            schema_patterns.append(
+                {
+                    "pattern": p.get("pattern", ""),
+                    "table": p.get("table", ""),
+                    "evidence": (
+                        ", ".join(p["evidence"])
+                        if isinstance(p.get("evidence"), list)
+                        else str(p.get("evidence", ""))
+                    ),
+                    "description": p.get("description", ""),
+                }
+            )
 
     # --- validation_report --------------------------------------------------
     validation_report: list[dict[str, str]] = []
     if state.validation_report:
         for issue in state.validation_report.get("issues", []):
-            validation_report.append({
-                "severity": issue.get("severity", "INFO"),
-                "type": issue.get("type", ""),
-                "table": issue.get("table") or "",
-                "column": issue.get("column") or "",
-                "message": issue.get("message", ""),
-            })
+            validation_report.append(
+                {
+                    "severity": issue.get("severity", "INFO"),
+                    "type": issue.get("type", ""),
+                    "table": issue.get("table") or "",
+                    "column": issue.get("column") or "",
+                    "message": issue.get("message", ""),
+                }
+            )
 
     return FinalOutput(
         metadata=metadata,
@@ -424,7 +438,8 @@ def run_pipeline_from_raw_json(
 
     Steps
     -----
-    1. Convert ``raw_json`` to a ``CanonicalSchema`` via ``raw_json_to_canonical_schema()``.
+    1. Convert ``raw_json``
+        to a ``CanonicalSchema`` via ``raw_json_to_canonical_schema()``.
     2. Create a ``PipelineState`` with the schema.
     3. Build and compile the ``StateGraph`` via ``build_pipeline()``.
     4. Invoke the graph.
@@ -472,11 +487,13 @@ def run_pipeline_from_raw_json(
 
     output = assemble_final_output(final_state)
     logger.info("Pipeline finished — %.1fs total", total)
-    logger.info("Tables: %d | Relationships: %d | Entities: %d | Patterns: %d",
-                len(output.get("tables", [])),
-                len(output.get("relationships", [])),
-                len(output.get("entities", [])),
-                len(output.get("schema_patterns", [])))
+    logger.info(
+        "Tables: %d | Relationships: %d | Entities: %d | Patterns: %d",
+        len(output.get("tables", [])),
+        len(output.get("relationships", [])),
+        len(output.get("entities", [])),
+        len(output.get("schema_patterns", [])),
+    )
     logger.info("═" * 50)
     return output
 
@@ -484,7 +501,7 @@ def run_pipeline_from_raw_json(
 def run_pipeline(input_path: str) -> dict[str, Any]:
     """Convenience function: load metadata from a JSON file, run the pipeline.
 
-    Equivalent to ``run_pipeline_from_raw_json(json.loads(…), source_label=input_path)``.
+    Equivalent to ``run_pipeline_from_raw_json(json.loads(…), source_label=input_path)``
 
     Parameters
     ----------
@@ -500,11 +517,14 @@ def run_pipeline(input_path: str) -> dict[str, Any]:
     return run_pipeline_from_raw_json(raw_json, source_label=input_path)
 
 
+run_pipeline_from_dict = run_pipeline_from_raw_json
+
 __all__ = [
     "assemble_final_output",
     "build_pipeline",
     "load_raw_metadata",
     "raw_json_to_canonical_schema",
     "run_pipeline",
+    "run_pipeline_from_dict",
     "run_pipeline_from_raw_json",
 ]

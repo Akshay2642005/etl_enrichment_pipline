@@ -28,7 +28,7 @@ def run_pipeline_from_sql(
     sql_file: str,
     database_type: str = "postgresql",
     schema: str = "public",
-    output_dir: str = "sqlj_son",
+    output_dir: str = "sql_json",
 ) -> dict[str, Any]:
     """Parse a SQL DDL file and run the full enrichment pipeline.
 
@@ -82,7 +82,7 @@ def run_pipeline_from_sql(
 
 def run_pipeline_from_db(
     system_name: str,
-    output_dir: str = "sqlj_son",
+    output_dir: str = "sql_json",
 ) -> dict[str, Any]:
     """Extract schema from a live PostgreSQL database and run the enrichment pipeline.
 
@@ -128,7 +128,6 @@ def run_pipeline_from_db(
         raise ValueError(msg)
 
     creds = db_config["credentials"]
-    rules = db_config["extraction_rules"]
 
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -136,7 +135,7 @@ def run_pipeline_from_db(
     intermediate_path = out_dir / f"raw_from_db_{system_name}.json"
 
     logger.info("Extracting schema from database: %s", system_name)
-    raw_json = extract_postgres_schema(creds, rules)
+    raw_json = extract_postgres_schema(creds)
 
     # Persist the intermediate JSON to disk
     intermediate_path.write_text(

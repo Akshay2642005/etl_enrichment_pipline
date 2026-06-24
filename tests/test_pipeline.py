@@ -594,8 +594,8 @@ class TestRunPipelineFromDb:
         captured_extract_args = []
         captured_pipeline_args = []
 
-        def mock_extract(creds, rules):
-            captured_extract_args.append((creds, rules))
+        def mock_extract(creds):
+            captured_extract_args.append(creds)
             return extract_result
 
         def mock_run_pipeline_from_raw_json(raw_json, source_label):
@@ -620,12 +620,9 @@ class TestRunPipelineFromDb:
 
         # extract_postgres_schema called with correct credentials
         assert len(captured_extract_args) == 1
-        creds, rules = captured_extract_args[0]
+        creds = captured_extract_args[0]
         assert creds["host"] == "localhost"
         assert creds["database"] == "crew"
-        assert rules["extract_table_info"] is True
-        assert rules["extract_ddl_views"] is True
-        assert rules["extract_relations"] is True
 
         # run_pipeline_from_raw_json called with correct source label
         assert len(captured_pipeline_args) == 1

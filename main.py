@@ -151,19 +151,23 @@ def main() -> None:
         description="ETL Schema Intelligence — API server or CLI pipeline runner",
     )
 
-    # Mutually-exclusive source flags (standalone modes)
-    source = parser.add_mutually_exclusive_group()
-    source.add_argument(
+    # Flags (mutually-exclusive with the pipeline subcommand)
+    parser.add_argument(
         "--sql-file",
         type=str,
         help="Path to a SQL DDL file to parse and enrich",
         metavar="PATH",
     )
-    source.add_argument(
+    parser.add_argument(
         "--db-connect",
-        type=str,
-        help="Database system name (from config) to extract and enrich",
-        metavar="NAME",
+        action="store_true",
+        help="Launch interactive database connection flow",
+    )
+
+    parser.add_argument(
+        "--extract-only",
+        action="store_true",
+        help="Only extract the database schema (skip the AI pipeline)",
     )
 
     parser.add_argument(
@@ -174,55 +178,37 @@ def main() -> None:
         help="Subcommand (api or pipeline)",
     )
     parser.add_argument(
-        "--sql-file",
-        help="Path to raw metadata JSON",
-    )
-    parser.add_argument(
-        "--db-connect",
-        action="store_true",
-        help="Use interactive database connection",
-    )
-
-    parser.add_argument(
-        "--extract-only",
-        action="store_true",
-        help="Only extract the database schema (skip the AI pipeline)",
+        "file",
+        nargs="?",
+        default="sql_json/raw_metadata.json",
+        help="Path to raw metadata JSON (pipeline command only)",
     )
 
     args = parser.parse_args()
 
-    # --sql-file / --db-connect are standalone modes — check first
+    # --sql-file: parse SQL DDL and run pipeline
     if args.sql_file:
         sql_path = Path(args.sql_file)
         if not sql_path.exists():
             parser.error(f"--sql-file: {args.sql_file!r} does not exist")
         setup_logging()
         result = run_pipeline_from_sql(str(sql_path))
-        out_dir = Path("output")
-        out_dir.mkdir(exist_ok=True)
-        out_path = out_dir / "enriched_metadata.json"
-        out_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
-        print(f"Written to {out_path}")
-    elif args.db_connect:
-        setup_logging()
-        result = run_pipeline_from_db(args.db_connect)
-        out_dir = Path("output")
-        out_dir.mkdir(exist_ok=True)
-        out_path = out_dir / "enriched_metadata.json"
-        out_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
-        print(f"Written to {out_path}")
-    elif args.command == "pipeline":
-        run_pipeline(args.file)
-    else:
-        run_api()
+        _save_output(result)
         return
 
-    if args.sql_file:
-        run_pipeline_file(args.sql_file)
-        return
-        
+    # --db-connect: interactive database connection
     if args.db_connect:
         interactive_db_flow(extract_only=args.extract_only)
+        return
+
+    # Positional subcommand
+    if args.command == "pipeline":
+        run_pipeline_file(args.file)
+        return
+
+    # API server (explicit "api" subcommand or no args at all)
+    if args.command == "api" or (args.command is None and not args.sql_file and not args.db_connect):
+        run_api()
         return
 
     # Interactive Terminal Flow
