@@ -9,41 +9,97 @@
   },
   "tables": [
     {
+      "table_name": "departmentsss",
+      "description": "Stores organizational departments with unique identifiers and names for employee assignment and reporting.",
+      "business_role": "master_data",
+      "domain": "Human Resources",
+      "columns": [
+        {
+          "column_name": "department_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the department",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "department_name",
+          "data_type": "varchar(100)",
+          "is_nullable": false,
+          "is_primary_key": false,
+          "description": "Name of the department",
+          "semantic_type": "NAME"
+        }
+      ]
+    },
+    {
+      "table_name": "employee",
+      "description": "Maintains employee records including names and department associations for workforce management.",
+      "business_role": "master_data",
+      "domain": "Human Resources",
+      "columns": [
+        {
+          "column_name": "employee_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the employee",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "employee_name",
+          "data_type": "varchar(200)",
+          "is_nullable": false,
+          "is_primary_key": false,
+          "description": "Full name of the employee",
+          "semantic_type": "FULL_NAME"
+        },
+        {
+          "column_name": "department_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the employee's department",
+          "semantic_type": "ID"
+        }
+      ]
+    },
+    {
       "table_name": "attendance",
-      "description": "Tracks employee attendance records including check-in and check-out times for each work date.",
+      "description": "Tracks employee daily attendance with check-in/check-out timestamps for timekeeping and payroll.",
       "business_role": "transactional",
       "domain": "Human Resources",
       "columns": [
         {
           "column_name": "attendance_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for attendance record",
+          "description": "Unique identifier for the attendance record",
           "semantic_type": "ID"
         },
         {
           "column_name": "employee_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to employee",
+          "description": "Foreign key linking to the employee",
           "semantic_type": "ID"
         },
         {
           "column_name": "check_in",
-          "data_type": "timestamp without time zone",
+          "data_type": "timestamp",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Employee check-in timestamp",
+          "description": "Timestamp when the employee checked in",
           "semantic_type": "TIMESTAMP"
         },
         {
           "column_name": "check_out",
-          "data_type": "timestamp without time zone",
+          "data_type": "timestamp",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Employee check-out timestamp",
+          "description": "Timestamp when the employee checked out",
           "semantic_type": "TIMESTAMP"
         },
         {
@@ -51,664 +107,176 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date of attendance record",
+          "description": "Date of the attendance record",
           "semantic_type": "DATE"
         }
       ]
     },
     {
-      "table_name": "baggage",
-      "description": "Stores baggage details linked to flights, including tag numbers and current status.",
-      "business_role": "master_data",
-      "domain": "Baggage Handling",
-      "columns": [
-        {
-          "column_name": "baggage_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for baggage",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "flight_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to associated flight",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "tag_number",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Baggage tag identification number",
-          "semantic_type": "CODE"
-        },
-        {
-          "column_name": "status",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Current status of baggage",
-          "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "baggage_loading",
-      "description": "Records baggage loading events onto specific flights with timestamps.",
-      "business_role": "transactional",
-      "domain": "Baggage Handling",
-      "columns": [
-        {
-          "column_name": "loading_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for loading event",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "baggage_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to baggage",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "flight_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to flight",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "loading_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Timestamp of loading event",
-          "semantic_type": "TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "table_name": "baggage_scan",
-      "description": "Logs baggage scan events at various locations with timestamps for tracking.",
-      "business_role": "transactional",
-      "domain": "Baggage Handling",
-      "columns": [
-        {
-          "column_name": "scan_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for scan event",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "baggage_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to baggage",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "scan_location",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Location where scan occurred",
-          "semantic_type": "NAME"
-        },
-        {
-          "column_name": "scan_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Timestamp of scan event",
-          "semantic_type": "TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "table_name": "baggage_unloading",
-      "description": "Records baggage unloading events from flights with timestamps.",
-      "business_role": "transactional",
-      "domain": "Baggage Handling",
-      "columns": [
-        {
-          "column_name": "unloading_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for unloading event",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "baggage_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to baggage",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "flight_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to flight",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "unloading_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Timestamp of unloading event",
-          "semantic_type": "TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "table_name": "boarding_task",
-      "description": "Tracks boarding preparation tasks for turnaround operations, including gate readiness and baggage loading status.",
-      "business_role": "transactional",
-      "domain": "Ground Operations / Turnaround",
-      "columns": [
-        {
-          "column_name": "boarding_task_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for boarding task",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "turnaround_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to turnaround operation",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "gate_ready",
-          "data_type": "boolean",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Indicates if gate is ready for boarding",
-          "semantic_type": "BOOLEAN_FLAG"
-        },
-        {
-          "column_name": "baggage_loaded",
-          "data_type": "boolean",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Indicates if baggage loading is complete",
-          "semantic_type": "BOOLEAN_FLAG"
-        },
-        {
-          "column_name": "status",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Current status of boarding task",
-          "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "catering_task",
-      "description": "Manages catering tasks for turnaround operations with vendor details and timing.",
-      "business_role": "transactional",
-      "domain": "Ground Operations / Turnaround",
-      "columns": [
-        {
-          "column_name": "catering_task_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for catering task",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "turnaround_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to turnaround operation",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "catering_vendor",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Name of catering vendor",
-          "semantic_type": "NAME"
-        },
-        {
-          "column_name": "start_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Catering task start timestamp",
-          "semantic_type": "TIMESTAMP"
-        },
-        {
-          "column_name": "end_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Catering task end timestamp",
-          "semantic_type": "TIMESTAMP"
-        },
-        {
-          "column_name": "status",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Current status of catering task",
-          "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "cleaning_task",
-      "description": "Tracks cleaning tasks for turnaround operations with assigned employees and timing.",
-      "business_role": "transactional",
-      "domain": "Ground Operations / Turnaround",
-      "columns": [
-        {
-          "column_name": "cleaning_task_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for cleaning task",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "turnaround_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to turnaround operation",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "assigned_employee_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to assigned employee",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "start_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Cleaning task start timestamp",
-          "semantic_type": "TIMESTAMP"
-        },
-        {
-          "column_name": "end_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Cleaning task end timestamp",
-          "semantic_type": "TIMESTAMP"
-        },
-        {
-          "column_name": "status",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Current status of cleaning task",
-          "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "department",
-      "description": "Defines organizational departments with unique names.",
-      "business_role": "master_data",
+      "table_name": "role",
+      "description": "Defines job roles or positions within the organization for role-based access and responsibility assignment.",
+      "business_role": "reference",
       "domain": "Human Resources",
       "columns": [
         {
-          "column_name": "department_id",
-          "data_type": "integer",
+          "column_name": "role_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for department",
+          "description": "Unique identifier for the role",
           "semantic_type": "ID"
         },
         {
-          "column_name": "department_name",
-          "data_type": "character varying",
+          "column_name": "role_name",
+          "data_type": "varchar(100)",
           "is_nullable": false,
           "is_primary_key": false,
-          "description": "Name of department",
+          "description": "Name of the job role or position",
           "semantic_type": "NAME"
-        }
-      ]
-    },
-    {
-      "table_name": "employee",
-      "description": "Stores employee information including name and department assignment.",
-      "business_role": "master_data",
-      "domain": "Human Resources",
-      "columns": [
-        {
-          "column_name": "employee_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for employee",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "employee_name",
-          "data_type": "character varying",
-          "is_nullable": false,
-          "is_primary_key": false,
-          "description": "Full name of employee",
-          "semantic_type": "FULL_NAME"
-        },
-        {
-          "column_name": "department_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to department",
-          "semantic_type": "ID"
         }
       ]
     },
     {
       "table_name": "employee_role",
-      "description": "Maps employees to their assigned roles.",
+      "description": "Maps employees to their assigned roles, supporting many-to-many relationships between staff and positions.",
       "business_role": "junction",
       "domain": "Human Resources",
       "columns": [
         {
           "column_name": "employee_role_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for employee-role mapping",
+          "description": "Unique identifier for the employee-role mapping",
           "semantic_type": "ID"
         },
         {
           "column_name": "employee_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to employee",
+          "description": "Foreign key linking to the employee",
           "semantic_type": "ID"
         },
         {
           "column_name": "role_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to role",
+          "description": "Foreign key linking to the role",
           "semantic_type": "ID"
         }
       ]
     },
     {
-      "table_name": "equipment",
-      "description": "Tracks equipment details including name, status, and type classification.",
-      "business_role": "master_data",
-      "domain": "Equipment Management",
+      "table_name": "shift",
+      "description": "Defines work shifts with start and end times for scheduling and workforce planning.",
+      "business_role": "reference",
+      "domain": "Human Resources",
       "columns": [
         {
-          "column_name": "equipment_id",
-          "data_type": "integer",
+          "column_name": "shift_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for equipment",
+          "description": "Unique identifier for the shift",
           "semantic_type": "ID"
         },
         {
-          "column_name": "equipment_name",
-          "data_type": "character varying",
+          "column_name": "shift_name",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Name or identifier of equipment",
+          "description": "Name or label of the shift",
           "semantic_type": "NAME"
         },
         {
-          "column_name": "status",
-          "data_type": "character varying",
+          "column_name": "start_time",
+          "data_type": "time",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current operational status of equipment",
-          "semantic_type": "STATUS"
+          "description": "Shift start time",
+          "semantic_type": "TIME"
         },
         {
-          "column_name": "equipment_type_id",
-          "data_type": "integer",
+          "column_name": "end_time",
+          "data_type": "time",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to equipment type",
-          "semantic_type": "ID"
+          "description": "Shift end time",
+          "semantic_type": "TIME"
         }
       ]
     },
     {
-      "table_name": "equipment_assignment",
-      "description": "Records equipment assignments to employees with assignment and return dates.",
+      "table_name": "schedule",
+      "description": "Assigns employees to specific shifts on given dates for operational scheduling.",
       "business_role": "transactional",
-      "domain": "Equipment Management",
+      "domain": "Human Resources",
       "columns": [
         {
-          "column_name": "assignment_id",
-          "data_type": "integer",
+          "column_name": "schedule_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for assignment",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "equipment_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to equipment",
+          "description": "Unique identifier for the schedule entry",
           "semantic_type": "ID"
         },
         {
           "column_name": "employee_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to assigned employee",
+          "description": "Foreign key linking to the employee",
           "semantic_type": "ID"
         },
         {
-          "column_name": "assigned_date",
+          "column_name": "shift_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the shift",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "schedule_date",
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date equipment was assigned",
+          "description": "Date the shift is scheduled for",
           "semantic_type": "DATE"
-        },
-        {
-          "column_name": "returned_date",
-          "data_type": "date",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Date equipment was returned",
-          "semantic_type": "DATE"
-        }
-      ]
-    },
-    {
-      "table_name": "equipment_type",
-      "description": "Defines equipment type categories.",
-      "business_role": "reference",
-      "domain": "Equipment Management",
-      "columns": [
-        {
-          "column_name": "equipment_type_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for equipment type",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "type_name",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Name of equipment type",
-          "semantic_type": "NAME"
-        }
-      ]
-    },
-    {
-      "table_name": "flight",
-      "description": "Stores flight information including flight number and operational status.",
-      "business_role": "master_data",
-      "domain": "Flight Operations",
-      "columns": [
-        {
-          "column_name": "flight_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for flight",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "flight_number",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Flight number identifier",
-          "semantic_type": "CODE"
-        },
-        {
-          "column_name": "status",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Current operational status of flight",
-          "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "gate",
-      "description": "Manages airport gate information and availability status.",
-      "business_role": "master_data",
-      "domain": "Airport Infrastructure",
-      "columns": [
-        {
-          "column_name": "gate_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for gate",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "gate_number",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Gate number or identifier",
-          "semantic_type": "CODE"
-        },
-        {
-          "column_name": "status",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Current availability status of gate",
-          "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "gate_assignment",
-      "description": "Links gates to flights with assignment timestamps.",
-      "business_role": "transactional",
-      "domain": "Airport Infrastructure",
-      "columns": [
-        {
-          "column_name": "gate_assignment_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for gate assignment",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "gate_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to gate",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "flight_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to flight",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "assigned_time",
-          "data_type": "timestamp without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Timestamp of gate assignment",
-          "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "leave_request",
-      "description": "Tracks employee leave requests including type, date range, and approval status.",
+      "description": "Records employee leave requests with type, date range, and approval status for absence management.",
       "business_role": "transactional",
       "domain": "Human Resources",
       "columns": [
         {
           "column_name": "leave_request_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for leave request",
+          "description": "Unique identifier for the leave request",
           "semantic_type": "ID"
         },
         {
           "column_name": "employee_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to employee",
+          "description": "Foreign key linking to the employee",
           "semantic_type": "ID"
         },
         {
           "column_name": "leave_type",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
           "description": "Type of leave (e.g., vacation, sick)",
-          "semantic_type": "CODE"
+          "semantic_type": "NAME"
         },
         {
           "column_name": "start_date",
@@ -728,74 +296,226 @@
         },
         {
           "column_name": "status",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Approval status of leave request",
+          "description": "Current approval status of the request",
           "semantic_type": "STATUS"
         }
       ]
     },
     {
-      "table_name": "lost_baggage",
-      "description": "Records lost baggage incidents with descriptions and resolution status.",
+      "table_name": "training_record",
+      "description": "Documents employee training completions with course names and dates for compliance and development tracking.",
       "business_role": "transactional",
-      "domain": "Baggage Handling",
+      "domain": "Human Resources",
       "columns": [
         {
-          "column_name": "lost_id",
-          "data_type": "integer",
+          "column_name": "training_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for lost baggage record",
+          "description": "Unique identifier for the training record",
           "semantic_type": "ID"
         },
         {
-          "column_name": "baggage_id",
-          "data_type": "integer",
+          "column_name": "employee_id",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to baggage",
+          "description": "Foreign key linking to the employee",
           "semantic_type": "ID"
+        },
+        {
+          "column_name": "training_name",
+          "data_type": "varchar(200)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Name of the training course",
+          "semantic_type": "NAME"
+        },
+        {
+          "column_name": "completion_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Date the training was completed",
+          "semantic_type": "DATE"
+        }
+      ]
+    },
+    {
+      "table_name": "equipment_type",
+      "description": "Categorizes equipment by type for inventory classification and management.",
+      "business_role": "reference",
+      "domain": "Equipment Management",
+      "columns": [
+        {
+          "column_name": "equipment_type_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the equipment type",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "type_name",
+          "data_type": "varchar(100)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Name of the equipment category",
+          "semantic_type": "NAME"
+        }
+      ]
+    },
+    {
+      "table_name": "equipment",
+      "description": "Tracks individual equipment items with names, status, and type classification for asset management.",
+      "business_role": "master_data",
+      "domain": "Equipment Management",
+      "columns": [
+        {
+          "column_name": "equipment_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the equipment item",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "equipment_name",
+          "data_type": "varchar(200)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Name or identifier of the equipment",
+          "semantic_type": "NAME"
         },
         {
           "column_name": "status",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current status of lost baggage case",
+          "description": "Current operational status of the equipment",
           "semantic_type": "STATUS"
+        },
+        {
+          "column_name": "equipment_type_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the equipment type",
+          "semantic_type": "ID"
+        }
+      ]
+    },
+    {
+      "table_name": "equipment_assignment",
+      "description": "Logs equipment assignments to employees with checkout and return dates for asset tracking.",
+      "business_role": "transactional",
+      "domain": "Equipment Management",
+      "columns": [
+        {
+          "column_name": "assignment_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the assignment record",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "equipment_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the equipment",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "employee_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the assigned employee",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "assigned_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Date the equipment was assigned",
+          "semantic_type": "DATE"
+        },
+        {
+          "column_name": "returned_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Date the equipment was returned",
+          "semantic_type": "DATE"
+        }
+      ]
+    },
+    {
+      "table_name": "maintenance_request",
+      "description": "Records maintenance requests for equipment with descriptions and status for service management.",
+      "business_role": "transactional",
+      "domain": "Equipment Management",
+      "columns": [
+        {
+          "column_name": "request_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the maintenance request",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "equipment_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the equipment",
+          "semantic_type": "ID"
         },
         {
           "column_name": "description",
           "data_type": "text",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Details about lost baggage incident",
+          "description": "Description of the maintenance issue",
           "semantic_type": "DESCRIPTION"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the maintenance request",
+          "semantic_type": "STATUS"
         }
       ]
     },
     {
       "table_name": "maintenance_history",
-      "description": "Logs equipment maintenance history with dates and remarks.",
+      "description": "Maintains historical maintenance records for equipment with dates and remarks for asset lifecycle tracking.",
       "business_role": "audit",
       "domain": "Equipment Management",
       "columns": [
         {
           "column_name": "maintenance_history_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for maintenance record",
+          "description": "Unique identifier for the maintenance history record",
           "semantic_type": "ID"
         },
         {
           "column_name": "equipment_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to equipment",
+          "description": "Foreign key linking to the equipment",
           "semantic_type": "ID"
         },
         {
@@ -811,228 +531,92 @@
           "data_type": "text",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Notes about maintenance performed",
+          "description": "Notes or details about the maintenance performed",
           "semantic_type": "COMMENT"
         }
       ]
     },
     {
-      "table_name": "maintenance_request",
-      "description": "Tracks maintenance requests for equipment with descriptions and status.",
-      "business_role": "transactional",
-      "domain": "Equipment Management",
+      "table_name": "flight",
+      "description": "Stores flight information including flight numbers and operational status for airline operations.",
+      "business_role": "master_data",
+      "domain": "Flight Operations",
       "columns": [
         {
-          "column_name": "request_id",
-          "data_type": "integer",
+          "column_name": "flight_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for maintenance request",
+          "description": "Unique identifier for the flight",
           "semantic_type": "ID"
         },
         {
-          "column_name": "equipment_id",
-          "data_type": "integer",
+          "column_name": "flight_number",
+          "data_type": "varchar(20)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to equipment",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "description",
-          "data_type": "text",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Description of maintenance issue",
-          "semantic_type": "DESCRIPTION"
+          "description": "Flight number identifier",
+          "semantic_type": "CODE"
         },
         {
           "column_name": "status",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current status of maintenance request",
+          "description": "Current operational status of the flight",
           "semantic_type": "STATUS"
         }
       ]
     },
     {
-      "table_name": "refueling_task",
-      "description": "Manages refueling tasks for turnaround operations with fuel quantities and status.",
-      "business_role": "transactional",
-      "domain": "Ground Operations / Turnaround",
+      "table_name": "gate",
+      "description": "Manages airport gate identifiers and their operational status for gate allocation.",
+      "business_role": "master_data",
+      "domain": "Airport Infrastructure",
       "columns": [
         {
-          "column_name": "refueling_task_id",
-          "data_type": "integer",
+          "column_name": "gate_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for refueling task",
+          "description": "Unique identifier for the gate",
           "semantic_type": "ID"
         },
         {
-          "column_name": "turnaround_id",
-          "data_type": "integer",
+          "column_name": "gate_number",
+          "data_type": "varchar(10)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to turnaround operation",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "fuel_remaining",
-          "data_type": "numeric",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Fuel remaining before refueling",
-          "semantic_type": "AMOUNT"
-        },
-        {
-          "column_name": "fuel_required",
-          "data_type": "numeric",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Fuel required for flight",
-          "semantic_type": "AMOUNT"
-        },
-        {
-          "column_name": "fuel_added",
-          "data_type": "numeric",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Amount of fuel added",
-          "semantic_type": "AMOUNT"
+          "description": "Gate number or identifier",
+          "semantic_type": "CODE"
         },
         {
           "column_name": "status",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current status of refueling task",
+          "description": "Current operational status of the gate",
           "semantic_type": "STATUS"
-        }
-      ]
-    },
-    {
-      "table_name": "role",
-      "description": "Defines role names for employee role assignments.",
-      "business_role": "reference",
-      "domain": "Human Resources",
-      "columns": [
-        {
-          "column_name": "role_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for role",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "role_name",
-          "data_type": "character varying",
-          "is_nullable": false,
-          "is_primary_key": false,
-          "description": "Name of role",
-          "semantic_type": "NAME"
-        }
-      ]
-    },
-    {
-      "table_name": "schedule",
-      "description": "Links employees to shifts on specific dates for workforce scheduling.",
-      "business_role": "transactional",
-      "domain": "Human Resources",
-      "columns": [
-        {
-          "column_name": "schedule_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for schedule entry",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "employee_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to employee",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "shift_id",
-          "data_type": "integer",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Reference to shift",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "schedule_date",
-          "data_type": "date",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Date of scheduled shift",
-          "semantic_type": "DATE"
-        }
-      ]
-    },
-    {
-      "table_name": "shift",
-      "description": "Defines shift names and time ranges for scheduling.",
-      "business_role": "reference",
-      "domain": "Human Resources",
-      "columns": [
-        {
-          "column_name": "shift_id",
-          "data_type": "integer",
-          "is_nullable": false,
-          "is_primary_key": true,
-          "description": "Unique identifier for shift",
-          "semantic_type": "ID"
-        },
-        {
-          "column_name": "shift_name",
-          "data_type": "character varying",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Name of shift",
-          "semantic_type": "NAME"
-        },
-        {
-          "column_name": "start_time",
-          "data_type": "time without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Shift start time",
-          "semantic_type": "TIME"
-        },
-        {
-          "column_name": "end_time",
-          "data_type": "time without time zone",
-          "is_nullable": true,
-          "is_primary_key": false,
-          "description": "Shift end time",
-          "semantic_type": "TIME"
         }
       ]
     },
     {
       "table_name": "stand",
-      "description": "Manages aircraft stand (parking position) information and status.",
+      "description": "Tracks airport stand/parking positions with identifiers and status for aircraft parking management.",
       "business_role": "master_data",
       "domain": "Airport Infrastructure",
       "columns": [
         {
           "column_name": "stand_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for stand",
+          "description": "Unique identifier for the stand",
           "semantic_type": "ID"
         },
         {
           "column_name": "stand_number",
-          "data_type": "character varying",
+          "data_type": "varchar(10)",
           "is_nullable": true,
           "is_primary_key": false,
           "description": "Stand number or identifier",
@@ -1040,122 +624,170 @@
         },
         {
           "column_name": "status",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current availability status of stand",
+          "description": "Current operational status of the stand",
           "semantic_type": "STATUS"
         }
       ]
     },
     {
-      "table_name": "stand_assignment",
-      "description": "Links stands to flights with assignment timestamps.",
-      "business_role": "transactional",
+      "table_name": "gate_assignment",
+      "description": "Assigns gates to flights at specific times for gate management and passenger flow.",
+      "business_role": "junction",
       "domain": "Airport Infrastructure",
       "columns": [
         {
-          "column_name": "stand_assignment_id",
-          "data_type": "integer",
+          "column_name": "gate_assignment_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for stand assignment",
+          "description": "Unique identifier for the gate assignment",
           "semantic_type": "ID"
         },
         {
-          "column_name": "stand_id",
-          "data_type": "integer",
+          "column_name": "gate_id",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to stand",
+          "description": "Foreign key linking to the gate",
           "semantic_type": "ID"
         },
         {
           "column_name": "flight_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to flight",
+          "description": "Foreign key linking to the flight",
           "semantic_type": "ID"
         },
         {
           "column_name": "assigned_time",
-          "data_type": "timestamp without time zone",
+          "data_type": "timestamp",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp of stand assignment",
+          "description": "Timestamp when the gate was assigned to the flight",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
-      "table_name": "training_record",
-      "description": "Tracks employee training completion with training names and dates.",
-      "business_role": "transactional",
-      "domain": "Human Resources",
+      "table_name": "stand_assignment",
+      "description": "Assigns stands to flights at specific times for aircraft parking coordination.",
+      "business_role": "junction",
+      "domain": "Airport Infrastructure",
       "columns": [
         {
-          "column_name": "training_id",
-          "data_type": "integer",
+          "column_name": "stand_assignment_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for training record",
+          "description": "Unique identifier for the stand assignment",
           "semantic_type": "ID"
         },
         {
-          "column_name": "employee_id",
-          "data_type": "integer",
+          "column_name": "stand_id",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to employee",
+          "description": "Foreign key linking to the stand",
           "semantic_type": "ID"
         },
         {
-          "column_name": "training_name",
-          "data_type": "character varying",
+          "column_name": "flight_id",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Name of training program",
-          "semantic_type": "NAME"
+          "description": "Foreign key linking to the flight",
+          "semantic_type": "ID"
         },
         {
-          "column_name": "completion_date",
-          "data_type": "date",
+          "column_name": "assigned_time",
+          "data_type": "timestamp",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date training was completed",
-          "semantic_type": "DATE"
+          "description": "Timestamp when the stand was assigned to the flight",
+          "semantic_type": "TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "table_name": "turnaround_operation",
+      "description": "Manages flight turnaround operations with timing targets and status for ground handling coordination.",
+      "business_role": "transactional",
+      "domain": "Turnaround Management",
+      "columns": [
+        {
+          "column_name": "turnaround_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the turnaround operation",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the flight",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "start_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Timestamp when turnaround started",
+          "semantic_type": "TIMESTAMP"
+        },
+        {
+          "column_name": "target_departure_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Target departure time for the flight",
+          "semantic_type": "TIMESTAMP"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the turnaround operation",
+          "semantic_type": "STATUS"
         }
       ]
     },
     {
       "table_name": "turnaround_checklist",
-      "description": "Manages checklist items for turnaround operations with completion status.",
+      "description": "Details checklist items for each turnaround operation with completion status for quality assurance.",
       "business_role": "transactional",
       "domain": "Turnaround Management",
       "columns": [
         {
           "column_name": "checklist_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for checklist item",
+          "description": "Unique identifier for the checklist item",
           "semantic_type": "ID"
         },
         {
           "column_name": "turnaround_id",
-          "data_type": "integer",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to turnaround operation",
+          "description": "Foreign key linking to the turnaround operation",
           "semantic_type": "ID"
         },
         {
           "column_name": "checklist_item",
-          "data_type": "character varying",
+          "data_type": "varchar(200)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Description of checklist item",
+          "description": "Description of the checklist task",
           "semantic_type": "DESCRIPTION"
         },
         {
@@ -1163,56 +795,424 @@
           "data_type": "boolean",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Indicates if checklist item is completed",
+          "description": "Boolean indicating if the checklist item is completed",
           "semantic_type": "BOOLEAN_FLAG"
         }
       ]
     },
     {
-      "table_name": "turnaround_operation",
-      "description": "Manages turnaround operations for flights with timing targets and status.",
+      "table_name": "boarding_task",
+      "description": "Tracks boarding preparation tasks per turnaround including gate readiness and baggage loading status.",
       "business_role": "transactional",
-      "domain": "Turnaround Management",
+      "domain": "Ground Operations / Turnaround",
       "columns": [
         {
-          "column_name": "turnaround_id",
-          "data_type": "integer",
+          "column_name": "boarding_task_id",
+          "data_type": "int",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for turnaround operation",
+          "description": "Unique identifier for the boarding task",
           "semantic_type": "ID"
         },
         {
-          "column_name": "flight_id",
-          "data_type": "integer",
+          "column_name": "turnaround_id",
+          "data_type": "int",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference to flight",
+          "description": "Foreign key linking to the turnaround operation",
           "semantic_type": "ID"
+        },
+        {
+          "column_name": "gate_ready",
+          "data_type": "boolean",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Boolean indicating if gate is ready for boarding",
+          "semantic_type": "BOOLEAN_FLAG"
+        },
+        {
+          "column_name": "baggage_loaded",
+          "data_type": "boolean",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Boolean indicating if baggage is loaded",
+          "semantic_type": "BOOLEAN_FLAG"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the boarding task",
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "refueling_task",
+      "description": "Records refueling requirements and execution per turnaround with fuel quantities and status.",
+      "business_role": "transactional",
+      "domain": "Ground Operations / Turnaround",
+      "columns": [
+        {
+          "column_name": "refueling_task_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the refueling task",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "turnaround_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the turnaround operation",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "fuel_remaining",
+          "data_type": "decimal",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Amount of fuel remaining before refuel",
+          "semantic_type": "AMOUNT"
+        },
+        {
+          "column_name": "fuel_required",
+          "data_type": "decimal",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Total fuel required for the flight",
+          "semantic_type": "AMOUNT"
+        },
+        {
+          "column_name": "fuel_added",
+          "data_type": "decimal",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Amount of fuel added during refuel",
+          "semantic_type": "AMOUNT"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the refueling task",
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "catering_task",
+      "description": "Manages catering service tasks per turnaround with vendor, timing, and status information.",
+      "business_role": "transactional",
+      "domain": "Ground Operations / Turnaround",
+      "columns": [
+        {
+          "column_name": "catering_task_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the catering task",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "turnaround_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the turnaround operation",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "catering_vendor",
+          "data_type": "varchar(100)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Name of the catering vendor",
+          "semantic_type": "NAME"
         },
         {
           "column_name": "start_time",
-          "data_type": "timestamp without time zone",
+          "data_type": "timestamp",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Turnaround operation start timestamp",
+          "description": "Timestamp when catering service started",
           "semantic_type": "TIMESTAMP"
         },
         {
-          "column_name": "target_departure_time",
-          "data_type": "timestamp without time zone",
+          "column_name": "end_time",
+          "data_type": "timestamp",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Target departure time for flight",
+          "description": "Timestamp when catering service ended",
           "semantic_type": "TIMESTAMP"
         },
         {
           "column_name": "status",
-          "data_type": "character varying",
+          "data_type": "varchar(50)",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current status of turnaround operation",
+          "description": "Current status of the catering task",
           "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "cleaning_task",
+      "description": "Tracks aircraft cleaning assignments per turnaround with assigned staff, timing, and status.",
+      "business_role": "transactional",
+      "domain": "Ground Operations / Turnaround",
+      "columns": [
+        {
+          "column_name": "cleaning_task_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the cleaning task",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "turnaround_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the turnaround operation",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "assigned_employee_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the assigned cleaning employee",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "start_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Timestamp when cleaning started",
+          "semantic_type": "TIMESTAMP"
+        },
+        {
+          "column_name": "end_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Timestamp when cleaning ended",
+          "semantic_type": "TIMESTAMP"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the cleaning task",
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "baggage",
+      "description": "Registers individual baggage items linked to flights with tag numbers and status for baggage handling.",
+      "business_role": "master_data",
+      "domain": "Baggage Handling",
+      "columns": [
+        {
+          "column_name": "baggage_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the baggage item",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the flight",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "tag_number",
+          "data_type": "varchar(100)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Baggage tag number for tracking",
+          "semantic_type": "CODE"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the baggage",
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "baggage_loading",
+      "description": "Logs baggage loading events onto flights with timestamps for loading verification.",
+      "business_role": "junction",
+      "domain": "Baggage Handling",
+      "columns": [
+        {
+          "column_name": "loading_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the loading record",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "baggage_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the baggage",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the flight",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "loading_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Timestamp when baggage was loaded",
+          "semantic_type": "TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "table_name": "baggage_unloading",
+      "description": "Records baggage unloading events from flights with timestamps for arrival processing.",
+      "business_role": "junction",
+      "domain": "Baggage Handling",
+      "columns": [
+        {
+          "column_name": "unloading_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the unloading record",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "baggage_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the baggage",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the flight",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "unloading_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Timestamp when baggage was unloaded",
+          "semantic_type": "TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "table_name": "baggage_scan",
+      "description": "Captures baggage scanning events at various locations with timestamps for tracking and security.",
+      "business_role": "transactional",
+      "domain": "Baggage Handling",
+      "columns": [
+        {
+          "column_name": "scan_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the scan record",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "baggage_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the baggage",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "scan_location",
+          "data_type": "varchar(200)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Location where the baggage was scanned",
+          "semantic_type": "NAME"
+        },
+        {
+          "column_name": "scan_time",
+          "data_type": "timestamp",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Timestamp when the baggage was scanned",
+          "semantic_type": "TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "table_name": "lost_baggage",
+      "description": "Documents lost baggage reports with status and descriptions for claims and recovery management.",
+      "business_role": "transactional",
+      "domain": "Baggage Handling",
+      "columns": [
+        {
+          "column_name": "lost_id",
+          "data_type": "int",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": "Unique identifier for the lost baggage report",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "baggage_id",
+          "data_type": "int",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Foreign key linking to the baggage",
+          "semantic_type": "ID"
+        },
+        {
+          "column_name": "status",
+          "data_type": "varchar(50)",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Current status of the lost baggage case",
+          "semantic_type": "STATUS"
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": "Description of the lost baggage situation",
+          "semantic_type": "DESCRIPTION"
         }
       ]
     }
@@ -1220,49 +1220,127 @@
   "views": [],
   "relationships": [
     {
+      "from_table": "employee",
+      "from_column": "department_id",
+      "to_table": "department",
+      "to_column": "department_id"
+    },
+    {
       "from_table": "attendance",
       "from_column": "employee_id",
       "to_table": "employee",
       "to_column": "employee_id"
     },
     {
-      "from_table": "baggage",
+      "from_table": "employee_role",
+      "from_column": "employee_id",
+      "to_table": "employee",
+      "to_column": "employee_id"
+    },
+    {
+      "from_table": "employee_role",
+      "from_column": "role_id",
+      "to_table": "role",
+      "to_column": "role_id"
+    },
+    {
+      "from_table": "schedule",
+      "from_column": "employee_id",
+      "to_table": "employee",
+      "to_column": "employee_id"
+    },
+    {
+      "from_table": "schedule",
+      "from_column": "shift_id",
+      "to_table": "shift",
+      "to_column": "shift_id"
+    },
+    {
+      "from_table": "leave_request",
+      "from_column": "employee_id",
+      "to_table": "employee",
+      "to_column": "employee_id"
+    },
+    {
+      "from_table": "training_record",
+      "from_column": "employee_id",
+      "to_table": "employee",
+      "to_column": "employee_id"
+    },
+    {
+      "from_table": "equipment",
+      "from_column": "equipment_type_id",
+      "to_table": "equipment_type",
+      "to_column": "equipment_type_id"
+    },
+    {
+      "from_table": "equipment_assignment",
+      "from_column": "equipment_id",
+      "to_table": "equipment",
+      "to_column": "equipment_id"
+    },
+    {
+      "from_table": "equipment_assignment",
+      "from_column": "employee_id",
+      "to_table": "employee",
+      "to_column": "employee_id"
+    },
+    {
+      "from_table": "maintenance_request",
+      "from_column": "equipment_id",
+      "to_table": "equipment",
+      "to_column": "equipment_id"
+    },
+    {
+      "from_table": "maintenance_history",
+      "from_column": "equipment_id",
+      "to_table": "equipment",
+      "to_column": "equipment_id"
+    },
+    {
+      "from_table": "gate_assignment",
+      "from_column": "gate_id",
+      "to_table": "gate",
+      "to_column": "gate_id"
+    },
+    {
+      "from_table": "gate_assignment",
       "from_column": "flight_id",
       "to_table": "flight",
       "to_column": "flight_id"
     },
     {
-      "from_table": "baggage_loading",
-      "from_column": "baggage_id",
-      "to_table": "baggage",
-      "to_column": "baggage_id"
+      "from_table": "stand_assignment",
+      "from_column": "stand_id",
+      "to_table": "stand",
+      "to_column": "stand_id"
     },
     {
-      "from_table": "baggage_loading",
+      "from_table": "stand_assignment",
       "from_column": "flight_id",
       "to_table": "flight",
       "to_column": "flight_id"
     },
     {
-      "from_table": "baggage_scan",
-      "from_column": "baggage_id",
-      "to_table": "baggage",
-      "to_column": "baggage_id"
-    },
-    {
-      "from_table": "baggage_unloading",
-      "from_column": "baggage_id",
-      "to_table": "baggage",
-      "to_column": "baggage_id"
-    },
-    {
-      "from_table": "baggage_unloading",
+      "from_table": "turnaround_operation",
       "from_column": "flight_id",
       "to_table": "flight",
       "to_column": "flight_id"
+    },
+    {
+      "from_table": "turnaround_checklist",
+      "from_column": "turnaround_id",
+      "to_table": "turnaround_operation",
+      "to_column": "turnaround_id"
     },
     {
       "from_table": "boarding_task",
+      "from_column": "turnaround_id",
+      "to_table": "turnaround_operation",
+      "to_column": "turnaround_id"
+    },
+    {
+      "from_table": "refueling_task",
       "from_column": "turnaround_id",
       "to_table": "turnaround_operation",
       "to_column": "turnaround_id"
@@ -1286,153 +1364,66 @@
       "to_column": "employee_id"
     },
     {
-      "from_table": "employee",
-      "from_column": "department_id",
-      "to_table": "department",
-      "to_column": "department_id"
-    },
-    {
-      "from_table": "employee_role",
-      "from_column": "employee_id",
-      "to_table": "employee",
-      "to_column": "employee_id"
-    },
-    {
-      "from_table": "employee_role",
-      "from_column": "role_id",
-      "to_table": "role",
-      "to_column": "role_id"
-    },
-    {
-      "from_table": "equipment",
-      "from_column": "equipment_type_id",
-      "to_table": "equipment_type",
-      "to_column": "equipment_type_id"
-    },
-    {
-      "from_table": "equipment_assignment",
-      "from_column": "equipment_id",
-      "to_table": "equipment",
-      "to_column": "equipment_id"
-    },
-    {
-      "from_table": "equipment_assignment",
-      "from_column": "employee_id",
-      "to_table": "employee",
-      "to_column": "employee_id"
-    },
-    {
-      "from_table": "gate_assignment",
-      "from_column": "gate_id",
-      "to_table": "gate",
-      "to_column": "gate_id"
-    },
-    {
-      "from_table": "gate_assignment",
+      "from_table": "baggage",
       "from_column": "flight_id",
       "to_table": "flight",
       "to_column": "flight_id"
     },
     {
-      "from_table": "leave_request",
-      "from_column": "employee_id",
-      "to_table": "employee",
-      "to_column": "employee_id"
+      "from_table": "baggage_loading",
+      "from_column": "baggage_id",
+      "to_table": "baggage",
+      "to_column": "baggage_id"
+    },
+    {
+      "from_table": "baggage_loading",
+      "from_column": "flight_id",
+      "to_table": "flight",
+      "to_column": "flight_id"
+    },
+    {
+      "from_table": "baggage_unloading",
+      "from_column": "baggage_id",
+      "to_table": "baggage",
+      "to_column": "baggage_id"
+    },
+    {
+      "from_table": "baggage_unloading",
+      "from_column": "flight_id",
+      "to_table": "flight",
+      "to_column": "flight_id"
+    },
+    {
+      "from_table": "baggage_scan",
+      "from_column": "baggage_id",
+      "to_table": "baggage",
+      "to_column": "baggage_id"
     },
     {
       "from_table": "lost_baggage",
       "from_column": "baggage_id",
       "to_table": "baggage",
       "to_column": "baggage_id"
-    },
-    {
-      "from_table": "maintenance_history",
-      "from_column": "equipment_id",
-      "to_table": "equipment",
-      "to_column": "equipment_id"
-    },
-    {
-      "from_table": "maintenance_request",
-      "from_column": "equipment_id",
-      "to_table": "equipment",
-      "to_column": "equipment_id"
-    },
-    {
-      "from_table": "refueling_task",
-      "from_column": "turnaround_id",
-      "to_table": "turnaround_operation",
-      "to_column": "turnaround_id"
-    },
-    {
-      "from_table": "schedule",
-      "from_column": "employee_id",
-      "to_table": "employee",
-      "to_column": "employee_id"
-    },
-    {
-      "from_table": "schedule",
-      "from_column": "shift_id",
-      "to_table": "shift",
-      "to_column": "shift_id"
-    },
-    {
-      "from_table": "stand_assignment",
-      "from_column": "stand_id",
-      "to_table": "stand",
-      "to_column": "stand_id"
-    },
-    {
-      "from_table": "stand_assignment",
-      "from_column": "flight_id",
-      "to_table": "flight",
-      "to_column": "flight_id"
-    },
-    {
-      "from_table": "training_record",
-      "from_column": "employee_id",
-      "to_table": "employee",
-      "to_column": "employee_id"
-    },
-    {
-      "from_table": "turnaround_checklist",
-      "from_column": "turnaround_id",
-      "to_table": "turnaround_operation",
-      "to_column": "turnaround_id"
-    },
-    {
-      "from_table": "turnaround_operation",
-      "from_column": "flight_id",
-      "to_table": "flight",
-      "to_column": "flight_id"
     }
   ],
   "entities": [
     {
+      "name": "Department"
+    },
+    {
       "name": "Employee"
-    },
-    {
-      "name": "Attendance"
-    },
-    {
-      "name": "LeaveRequest"
-    },
-    {
-      "name": "Schedule"
-    },
-    {
-      "name": "Shift"
-    },
-    {
-      "name": "TrainingRecord"
     },
     {
       "name": "Role"
     },
     {
-      "name": "Department"
+      "name": "Shift"
     },
     {
-      "name": "Baggage"
+      "name": "EquipmentType"
+    },
+    {
+      "name": "Equipment"
     },
     {
       "name": "Flight"
@@ -1444,53 +1435,38 @@
       "name": "Stand"
     },
     {
-      "name": "Equipment"
+      "name": "TurnaroundOperation"
     },
     {
-      "name": "TurnaroundOperation"
+      "name": "Baggage"
     }
   ],
   "entity_relationships": [
     {
-      "entity": "Attendance",
-      "related_entities": "Employee",
-      "business_meaning": "An attendance record belongs to one employee"
-    },
-    {
-      "entity": "Baggage",
-      "related_entities": "Flight",
-      "business_meaning": "A baggage item is associated with one flight"
-    },
-    {
       "entity": "Employee",
-      "related_entities": "Department, Role",
-      "business_meaning": "An employee belongs to one department and can be assigned multiple roles"
+      "related_entities": "Department",
+      "business_meaning": "An employee belongs to one department"
     },
     {
-      "entity": "LeaveRequest",
-      "related_entities": "Employee",
-      "business_meaning": "A leave request is submitted by one employee"
-    },
-    {
-      "entity": "Schedule",
-      "related_entities": "Employee, Shift",
-      "business_meaning": "A schedule assigns one employee to one shift"
-    },
-    {
-      "entity": "TrainingRecord",
-      "related_entities": "Employee",
-      "business_meaning": "A training record belongs to one employee"
+      "entity": "Equipment",
+      "related_entities": "EquipmentType",
+      "business_meaning": "An equipment item is classified under one equipment type"
     },
     {
       "entity": "TurnaroundOperation",
       "related_entities": "Flight",
       "business_meaning": "A turnaround operation is performed for one flight"
+    },
+    {
+      "entity": "Baggage",
+      "related_entities": "Flight",
+      "business_meaning": "A baggage item is associated with one flight"
     }
   ],
   "business_processes": [
     {
       "domain": "Human Resources",
-      "tables": "attendance, department, employee, employee_role, leave_request, role, schedule, shift, training_record"
+      "tables": "attendance, departmentsss, employee, employee_role, leave_request, role, schedule, shift, training_record"
     },
     {
       "domain": "Baggage Handling",
@@ -1520,85 +1496,47 @@
   "use_cases": [
     {
       "name": "Flight Turnaround Management",
-      "description": "End-to-end management of aircraft turnaround operations including boarding, catering, cleaning, refueling, and checklist completion to ensure on-time departures.",
-      "involved_tables": "[\"flight\", \"turnaround_operation\", \"turnaround_checklist\", \"boarding_task\", \"catering_task\", \"cleaning_task\", \"refueling_task\", \"gate_assignment\", \"stand_assignment\"]"
+      "description": "Coordinates all ground operations for a flight's arrival and departure including gate/stand assignment, refueling, catering, cleaning, boarding preparation, and checklist completion to ensure on-time departure.",
+      "involved_tables": "[\"flight\", \"gate\", \"stand\", \"gate_assignment\", \"stand_assignment\", \"turnaround_operation\", \"turnaround_checklist\", \"boarding_task\", \"refueling_task\", \"catering_task\", \"cleaning_task\"]"
+    },
+    {
+      "name": "Employee Attendance and Shift Management",
+      "description": "Tracks employee check-in/check-out times against scheduled shifts, manages leave requests, and monitors attendance compliance across departments.",
+      "involved_tables": "[\"employee\", \"departmentsss\", \"attendance\", \"shift\", \"schedule\", \"leave_request\"]"
     },
     {
       "name": "Baggage Tracking and Tracing",
-      "description": "Complete lifecycle tracking of baggage from check-in through loading, in-transit scans, unloading, and exception handling for lost baggage.",
-      "involved_tables": "[\"baggage\", \"baggage_scan\", \"baggage_loading\", \"baggage_unloading\", \"lost_baggage\", \"flight\"]"
-    },
-    {
-      "name": "Employee Attendance and Scheduling",
-      "description": "Workforce management covering shift scheduling, time-and-attendance tracking, leave requests, role assignments, and training compliance for airport staff.",
-      "involved_tables": "[\"employee\", \"attendance\", \"schedule\", \"shift\", \"leave_request\", \"employee_role\", \"role\", \"department\", \"training_record\"]"
+      "description": "Provides end-to-end visibility of baggage from check-in through loading, in-transit scans, unloading, and handles lost baggage incidents with status tracking.",
+      "involved_tables": "[\"baggage\", \"baggage_loading\", \"baggage_unloading\", \"baggage_scan\", \"lost_baggage\", \"flight\"]"
     },
     {
       "name": "Equipment Maintenance Management",
-      "description": "Asset lifecycle management for ground support equipment including maintenance requests, service history, type categorization, and crew assignments.",
-      "involved_tables": "[\"equipment\", \"equipment_type\", \"maintenance_request\", \"maintenance_history\", \"equipment_assignment\", \"employee\"]"
+      "description": "Manages equipment lifecycle including type categorization, assignment to employees, maintenance request workflow, and historical maintenance records for operational readiness.",
+      "involved_tables": "[\"equipment_type\", \"equipment\", \"equipment_assignment\", \"maintenance_request\", \"maintenance_history\", \"employee\"]"
     },
     {
-      "name": "Gate and Stand Assignment",
-      "description": "Real-time allocation and monitoring of gate and stand resources for arriving and departing flights to optimize apron utilization and minimize conflicts.",
-      "involved_tables": "[\"gate\", \"gate_assignment\", \"stand\", \"stand_assignment\", \"flight\"]"
+      "name": "Crew Scheduling and Training Compliance",
+      "description": "Assigns qualified crew to shifts based on roles, tracks training completion and certifications, and ensures regulatory compliance for operational staff.",
+      "involved_tables": "[\"employee\", \"role\", \"employee_role\", \"schedule\", \"shift\", \"training_record\"]"
     }
   ],
-  "sample_queries": [
-    {
-      "question": "Find baggage details by tag number for customer service inquiry",
-      "sql": "SELECT b.baggage_id, b.tag_number, b.status AS baggage_status, f.flight_number, f.status AS flight_status,\n       bl.loading_time, bu.unloading_time,\n       bs.scan_location, bs.scan_time AS last_scan_time\nFROM baggage b\nJOIN flight f ON b.flight_id = f.flight_id\nLEFT JOIN baggage_loading bl ON b.baggage_id = bl.baggage_id\nLEFT JOIN baggage_unloading bu ON b.baggage_id = bu.baggage_id\nLEFT JOIN (\n    SELECT baggage_id, scan_location, scan_time\n    FROM baggage_scan\n    WHERE scan_time = (SELECT MAX(scan_time) FROM baggage_scan WHERE baggage_id = b.baggage_id)\n) bs ON b.baggage_id = bs.baggage_id\nWHERE b.tag_number = 'BA123456789';",
-      "category": "Lookup"
-    },
-    {
-      "question": "Generate daily turnaround operations report showing all flights with their gate/stand assignments and task completion status",
-      "sql": "SELECT to.turnaround_id, f.flight_number, f.status AS flight_status,\n       to.start_time, to.target_departure_time, to.status AS turnaround_status,\n       ga.gate_number, sa.stand_number,\n       bt.gate_ready, bt.baggage_loaded, bt.status AS boarding_status,\n       ct.catering_vendor, ct.status AS catering_status,\n       clt.status AS cleaning_status,\n       rt.fuel_added, rt.status AS refueling_status\nFROM turnaround_operation to\nJOIN flight f ON to.flight_id = f.flight_id\nLEFT JOIN gate_assignment ga ON f.flight_id = ga.flight_id\nLEFT JOIN stand_assignment sa ON f.flight_id = sa.flight_id\nLEFT JOIN boarding_task bt ON to.turnaround_id = bt.turnaround_id\nLEFT JOIN catering_task ct ON to.turnaround_id = ct.turnaround_id\nLEFT JOIN cleaning_task clt ON to.turnaround_id = clt.turnaround_id\nLEFT JOIN refueling_task rt ON to.turnaround_id = rt.turnaround_id\nWHERE to.start_time >= CURRENT_DATE - INTERVAL '1 day'\nORDER BY to.start_time;",
-      "category": "Reporting"
-    },
-    {
-      "question": "Calculate average turnaround duration by flight status and identify flights exceeding target departure time",
-      "sql": "SELECT f.status AS flight_status,\n       COUNT(to.turnaround_id) AS total_turnarounds,\n       AVG(EXTRACT(EPOCH FROM (to.target_departure_time - to.start_time))/60) AS avg_turnaround_minutes,\n       SUM(CASE WHEN to.start_time > to.target_departure_time THEN 1 ELSE 0 END) AS delayed_count,\n       ROUND(100.0 * SUM(CASE WHEN to.start_time > to.target_departure_time THEN 1 ELSE 0 END) / COUNT(to.turnaround_id), 2) AS delay_percentage\nFROM turnaround_operation to\nJOIN flight f ON to.flight_id = f.flight_id\nWHERE to.start_time >= CURRENT_DATE - INTERVAL '30 days'\nGROUP BY f.status\nORDER BY avg_turnaround_minutes DESC;",
-      "category": "Analytics"
-    },
-    {
-      "question": "Summarize employee count per department with role distribution and attendance rate for the current month",
-      "sql": "SELECT d.department_name,\n       COUNT(DISTINCT e.employee_id) AS total_employees,\n       STRING_AGG(DISTINCT r.role_name, ', ') AS roles_in_department,\n       COUNT(DISTINCT a.employee_id) AS employees_with_attendance,\n       ROUND(100.0 * COUNT(DISTINCT a.employee_id) / COUNT(DISTINCT e.employee_id), 2) AS attendance_rate_pct,\n       AVG(EXTRACT(EPOCH FROM (a.check_out - a.check_in))/3600) AS avg_work_hours_per_day\nFROM department d\nLEFT JOIN employee e ON d.department_id = e.department_id\nLEFT JOIN employee_role er ON e.employee_id = er.employee_id\nLEFT JOIN role r ON er.role_id = r.role_id\nLEFT JOIN attendance a ON e.employee_id = a.employee_id\n    AND a.attendance_date >= DATE_TRUNC('month', CURRENT_DATE)\n    AND a.attendance_date < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'\nGROUP BY d.department_id, d.department_name\nORDER BY total_employees DESC;",
-      "category": "Aggregation"
-    },
-    {
-      "question": "Get complete flight operation view linking flight, gate, stand, turnaround, and all associated tasks with assigned employees",
-      "sql": "SELECT f.flight_id, f.flight_number, f.status AS flight_status,\n       ga.gate_number, ga.assigned_time AS gate_assigned_time,\n       sa.stand_number, sa.assigned_time AS stand_assigned_time,\n       to.turnaround_id, to.start_time AS turnaround_start, to.target_departure_time, to.status AS turnaround_status,\n       bt.boarding_task_id, bt.gate_ready, bt.baggage_loaded, bt.status AS boarding_status,\n       ct.catering_task_id, ct.catering_vendor, ct.start_time AS catering_start, ct.end_time AS catering_end, ct.status AS catering_status,\n       clt.cleaning_task_id, clt.start_time AS cleaning_start, clt.end_time AS cleaning_end, clt.status AS cleaning_status,\n       e.employee_name AS cleaning_employee,\n       rt.refueling_task_id, rt.fuel_remaining, rt.fuel_required, rt.fuel_added, rt.status AS refueling_status\nFROM flight f\nLEFT JOIN gate_assignment ga ON f.flight_id = ga.flight_id\nLEFT JOIN gate g ON ga.gate_id = g.gate_id\nLEFT JOIN stand_assignment sa ON f.flight_id = sa.flight_id\nLEFT JOIN stand s ON sa.stand_id = s.stand_id\nLEFT JOIN turnaround_operation to ON f.flight_id = to.flight_id\nLEFT JOIN boarding_task bt ON to.turnaround_id = bt.turnaround_id\nLEFT JOIN catering_task ct ON to.turnaround_id = ct.turnaround_id\nLEFT JOIN cleaning_task clt ON to.turnaround_id = clt.turnaround_id\nLEFT JOIN employee e ON clt.assigned_employee_id = e.employee_id\nLEFT JOIN refueling_task rt ON to.turnaround_id = rt.turnaround_id\nWHERE f.flight_number = 'AA123'\nORDER BY to.start_time DESC;",
-      "category": "Relationship"
-    }
-  ],
+  "sample_queries": [],
   "schema_patterns": [
     {
       "pattern": "state_machine",
-      "table": "baggage",
-      "evidence": "status",
-      "description": "Rows transition through defined states"
-    },
-    {
-      "pattern": "state_machine",
-      "table": "boarding_task",
-      "evidence": "status",
-      "description": "Rows transition through defined states"
-    },
-    {
-      "pattern": "state_machine",
-      "table": "catering_task",
-      "evidence": "status",
-      "description": "Rows transition through defined states"
-    },
-    {
-      "pattern": "state_machine",
-      "table": "cleaning_task",
+      "table": "leave_request",
       "evidence": "status",
       "description": "Rows transition through defined states"
     },
     {
       "pattern": "state_machine",
       "table": "equipment",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "maintenance_request",
       "evidence": "status",
       "description": "Rows transition through defined states"
     },
@@ -1616,19 +1554,19 @@
     },
     {
       "pattern": "state_machine",
-      "table": "leave_request",
+      "table": "stand",
       "evidence": "status",
       "description": "Rows transition through defined states"
     },
     {
       "pattern": "state_machine",
-      "table": "lost_baggage",
+      "table": "turnaround_operation",
       "evidence": "status",
       "description": "Rows transition through defined states"
     },
     {
       "pattern": "state_machine",
-      "table": "maintenance_request",
+      "table": "boarding_task",
       "evidence": "status",
       "description": "Rows transition through defined states"
     },
@@ -1640,16 +1578,36 @@
     },
     {
       "pattern": "state_machine",
-      "table": "stand",
+      "table": "catering_task",
       "evidence": "status",
       "description": "Rows transition through defined states"
     },
     {
       "pattern": "state_machine",
-      "table": "turnaround_operation",
+      "table": "cleaning_task",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "baggage",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "lost_baggage",
       "evidence": "status",
       "description": "Rows transition through defined states"
     }
   ],
-  "validation_report": []
+  "validation_report": [
+    {
+      "severity": "WARN",
+      "type": "broken_fk",
+      "table": "employee",
+      "column": "department_id",
+      "message": "Foreign key employee.department_id references table 'department', which does not exist in the schema."
+    }
+  ]
 }

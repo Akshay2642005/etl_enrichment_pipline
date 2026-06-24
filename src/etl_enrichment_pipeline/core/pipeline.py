@@ -36,14 +36,14 @@ from etl_enrichment_pipeline.models.pipeline_state import PipelineState
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# A. JSON Adapter —  load_raw_metadata
+# A. JSON Adapter — raw dict → CanonicalSchema
 # ---------------------------------------------------------------------------
 
 
-def load_raw_metadata_from_dict(raw: dict) -> CanonicalSchema:
-    """Convert a raw metadata dictionary to a ``CanonicalSchema``.
+def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
+    """Convert a raw metadata JSON dict to a ``CanonicalSchema``.
 
-    The expected JSON format is::
+    The expected JSON structure::
 
         {
             "database_type": "postgresql",
@@ -75,7 +75,6 @@ def load_raw_metadata_from_dict(raw: dict) -> CanonicalSchema:
             col_name: str = col["column_name"]
             data_type: str = col["data_type"]
             nullable_raw = col.get("nullable", True)
-            # nullable: false → is_nullable = False
             is_nullable = nullable_raw if isinstance(nullable_raw, bool) else True
 
             columns.append(
@@ -123,9 +122,21 @@ def load_raw_metadata_from_dict(raw: dict) -> CanonicalSchema:
 
 
 def load_raw_metadata(filepath: str) -> CanonicalSchema:
-    """Read a ``raw_metadata.json`` file and convert it to a ``CanonicalSchema``."""
+    """Read a ``raw_metadata.json`` file and convert it to a ``CanonicalSchema``.
+
+    Equivalent to ``raw_json_to_canonical_schema(json.loads(…))``.
+
+    Parameters
+    ----------
+    filepath :
+        Path to a ``.json`` file on disk.
+
+    Returns
+    -------
+    CanonicalSchema
+    """
     raw = json.loads(Path(filepath).read_text(encoding="utf-8"))
-    return load_raw_metadata_from_dict(raw)
+    return raw_json_to_canonical_schema(raw)
 
 
 # ---------------------------------------------------------------------------
@@ -166,9 +177,11 @@ def _load_json_node(state: PipelineState) -> PipelineState:
 
     This node should be the **first** node in the graph.  It expects
     ``state.raw_input`` to contain a file path string (set before invocation).
-    If no path is set, the state is returned unchanged.
+
+    If ``state.canonical_schema`` is already populated (e.g. set by
+    ``run_pipeline_from_raw_json``), loading is skipped.
     """
-    if state.raw_input:
+    if state.canonical_schema is None and state.raw_input:
         schema = load_raw_metadata(state.raw_input)
         state.canonical_schema = schema
     return state
@@ -403,13 +416,16 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def run_pipeline(input_path: str) -> dict[str, Any]:
-    """Convenience function: load metadata, run the full pipeline, return results.
+def run_pipeline_from_raw_json(
+    raw_json: dict,
+    source_label: str = "raw_metadata",
+) -> dict[str, Any]:
+    """Run the full enrichment pipeline from a raw metadata dict.
 
     Steps
     -----
-    1. Call ``load_raw_metadata(input_path)`` to get a ``CanonicalSchema``.
-    2. Create a ``PipelineState`` with the schema and the raw input path.
+    1. Convert ``raw_json`` to a ``CanonicalSchema`` via ``raw_json_to_canonical_schema()``.
+    2. Create a ``PipelineState`` with the schema.
     3. Build and compile the ``StateGraph`` via ``build_pipeline()``.
     4. Invoke the graph.
     5. Assemble the final output via ``assemble_final_output()``.
@@ -417,8 +433,10 @@ def run_pipeline(input_path: str) -> dict[str, Any]:
 
     Parameters
     ----------
-    input_path : str
-        Path to a ``raw_metadata.json`` file.
+    raw_json :
+        A dict matching the ``raw_metadata.json`` format.
+    source_label :
+        A human-readable label for logging (e.g. the file path or source name).
 
     Returns
     -------
@@ -426,39 +444,32 @@ def run_pipeline(input_path: str) -> dict[str, Any]:
         The fully enriched output in the master plan final-output format.
     """
     logger.info("═" * 50)
-    logger.info("Pipeline started — input: %s", input_path)
+    logger.info("Pipeline started — source: %s", source_label)
 
-    # 1. Load raw metadata into canonical schema
-    schema = load_raw_metadata(input_path)
+    schema = raw_json_to_canonical_schema(raw_json)
     logger.info(
         "Loaded %d table(s), %d relationship(s)",
         len(schema.tables),
         len(schema.relationships),
     )
 
-    # 2. Create initial state
     initial_state = PipelineState(
-        raw_input=input_path,
+        raw_input=source_label,
         canonical_schema=schema,
     )
 
-    # 3. Build and compile the graph
     graph = build_pipeline()
     logger.info("Pipeline graph compiled — 11 agent nodes")
 
-    # 4. Run the pipeline
     t0 = time.time()
     result_state = graph.invoke(initial_state)
     total = time.time() - t0
 
-    # graph.invoke returns a dict when using Pydantic BaseModel state;
-    # convert back to PipelineState if necessary
     if isinstance(result_state, dict):
         final_state = PipelineState(**result_state)
     else:
         final_state = result_state
 
-    # 5. Assemble output
     output = assemble_final_output(final_state)
     logger.info("Pipeline finished — %.1fs total", total)
     logger.info("Tables: %d | Relationships: %d | Entities: %d | Patterns: %d",
@@ -470,56 +481,30 @@ def run_pipeline(input_path: str) -> dict[str, Any]:
     return output
 
 
-def run_pipeline_from_dict(raw: dict) -> dict[str, Any]:
-    """Run the pipeline entirely in memory from a metadata dictionary."""
-    logger.info("═" * 50)
-    logger.info("Pipeline started — input: in-memory dictionary")
+def run_pipeline(input_path: str) -> dict[str, Any]:
+    """Convenience function: load metadata from a JSON file, run the pipeline.
 
-    # 1. Load raw metadata into canonical schema
-    schema = load_raw_metadata_from_dict(raw)
-    logger.info(
-        "Loaded %d table(s), %d relationship(s)",
-        len(schema.tables),
-        len(schema.relationships),
-    )
+    Equivalent to ``run_pipeline_from_raw_json(json.loads(…), source_label=input_path)``.
 
-    # 2. Create initial state
-    initial_state = PipelineState(
-        raw_input="",
-        canonical_schema=schema,
-    )
+    Parameters
+    ----------
+    input_path :
+        Path to a ``raw_metadata.json`` file.
 
-    # 3. Build and compile the graph
-    graph = build_pipeline()
-    logger.info("Pipeline graph compiled — 11 agent nodes")
-
-    # 4. Run the pipeline
-    t0 = time.time()
-    result_state = graph.invoke(initial_state)
-    total = time.time() - t0
-
-    if isinstance(result_state, dict):
-        final_state = PipelineState(**result_state)
-    else:
-        final_state = result_state
-
-    # 5. Assemble output
-    output = assemble_final_output(final_state)
-    logger.info("Pipeline finished — %.1fs total", total)
-    logger.info("Tables: %d | Relationships: %d | Entities: %d | Patterns: %d",
-                len(output.get("tables", [])),
-                len(output.get("relationships", [])),
-                len(output.get("entities", [])),
-                len(output.get("schema_patterns", [])))
-    logger.info("═" * 50)
-    return output
+    Returns
+    -------
+    dict[str, Any]
+        The fully enriched output in the master plan final-output format.
+    """
+    raw_json = json.loads(Path(input_path).read_text(encoding="utf-8"))
+    return run_pipeline_from_raw_json(raw_json, source_label=input_path)
 
 
 __all__ = [
     "assemble_final_output",
     "build_pipeline",
     "load_raw_metadata",
-    "load_raw_metadata_from_dict",
+    "raw_json_to_canonical_schema",
     "run_pipeline",
-    "run_pipeline_from_dict",
+    "run_pipeline_from_raw_json",
 ]

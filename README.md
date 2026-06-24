@@ -47,10 +47,40 @@ The server starts at `http://localhost:8000` with auto-reload.
 ### Run the pipeline directly (CLI)
 
 ```bash
+# From a raw metadata JSON file:
 uv run main.py pipeline sqlj_son/raw_metadata.json
+
+# From a SQL DDL file:
+uv run main.py --sql-file sqlj_son/sample_schema.sql
+
+# From a live database (system_name from config):
+uv run main.py --db-connect "Crew Management System"
+
+# Start API server:
+uv run main.py
+# or
+uv run main.py api
 ```
 
 Output is written to `output/enriched_metadata.json`.
+
+Full help:
+
+```
+usage: main.py [-h] [--sql-file PATH | --db-connect NAME]
+               [{api,pipeline}] [file]
+
+ETL Schema Intelligence — API server or CLI pipeline runner
+
+positional arguments:
+  {api,pipeline}     Subcommand (default: api)
+  file               Path to raw metadata JSON (pipeline command only)
+
+options:
+  -h, --help         show this help message and exit
+  --sql-file PATH    Path to a SQL DDL file to parse and enrich
+  --db-connect NAME  Database system name (from config) to extract and enrich
+```
 
 ## API Endpoints
 
