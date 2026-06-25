@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Database, FileCode, Loader2, UploadCloud } from 'lucide-react';
 
-export const InputSelection = () => {
+export const ConnectionView = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +23,7 @@ export const InputSelection = () => {
   // SQL State
   const [sqlDbType, setSqlDbType] = useState('postgres');
   const [sqlSchema, setSqlSchema] = useState('public');
+  const [sqlDbName, setSqlDbName] = useState('');
   const [sqlFile, setSqlFile] = useState<File | null>(null);
 
   const handleDbSubmit = async (e: React.FormEvent) => {
@@ -31,7 +32,7 @@ export const InputSelection = () => {
     setError(null);
     try {
       const data = await extractFromDb(dbType, { host, port, database, username, password });
-      navigate('/dashboard', { state: { metadata: data.data } });
+      navigate('/schema', { state: { metadata: data.data } });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -49,8 +50,11 @@ export const InputSelection = () => {
     setError(null);
     try {
       const text = await sqlFile.text();
-      const data = await extractFromSql(text, sqlDbType, sqlSchema);
-      navigate('/dashboard', { state: { metadata: data.data } });
+      const data = await extractFromSql(text, sqlDbType, sqlSchema); // sqlDbName can be appended here if backend accepts it in future
+      if (sqlDbName) {
+         data.data.database_name = sqlDbName;
+      }
+      navigate('/schema', { state: { metadata: data.data } });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -59,7 +63,7 @@ export const InputSelection = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4">
+    <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
@@ -158,12 +162,25 @@ export const InputSelection = () => {
                     </select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Database / Schema Name</label>
-                    <Input placeholder="public" value={sqlSchema} onChange={(e) => setSqlSchema(e.target.value)} />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Schema Name</label>
+                      <Input
+                        type="text"
+                        placeholder="e.g., public"
+                        value={sqlSchema}
+                        onChange={(e) => setSqlSchema(e.target.value)}
+                      />
+                    </div>
+                  <div className="space-y-2 mt-4">
+                    <label className="text-sm font-medium">Database Name (Optional)</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., my_database"
+                      value={sqlDbName}
+                      onChange={(e) => setSqlDbName(e.target.value)}
+                    />
                   </div>
-                  
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4">
                     <label className="text-sm font-medium">Upload .sql File</label>
                     <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-8 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                       <UploadCloud className="w-8 h-8 mb-3 text-slate-400" />
