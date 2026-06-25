@@ -1,7 +1,7 @@
 -- Sample PostgreSQL DDL — Airport Turnaround Operations
 -- Extracted from raw_metadata.json table definitions
 
-CREATE TABLE departmentsss (
+CREATE TABLE department (
     department_id INTEGER NOT NULL,
     department_name VARCHAR(100) NOT NULL,
     CONSTRAINT department_pkey PRIMARY KEY (department_id)
