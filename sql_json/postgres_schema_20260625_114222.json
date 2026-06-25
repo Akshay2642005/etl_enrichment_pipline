@@ -1,0 +1,1239 @@
+{
+  "database_type": "postgresql",
+  "schema": "public",
+  "tables": [
+    {
+      "table_name": "medicalcertificate",
+      "columns": [
+        {
+          "column_name": "medical_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "issue_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "expiry_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "medicalcertificate_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "medical_id"
+        },
+        {
+          "constraint_name": "medicalcertificate_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "dutylog",
+      "columns": [
+        {
+          "column_name": "duty_log_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "duty_start",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        },
+        {
+          "column_name": "duty_end",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "dutylog_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "duty_log_id"
+        },
+        {
+          "constraint_name": "dutylog_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "dutylog_flight_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "flight_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "flight_id",
+          "parent_table": "flight",
+          "parent_column": "flight_id"
+        }
+      ]
+    },
+    {
+      "table_name": "complianceviolation",
+      "columns": [
+        {
+          "column_name": "violation_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "violation_type",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "violation_date",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "complianceviolation_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "violation_id"
+        },
+        {
+          "constraint_name": "complianceviolation_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "auditlog",
+      "columns": [
+        {
+          "column_name": "audit_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "action",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "table_name",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "record_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "timestamp",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "auditlog_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "audit_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "trainingenrollment",
+      "columns": [
+        {
+          "column_name": "enrollment_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "session_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "trainingenrollment_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "enrollment_id"
+        },
+        {
+          "constraint_name": "trainingenrollment_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "trainingenrollment_session_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "session_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "session_id",
+          "parent_table": "trainingsession",
+          "parent_column": "session_id"
+        }
+      ]
+    },
+    {
+      "table_name": "simulatorsession",
+      "columns": [
+        {
+          "column_name": "simulator_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "aircraft_type_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "session_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "result",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "simulatorsession_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "simulator_id"
+        },
+        {
+          "constraint_name": "simulatorsession_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "simulatorsession_aircraft_type_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "aircraft_type_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "aircraft_type_id",
+          "parent_table": "aircrafttype",
+          "parent_column": "aircraft_type_id"
+        }
+      ]
+    },
+    {
+      "table_name": "expenseclaim",
+      "columns": [
+        {
+          "column_name": "claim_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "expense_type_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "amount",
+          "data_type": "numeric",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "expenseclaim_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "claim_id"
+        },
+        {
+          "constraint_name": "expenseclaim_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "expenseclaim_expense_type_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "expense_type_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "expense_type_id",
+          "parent_table": "expensetype",
+          "parent_column": "expense_type_id"
+        }
+      ]
+    },
+    {
+      "table_name": "notification",
+      "columns": [
+        {
+          "column_name": "notification_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "title",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "message",
+          "data_type": "text",
+          "nullable": true
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "notification_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "notification_id"
+        },
+        {
+          "constraint_name": "notification_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "restperiod",
+      "columns": [
+        {
+          "column_name": "rest_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "rest_start",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        },
+        {
+          "column_name": "rest_end",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "restperiod_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "rest_id"
+        },
+        {
+          "constraint_name": "restperiod_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "crewassignment",
+      "columns": [
+        {
+          "column_name": "assignment_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "roster_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "assigned_role",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewassignment_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "assignment_id"
+        },
+        {
+          "constraint_name": "crewassignment_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "crewassignment_flight_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "flight_id"
+        },
+        {
+          "constraint_name": "crewassignment_roster_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "roster_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "flight_id",
+          "parent_table": "flight",
+          "parent_column": "flight_id"
+        },
+        {
+          "child_column": "roster_id",
+          "parent_table": "roster",
+          "parent_column": "roster_id"
+        }
+      ]
+    },
+    {
+      "table_name": "leaverequest",
+      "columns": [
+        {
+          "column_name": "leave_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "leave_type_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "start_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "end_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "leaverequest_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "leave_id"
+        },
+        {
+          "constraint_name": "leaverequest_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "leaverequest_leave_type_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "leave_type_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "leave_type_id",
+          "parent_table": "leavetype",
+          "parent_column": "leave_type_id"
+        }
+      ]
+    },
+    {
+      "table_name": "availability",
+      "columns": [
+        {
+          "column_name": "availability_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "available_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "availability_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "availability_id"
+        },
+        {
+          "constraint_name": "availability_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "crewemergencycontact",
+      "columns": [
+        {
+          "column_name": "emergency_contact_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "contact_name",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "relationship",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "phone",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewemergencycontact_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "emergency_contact_id"
+        },
+        {
+          "constraint_name": "crewemergencycontact_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "crewcontact",
+      "columns": [
+        {
+          "column_name": "contact_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "phone",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "email",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "address",
+          "data_type": "text",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewcontact_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "contact_id"
+        },
+        {
+          "constraint_name": "crewcontact_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        }
+      ]
+    },
+    {
+      "table_name": "crewaircraftrating",
+      "columns": [
+        {
+          "column_name": "rating_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "aircraft_type_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "issue_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "expiry_date",
+          "data_type": "date",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewaircraftrating_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "rating_id"
+        },
+        {
+          "constraint_name": "crewaircraftrating_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "crewaircraftrating_aircraft_type_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "aircraft_type_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "aircraft_type_id",
+          "parent_table": "aircrafttype",
+          "parent_column": "aircraft_type_id"
+        }
+      ]
+    },
+    {
+      "table_name": "crewlicense",
+      "columns": [
+        {
+          "column_name": "crew_license_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "license_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "issue_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "expiry_date",
+          "data_type": "date",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewlicense_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "crew_license_id"
+        },
+        {
+          "constraint_name": "crewlicense_crew_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "crewlicense_license_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "license_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "crew_id",
+          "parent_table": "crew",
+          "parent_column": "crew_id"
+        },
+        {
+          "child_column": "license_id",
+          "parent_table": "license",
+          "parent_column": "license_id"
+        }
+      ]
+    },
+    {
+      "table_name": "crew",
+      "columns": [
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "employee_no",
+          "data_type": "character varying",
+          "nullable": false
+        },
+        {
+          "column_name": "first_name",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "last_name",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "rank_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "base_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "hire_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crew_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "crew_id"
+        },
+        {
+          "constraint_name": "crew_employee_no_key",
+          "constraint_type": "UNIQUE",
+          "column_name": "employee_no"
+        },
+        {
+          "constraint_name": "crew_rank_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "rank_id"
+        },
+        {
+          "constraint_name": "crew_base_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "base_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "rank_id",
+          "parent_table": "crewrank",
+          "parent_column": "rank_id"
+        },
+        {
+          "child_column": "base_id",
+          "parent_table": "crewbase",
+          "parent_column": "base_id"
+        }
+      ]
+    },
+    {
+      "table_name": "trainingsession",
+      "columns": [
+        {
+          "column_name": "session_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "program_id",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "session_date",
+          "data_type": "date",
+          "nullable": true
+        },
+        {
+          "column_name": "instructor",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "trainingsession_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "session_id"
+        },
+        {
+          "constraint_name": "trainingsession_program_id_fkey",
+          "constraint_type": "FOREIGN KEY",
+          "column_name": "program_id"
+        }
+      ],
+      "relationships": [
+        {
+          "child_column": "program_id",
+          "parent_table": "trainingprogram",
+          "parent_column": "program_id"
+        }
+      ]
+    },
+    {
+      "table_name": "trainingprogram",
+      "columns": [
+        {
+          "column_name": "program_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "program_name",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "validity_months",
+          "data_type": "integer",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "trainingprogram_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "program_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "license",
+      "columns": [
+        {
+          "column_name": "license_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "license_type",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "license_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "license_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "flight",
+      "columns": [
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "flight_number",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "origin",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "destination",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "departure_time",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        },
+        {
+          "column_name": "arrival_time",
+          "data_type": "timestamp without time zone",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "flight_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "flight_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "roster",
+      "columns": [
+        {
+          "column_name": "roster_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "roster_month",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "roster_year",
+          "data_type": "integer",
+          "nullable": true
+        },
+        {
+          "column_name": "published",
+          "data_type": "boolean",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "roster_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "roster_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "aircrafttype",
+      "columns": [
+        {
+          "column_name": "aircraft_type_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "aircraft_code",
+          "data_type": "character varying",
+          "nullable": true
+        },
+        {
+          "column_name": "aircraft_name",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "aircrafttype_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "aircraft_type_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "leavetype",
+      "columns": [
+        {
+          "column_name": "leave_type_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "leave_name",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "leavetype_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "leave_type_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "expensetype",
+      "columns": [
+        {
+          "column_name": "expense_type_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "expense_name",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "expensetype_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "expense_type_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "crewbase",
+      "columns": [
+        {
+          "column_name": "base_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "airport_code",
+          "data_type": "character varying",
+          "nullable": false
+        },
+        {
+          "column_name": "base_name",
+          "data_type": "character varying",
+          "nullable": true
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewbase_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "base_id"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "table_name": "crewrank",
+      "columns": [
+        {
+          "column_name": "rank_id",
+          "data_type": "integer",
+          "nullable": false
+        },
+        {
+          "column_name": "rank_name",
+          "data_type": "character varying",
+          "nullable": false
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "crewrank_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "rank_id"
+        }
+      ],
+      "relationships": []
+    }
+  ]
+}
