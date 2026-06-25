@@ -1,9 +1,9 @@
 {
-  "database_type": "postgresql",
+  "database_type": "postgres",
   "schema": "public",
   "tables": [
     {
-      "table_name": "department",
+      "table_name": "departmentsss",
       "columns": [
         {
           "column_name": "department_id",

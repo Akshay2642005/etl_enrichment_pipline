@@ -1,2 +1,0 @@
-default_port: 3306
-driver: pymysql

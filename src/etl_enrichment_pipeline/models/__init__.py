@@ -1,18 +1,5 @@
 """Data models for the ETL enrichment pipeline."""
 
-from etl_enrichment_pipeline.models.agent_outputs import (
-    BusinessRoleOutput,
-    DescriptionOutput,
-    DomainOutput,
-    EntityDiscoveryOutput,
-    ExtractionOutput,
-    PatternDetectionOutput,
-    RelationshipIntelligenceOutput,
-    SampleQueryOutput,
-    SemanticTypeOutput,
-    UseCaseOutput,
-    ValidationOutput,
-)
 from etl_enrichment_pipeline.models.canonical import (
     CanonicalSchema,
     ColumnSchema,
@@ -66,16 +53,4 @@ __all__ = [
     "ValidationReport",
     # final_output
     "FinalOutput",
-    # agent_outputs
-    "BusinessRoleOutput",
-    "DescriptionOutput",
-    "DomainOutput",
-    "EntityDiscoveryOutput",
-    "ExtractionOutput",
-    "PatternDetectionOutput",
-    "RelationshipIntelligenceOutput",
-    "SampleQueryOutput",
-    "SemanticTypeOutput",
-    "UseCaseOutput",
-    "ValidationOutput",
 ]

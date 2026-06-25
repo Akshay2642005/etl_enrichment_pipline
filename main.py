@@ -38,19 +38,42 @@ from etl_enrichment_pipeline.agents.extraction_agent import run_extraction_flow
 
 
 def setup_logging(level: str = "INFO") -> None:
-    """Configure root logger so pipeline node logs appear on stderr."""
+    """Configure root logger: stderr + file output."""
     try:
         from etl_enrichment_pipeline.config.config_global import GLOBAL_PIPELINE
         level = GLOBAL_PIPELINE.get("log_level", level).upper()
     except Exception:
         pass
 
-    logging.basicConfig(
-        level=getattr(logging, level, logging.INFO),
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    log_fmt = logging.Formatter(
+        fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         datefmt="%H:%M:%S",
-        stream=sys.stderr,
     )
+    root = logging.getLogger()
+    root.setLevel(getattr(logging, level, logging.INFO))
+
+    # ── stderr handler (only if none exist, to avoid dupes) ──────
+    has_console = any(
+        isinstance(h, logging.StreamHandler)
+        and not isinstance(h, logging.FileHandler)
+        for h in root.handlers
+    )
+    if not has_console:
+        console = logging.StreamHandler(stream=sys.stderr)
+        console.setFormatter(log_fmt)
+        root.addHandler(console)
+
+    # ── File handler for pipeline log output ─────────────────────
+    if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
+        log_dir = Path(__file__).resolve().parent / "output"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        file_h = logging.FileHandler(
+            filename=log_dir / "pipeline_output.txt",
+            mode="a",
+            encoding="utf-8",
+        )
+        file_h.setFormatter(log_fmt)
+        root.addHandler(file_h)
 
 # ---------------------------------------------------------------
 # Exposed for:  uv run uvicorn main:app

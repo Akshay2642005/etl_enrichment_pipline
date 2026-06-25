@@ -1,2 +1,0 @@
-default_port: 1521
-driver: oracledb

@@ -1,2 +1,0 @@
-default_port: 5432
-driver: psycopg2
