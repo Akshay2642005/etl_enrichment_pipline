@@ -2,17 +2,20 @@
 """Entry point — run the API server or execute the enrichment pipeline directly.
 
 Usage:
-    uv run main.py api               # start the API server
+    uv run main.py api               # start the enrichment API server (port 8000)
+    uv run main.py nl2sql            # start the NL2SQL API server (port 8001)
     uv run main.py --sql-file <file> # run the pipeline on a metadata JSON file
     uv run main.py --db-connect      # run interactive database extraction
-    uv run main.py                       # start the API server (default)
+    uv run main.py                       # start the enrichment API server (default)
     uv run main.py api                   # same as above
+    uv run main.py nl2sql               # start the NL2SQL API server (port 8001)
     uv run main.py pipeline <file>       # run the pipeline on a metadata JSON file
     uv run main.py --sql-file <path>     # run the pipeline from a SQL DDL file
     uv run main.py --db-connect <name>   # run the pipeline from a live database
 
 For uvicorn directly:
-    uv run uvicorn main:app
+    uv run uvicorn main:app              # enrichment API (port 8000)
+    uv run uvicorn src.etl_enrichment_pipeline.api.nl2sql_app:app --port 8001  # NL2SQL
 """
 
 from __future__ import annotations
@@ -63,6 +66,19 @@ def run_api() -> None:
         "src.etl_enrichment_pipeline.api.main:app",
         host="0.0.0.0",
         port=8000,
+        reload=True,
+    )
+
+
+def run_nl2sql_api() -> None:
+    """Start the standalone NL2SQL API server on port 8001."""
+    setup_logging()
+    import uvicorn
+
+    uvicorn.run(
+        "src.etl_enrichment_pipeline.api.nl2sql_app:app",
+        host="0.0.0.0",
+        port=8001,
         reload=True,
     )
 
@@ -174,8 +190,8 @@ def main() -> None:
         "command",
         nargs="?",
         default=None,
-        choices=("api", "pipeline"),
-        help="Subcommand (api or pipeline)",
+        choices=("api", "nl2sql", "pipeline"),
+        help="Subcommand (api, nl2sql, or pipeline)",
     )
     parser.add_argument(
         "file",
@@ -206,9 +222,14 @@ def main() -> None:
         run_pipeline_file(args.file)
         return
 
-    # API server (explicit "api" subcommand or no args at all)
+    # Enrichment API server (explicit "api" subcommand or no args at all)
     if args.command == "api" or (args.command is None and not args.sql_file and not args.db_connect):
         run_api()
+        return
+
+    # NL2SQL API server (separate process on port 8001)
+    if args.command == "nl2sql":
+        run_nl2sql_api()
         return
 
     # Interactive Terminal Flow
