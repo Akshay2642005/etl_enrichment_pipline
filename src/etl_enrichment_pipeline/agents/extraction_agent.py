@@ -427,7 +427,6 @@ def run_extraction_flow(db_type: str, creds: dict) -> dict:
         logger.error(f"Failed to extract schema from {db_type}: {e}")
         raise
 
-
 def extraction_node(state: dict) -> dict:
     raise NotImplementedError(
         "extraction_node() requires Phase 1 rework before it can be used in the LangGraph pipeline."

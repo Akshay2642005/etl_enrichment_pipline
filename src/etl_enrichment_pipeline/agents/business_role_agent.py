@@ -1,7 +1,6 @@
 """Business role agent — classifies tables into business role categories."""
 
 from __future__ import annotations
-
 from typing import cast
 
 from etl_enrichment_pipeline.models.agent_outputs import BusinessRoleOutput
