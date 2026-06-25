@@ -26,30 +26,16 @@ def test_pipeline_state_defaults(empty_pipeline_state):
 
 
 def test_all_agent_stubs_importable():
-    """All 10 agent node functions and RuleEngine are importable."""
+    """All active agent node functions and RuleEngine are importable."""
     from etl_enrichment_pipeline.agents import (
-        business_role_node,
-        description_node,
-        domain_node,
-        entity_discovery_node,
+        consolidated_enrichment_node,
         pattern_detection_node,
-        relationship_intelligence_node,
-        sample_query_node,
-        semantic_type_node,
-        use_case_node,
         validation_node,
     )
     from etl_enrichment_pipeline.agents.rule_engine import RuleEngine
 
     for name, node in [
-        ("description_node", description_node),
-        ("business_role_node", business_role_node),
-        ("domain_node", domain_node),
-        ("semantic_type_node", semantic_type_node),
-        ("entity_discovery_node", entity_discovery_node),
-        ("relationship_intelligence_node", relationship_intelligence_node),
-        ("use_case_node", use_case_node),
-        ("sample_query_node", sample_query_node),
+        ("consolidated_enrichment_node", consolidated_enrichment_node),
         ("pattern_detection_node", pattern_detection_node),
         ("validation_node", validation_node),
     ]:

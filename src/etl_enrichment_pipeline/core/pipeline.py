@@ -263,8 +263,89 @@ def build_pipeline() -> CompiledStateGraph:
 
 
 # ---------------------------------------------------------------------------
-# C. Final output assembler
+# C. Helpers & final output assembler
 # ---------------------------------------------------------------------------
+
+
+# Common table-name-to-entity mappings for better natural language
+_ENTITY_OVERRIDES = {
+    "people": "person",
+    "employees": "employee",
+    "staff": "staff_member",
+    "users": "user",
+    "children": "child",
+    "men": "man",
+    "women": "woman",
+    "countries": "country",
+    "cities": "city",
+    "categories": "category",
+    "species": "species",
+    "series": "series",
+    "statuses": "status",
+    "addresses": "address",
+    "supplies": "supply",
+}
+
+
+def _singular(name: str) -> str:
+    """Simple singularisation for English table names."""
+    lower = name.lower()
+    if lower in _ENTITY_OVERRIDES:
+        return _ENTITY_OVERRIDES[lower]
+    if lower.endswith("ies") and len(lower) > 3:
+        return name[:-3] + "y"
+    if lower.endswith("sses") or lower.endswith("shes") or lower.endswith("ches"):
+        return name[:-2]
+    if lower.endswith("ses"):
+        return name[:-2]
+    if lower.endswith("s") and not lower.endswith("ss"):
+        return name[:-1]
+    return name
+
+
+def _describe_relationship(
+    from_table: str,
+    from_column: str,
+    to_table: str,
+    to_column: str,
+) -> str:
+    """Generate a one-line natural-language description of a FK relationship.
+
+    Instead of ``employee.department_id → department.id``, produce something
+    a human would say:  *"each employee belongs to a department"*.
+    """
+    child = _singular(from_table)
+    parent = _singular(to_table)
+    fk_lower = from_column.lower()
+    parent_lower = parent.lower()
+
+    # ── heuristic: does the FK column contain the parent table name? ──
+    # e.g.  employee.dept_id  →  department.id         => "belongs to"
+    #       employee.department_id → department.id     => "belongs to"
+    #       employee.manager_id → employee.id          => "reports to"
+    if fk_lower == f"{parent_lower}_id" or parent_lower in fk_lower:
+        if parent_lower in ("manager", "supervisor", "lead", "head"):
+            return f"each {child} reports to a {parent}"
+        return f"each {child} belongs to a {parent}"
+
+    # ── self-referencing FK (manager_id → employee.id) ───────────────
+    if from_table == to_table and from_column != to_column:
+        if parent_lower in fk_lower:
+            return f"each {child} reports to another {child}"
+        return f"each {child} references another {child} via {from_column}"
+
+    # ── junction / link table (composite key referencing two parents) ─
+    # Detected by checking whether ``from_table`` looks like a composite
+    # of the two parent names — not fully reliable here, so fall through.
+
+    # ── generic fallback templates ────────────────────────────────────
+    # Use the column name for a hint when the parent name isn't in the FK:
+    if fk_lower in ("id", f"{from_table}_id"):
+        return f"each {child} is associated with one {parent}"
+    if fk_lower.startswith(parent_lower):
+        return f"each {child} belongs to a {parent}"
+
+    return f"each {child} references {parent} via {from_column}"
 
 
 def assemble_final_output(state: PipelineState) -> dict[str, Any]:
@@ -367,9 +448,11 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
             relationships.append(
                 {
                     "name": rel_name,
-                    "description": (
-                        f"{rel.from_table}.{rel.from_column} "
-                        f"\u2192 {rel.to_table}.{rel.to_column}"
+                    "description": _describe_relationship(
+                        rel.from_table,
+                        rel.from_column,
+                        rel.to_table,
+                        rel.to_column,
                     ),
                 }
             )
