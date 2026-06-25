@@ -128,6 +128,57 @@ export const TablesExplorer = ({ database }: { database: Database }) => {
           </CardContent>
         </Card>
       ))}
+
+      {database.views && database.views.map((view, idx) => (
+        <Card key={`view-${idx}`} className="border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow bg-slate-50/30 dark:bg-slate-900/30">
+          <CardHeader className="bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 flex items-center justify-center">
+                  <Type className="w-4 h-4" />
+                </div>
+                {view.view_name} <span className="text-xs font-normal text-slate-500">(View)</span>
+              </CardTitle>
+              <Badge variant="secondary" className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                {view.columns.length} Cols
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 p-0">
+            <div className="w-full">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-500 uppercase bg-slate-100/80 dark:bg-slate-800/80 sticky top-0 backdrop-blur-sm z-10">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Column Name</th>
+                    <th className="px-4 py-3 font-semibold">Data Type</th>
+                    <th className="px-4 py-3 font-semibold text-center">Nullable</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {view.columns.map((col, cIdx) => (
+                    <tr key={cIdx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                      <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <div className="w-3 h-3" />
+                        {col.column_name}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-emerald-600 dark:text-emerald-400">
+                        {col.data_type}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        {col.nullable ? (
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600">✓</span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

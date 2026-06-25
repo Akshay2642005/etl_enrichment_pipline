@@ -101,8 +101,32 @@ def extract_postgres_schema(creds: dict) -> dict:
             }
         )
 
+    result_views = []
+    cursor.execute("""
+        SELECT table_name, view_definition
+        FROM information_schema.views
+        WHERE table_schema='public';
+    """)
+    views = cursor.fetchall()
+    
+    for view_name, view_def in views:
+        cursor.execute(f"""
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='{view_name}';
+        """)
+        columns = [
+            {"column_name": row[0], "data_type": row[1], "nullable": row[2] == "YES"}
+            for row in cursor.fetchall()
+        ]
+        result_views.append({
+            "view_name": view_name,
+            "columns": columns,
+            "definition": view_def
+        })
+
     conn.close()
-    return {"database_type": "postgresql", "schema": "public", "tables": result_tables}
+    return {"database_type": "postgresql", "schema": "public", "tables": result_tables, "views": result_views}
 
 
 def extract_mysql_schema(creds: dict) -> dict:
@@ -178,8 +202,32 @@ def extract_mysql_schema(creds: dict) -> dict:
             }
         )
 
+    result_views = []
+    cursor.execute(f"""
+        SELECT TABLE_NAME, VIEW_DEFINITION
+        FROM information_schema.views
+        WHERE table_schema='{db_name}';
+    """)
+    views = cursor.fetchall()
+    
+    for view_name, view_def in views:
+        cursor.execute(f"""
+            SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+            FROM information_schema.columns
+            WHERE table_schema='{db_name}' AND table_name='{view_name}';
+        """)
+        columns = [
+            {"column_name": row[0], "data_type": row[1], "nullable": row[2] == "YES"}
+            for row in cursor.fetchall()
+        ]
+        result_views.append({
+            "view_name": view_name,
+            "columns": columns,
+            "definition": view_def
+        })
+
     conn.close()
-    return {"database_type": "mysql", "schema": db_name, "tables": result_tables}
+    return {"database_type": "mysql", "schema": db_name, "tables": result_tables, "views": result_views}
 
 
 def extract_sqlserver_schema(creds: dict) -> dict:
@@ -259,8 +307,31 @@ def extract_sqlserver_schema(creds: dict) -> dict:
             }
         )
 
+    result_views = []
+    cursor.execute("""
+        SELECT TABLE_NAME, VIEW_DEFINITION
+        FROM INFORMATION_SCHEMA.VIEWS;
+    """)
+    views = cursor.fetchall()
+    
+    for view_name, view_def in views:
+        cursor.execute(f"""
+            SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME='{view_name}';
+        """)
+        columns = [
+            {"column_name": row[0], "data_type": row[1], "nullable": row[2] == "YES"}
+            for row in cursor.fetchall()
+        ]
+        result_views.append({
+            "view_name": view_name,
+            "columns": columns,
+            "definition": view_def
+        })
+
     conn.close()
-    return {"database_type": "sqlserver", "schema": "dbo", "tables": result_tables}
+    return {"database_type": "sqlserver", "schema": "dbo", "tables": result_tables, "views": result_views}
 
 
 def extract_oracle_schema(creds: dict) -> dict:
@@ -340,8 +411,31 @@ def extract_oracle_schema(creds: dict) -> dict:
             }
         )
 
+    result_views = []
+    cursor.execute("SELECT VIEW_NAME, TEXT FROM USER_VIEWS")
+    views_raw = cursor.fetchall()
+    
+    for row in views_raw:
+        view_name = row[0]
+        view_def = row[1].read() if hasattr(row[1], 'read') else row[1]
+        
+        cursor.execute(f"""
+            SELECT COLUMN_NAME, DATA_TYPE, NULLABLE 
+            FROM USER_TAB_COLUMNS 
+            WHERE TABLE_NAME = '{view_name}'
+        """)
+        columns = [
+            {"column_name": col_row[0], "data_type": col_row[1], "nullable": col_row[2] == "Y"}
+            for col_row in cursor.fetchall()
+        ]
+        result_views.append({
+            "view_name": view_name,
+            "columns": columns,
+            "definition": view_def
+        })
+
     conn.close()
-    return {"database_type": "oracle", "schema": user, "tables": result_tables}
+    return {"database_type": "oracle", "schema": user, "tables": result_tables, "views": result_views}
 
 
 def extract_sqlite_schema(creds: dict) -> dict:
@@ -400,8 +494,28 @@ def extract_sqlite_schema(creds: dict) -> dict:
             }
         )
 
+    result_views = []
+    cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+    views = cursor.fetchall()
+    
+    for view_name, view_def in views:
+        cursor.execute(f"PRAGMA table_info('{view_name}');")
+        columns = []
+        for row in cursor.fetchall():
+            columns.append({
+                "column_name": row[1],
+                "data_type": row[2],
+                "nullable": row[3] == 0,
+            })
+            
+        result_views.append({
+            "view_name": view_name,
+            "columns": columns,
+            "definition": view_def
+        })
+
     conn.close()
-    return {"database_type": "sqlite", "schema": "main", "tables": result_tables}
+    return {"database_type": "sqlite", "schema": "main", "tables": result_tables, "views": result_views}
 
 
 def run_extraction_flow(db_type: str, creds: dict) -> dict:

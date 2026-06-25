@@ -19,12 +19,19 @@ export interface Relationship {
 export interface Table {
   table_name: string;
   columns: Column[];
-  constraints: Constraint[];
-  relationships: Relationship[];
+  constraints?: Constraint[];
+  relationships?: Relationship[];
+}
+
+export interface View {
+  view_name: string;
+  columns: Column[];
+  definition: string;
 }
 
 export interface Database {
   database_type: string;
   schema: string;
   tables: Table[];
+  views?: View[];
 }
