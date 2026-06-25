@@ -7,7 +7,7 @@ import type { NormalizedTable } from '../lib/schema-adapter';
 import { Database, Table as TableIcon, LayoutDashboard, ChevronDown, ChevronRight, Eye, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 
-export const Dashboard = () => {
+export const SchemaView = () => {
   const location = useLocation();
   const rawMetadata = location.state?.metadata;
   
