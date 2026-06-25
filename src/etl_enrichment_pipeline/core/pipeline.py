@@ -29,6 +29,7 @@ from etl_enrichment_pipeline.models.canonical import (
     DatabaseInfo,
     RelationshipSchema,
     TableSchema,
+    ViewSchema,
 )
 from etl_enrichment_pipeline.models.final_output import FinalOutput
 from etl_enrichment_pipeline.models.pipeline_state import PipelineState
@@ -48,6 +49,7 @@ def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
         {
             "database_type": "postgresql",
             "schema": "public",
+            "database_version": "15.0",
             "tables": [
                 {
                     "table_name": "attendance",
@@ -55,12 +57,21 @@ def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
                     "constraints": [...],
                     "relationships": [...]
                 }
+            ],
+            "views": [
+                {
+                    "view_name": "active_users",
+                    "definition": "SELECT ...",
+                    "columns": [...]
+                }
             ]
         }
     """
+    db_version = raw.get("database_version") or raw.get("version")
     db_info = DatabaseInfo(
         name=raw.get("schema"),
         vendor=raw.get("database_type"),
+        version=db_version,
     )
 
     tables: list[TableSchema] = []
@@ -86,11 +97,18 @@ def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
                 )
             )
 
-        # --- constraints: mark primary keys ---
+        # --- constraints: mark primary keys and build FK name lookup ---
         pk_columns: set[str] = set()
+        fk_constraint_names: dict[str, str] = {}  # column_name -> constraint_name
         for constraint in tbl.get("constraints", []):
-            if constraint.get("constraint_type", "").upper() == "PRIMARY KEY":
+            ctype = constraint.get("constraint_type", "").upper()
+            if ctype == "PRIMARY KEY":
                 pk_columns.add(constraint["column_name"])
+            elif ctype == "FOREIGN KEY":
+                col_name_fk = constraint["column_name"]
+                constraint_name = constraint.get("constraint_name")
+                if constraint_name:
+                    fk_constraint_names[col_name_fk] = constraint_name
 
         for col in columns:
             if col.column_name in pk_columns:
@@ -103,20 +121,51 @@ def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
             )
         )
 
-        # --- relationships ---
+        # --- relationships (with optional constraint_name) ---
         for rel in tbl.get("relationships", []):
+            child_col = rel["child_column"]
+            constraint_name = fk_constraint_names.get(child_col)
             relationships.append(
                 RelationshipSchema(
                     from_table=table_name,
-                    from_column=rel["child_column"],
+                    from_column=child_col,
                     to_table=rel["parent_table"],
                     to_column=rel["parent_column"],
+                    constraint_name=constraint_name,
                 )
             )
+
+    # --- views ---
+    views: list[ViewSchema] = []
+    for v in raw.get("views", []):
+        view_name: str = v["view_name"]
+        view_columns: list[ColumnSchema] = []
+        for col in v.get("columns", []):
+            nullable_raw = col.get("nullable", True)
+            view_columns.append(
+                ColumnSchema(
+                    table_name=view_name,
+                    column_name=col["column_name"],
+                    data_type=col.get("data_type", "unknown"),
+                    is_nullable=(
+                        nullable_raw
+                        if isinstance(nullable_raw, bool)
+                        else True
+                    ),
+                )
+            )
+        views.append(
+            ViewSchema(
+                view_name=view_name,
+                definition=v.get("definition", ""),
+                columns=view_columns,
+            )
+        )
 
     return CanonicalSchema(
         database_info=db_info,
         tables=tables,
+        views=views,
         relationships=relationships,
     )
 
@@ -269,9 +318,11 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     }
     if schema:
         metadata["database_type"] = schema.database_info.vendor or ""
-        metadata["schema"] = schema.database_info.name or ""
+        metadata["database_name"] = schema.database_info.name or ""
+        metadata["database_version"] = schema.database_info.version or ""
         metadata["tables_count"] = len(schema.tables)
         metadata["columns_count"] = sum(len(t.columns) for t in schema.tables)
+        metadata["views_count"] = len(schema.views)
         metadata["relationships_count"] = len(schema.relationships)
 
     # --- tables (enriched with descriptions, business_roles, domains) -------
@@ -324,23 +375,38 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     views: list[dict[str, Any]] = []
     if schema:
         for v in schema.views:
+            view_cols = [
+                {
+                    "column_name": col.column_name,
+                    "data_type": col.data_type,
+                    "is_nullable": col.is_nullable,
+                }
+                for col in v.columns
+            ]
             views.append(
                 {
                     "view_name": v.view_name,
                     "definition": v.definition,
+                    "columns": view_cols,
                 }
             )
 
-    # --- relationships ------------------------------------------------------
+    # --- relationships (human-readable format) ------------------------------
     relationships: list[dict[str, str]] = []
     if schema:
         for rel in schema.relationships:
+            # Build a descriptive name: prefer constraint_name, else generate one
+            rel_name = (
+                rel.constraint_name
+                or f"fk_{rel.from_table}_{rel.from_column}_{rel.to_table}"
+            )
             relationships.append(
                 {
-                    "from_table": rel.from_table,
-                    "from_column": rel.from_column,
-                    "to_table": rel.to_table,
-                    "to_column": rel.to_column,
+                    "name": rel_name,
+                    "description": (
+                        f"{rel.from_table}.{rel.from_column} "
+                        f"\u2192 {rel.to_table}.{rel.to_column}"
+                    ),
                 }
             )
 
@@ -463,8 +529,9 @@ def run_pipeline_from_raw_json(
 
     schema = raw_json_to_canonical_schema(raw_json)
     logger.info(
-        "Loaded %d table(s), %d relationship(s)",
+        "Loaded %d table(s), %d view(s), %d relationship(s)",
         len(schema.tables),
+        len(schema.views),
         len(schema.relationships),
     )
 
