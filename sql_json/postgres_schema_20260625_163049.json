@@ -1,6 +1,0 @@
-{
-  "database_type": "postgresql",
-  "schema": "public",
-  "tables": [],
-  "views": []
-}
