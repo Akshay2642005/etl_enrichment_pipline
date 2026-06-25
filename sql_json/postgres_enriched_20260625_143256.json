@@ -1,0 +1,3124 @@
+{
+  "metadata": {
+    "source": "raw_metadata.json",
+    "database_type": "postgresql",
+    "database_name": "public",
+    "database_version": "",
+    "tables_count": 27,
+    "columns_count": 118,
+    "views_count": 1,
+    "relationships_count": 27
+  },
+  "tables": [
+    {
+      "table_name": "medicalcertificate",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "medical_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "issue_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "expiry_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "dutylog",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "duty_log_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "duty_start",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "duty_end",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "complianceviolation",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "violation_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "violation_type",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "violation_date",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "auditlog",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "audit_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "action",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "table_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "record_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "timestamp",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "trainingenrollment",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "enrollment_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "session_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "simulatorsession",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "simulator_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "aircraft_type_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "session_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "result",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "expenseclaim",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "claim_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "expense_type_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "amount",
+          "data_type": "numeric",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "notification",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "notification_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "message",
+          "data_type": "text",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "table_name": "restperiod",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "rest_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "rest_start",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "rest_end",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "crewassignment",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "assignment_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "roster_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "assigned_role",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "leaverequest",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "leave_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "leave_type_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "start_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "end_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "availability",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "availability_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "available_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "crewemergencycontact",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "emergency_contact_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "contact_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "relationship",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "phone",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "PHONE"
+        }
+      ]
+    },
+    {
+      "table_name": "crewcontact",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "contact_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "phone",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "PHONE"
+        },
+        {
+          "column_name": "email",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "EMAIL"
+        },
+        {
+          "column_name": "address",
+          "data_type": "text",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "crewaircraftrating",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "rating_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "aircraft_type_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "issue_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "expiry_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "crewlicense",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "crew_license_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "license_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "issue_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "expiry_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "crew",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "employee_no",
+          "data_type": "character varying",
+          "is_nullable": false,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "first_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "FIRST_NAME"
+        },
+        {
+          "column_name": "last_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "LAST_NAME"
+        },
+        {
+          "column_name": "rank_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "base_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "hire_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": "STATUS"
+        }
+      ]
+    },
+    {
+      "table_name": "trainingsession",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "session_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "program_id",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "session_date",
+          "data_type": "date",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "instructor",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "trainingprogram",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "program_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "program_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "validity_months",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "license",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "license_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "license_type",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "flight",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "flight_number",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "origin",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "destination",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "departure_time",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "arrival_time",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "roster",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "roster_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "roster_month",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "roster_year",
+          "data_type": "integer",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "published",
+          "data_type": "boolean",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "aircrafttype",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "aircraft_type_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "aircraft_code",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "aircraft_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "leavetype",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "leave_type_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "leave_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "expensetype",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "expense_type_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "expense_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "crewbase",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "base_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "airport_code",
+          "data_type": "character varying",
+          "is_nullable": false,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "base_name",
+          "data_type": "character varying",
+          "is_nullable": true,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    },
+    {
+      "table_name": "crewrank",
+      "description": null,
+      "business_role": null,
+      "domain": null,
+      "columns": [
+        {
+          "column_name": "rank_id",
+          "data_type": "integer",
+          "is_nullable": false,
+          "is_primary_key": true,
+          "description": null,
+          "semantic_type": null
+        },
+        {
+          "column_name": "rank_name",
+          "data_type": "character varying",
+          "is_nullable": false,
+          "is_primary_key": false,
+          "description": null,
+          "semantic_type": null
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "view_name": "new_view",
+      "definition": " SELECT duty_log_id,\n    crew_id,\n    flight_id,\n    duty_start,\n    duty_end\n   FROM dutylog;",
+      "columns": [
+        {
+          "column_name": "duty_log_id",
+          "data_type": "integer",
+          "is_nullable": true
+        },
+        {
+          "column_name": "crew_id",
+          "data_type": "integer",
+          "is_nullable": true
+        },
+        {
+          "column_name": "flight_id",
+          "data_type": "integer",
+          "is_nullable": true
+        },
+        {
+          "column_name": "duty_start",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true
+        },
+        {
+          "column_name": "duty_end",
+          "data_type": "timestamp without time zone",
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "medicalcertificate_crew_id_fkey",
+      "description": "medicalcertificate.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "dutylog_crew_id_fkey",
+      "description": "dutylog.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "dutylog_flight_id_fkey",
+      "description": "dutylog.flight_id \u2192 flight.flight_id"
+    },
+    {
+      "name": "complianceviolation_crew_id_fkey",
+      "description": "complianceviolation.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "trainingenrollment_crew_id_fkey",
+      "description": "trainingenrollment.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "trainingenrollment_session_id_fkey",
+      "description": "trainingenrollment.session_id \u2192 trainingsession.session_id"
+    },
+    {
+      "name": "simulatorsession_crew_id_fkey",
+      "description": "simulatorsession.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "simulatorsession_aircraft_type_id_fkey",
+      "description": "simulatorsession.aircraft_type_id \u2192 aircrafttype.aircraft_type_id"
+    },
+    {
+      "name": "expenseclaim_crew_id_fkey",
+      "description": "expenseclaim.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "expenseclaim_expense_type_id_fkey",
+      "description": "expenseclaim.expense_type_id \u2192 expensetype.expense_type_id"
+    },
+    {
+      "name": "notification_crew_id_fkey",
+      "description": "notification.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "restperiod_crew_id_fkey",
+      "description": "restperiod.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewassignment_crew_id_fkey",
+      "description": "crewassignment.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewassignment_flight_id_fkey",
+      "description": "crewassignment.flight_id \u2192 flight.flight_id"
+    },
+    {
+      "name": "crewassignment_roster_id_fkey",
+      "description": "crewassignment.roster_id \u2192 roster.roster_id"
+    },
+    {
+      "name": "leaverequest_crew_id_fkey",
+      "description": "leaverequest.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "leaverequest_leave_type_id_fkey",
+      "description": "leaverequest.leave_type_id \u2192 leavetype.leave_type_id"
+    },
+    {
+      "name": "availability_crew_id_fkey",
+      "description": "availability.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewemergencycontact_crew_id_fkey",
+      "description": "crewemergencycontact.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewcontact_crew_id_fkey",
+      "description": "crewcontact.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewaircraftrating_crew_id_fkey",
+      "description": "crewaircraftrating.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewaircraftrating_aircraft_type_id_fkey",
+      "description": "crewaircraftrating.aircraft_type_id \u2192 aircrafttype.aircraft_type_id"
+    },
+    {
+      "name": "crewlicense_crew_id_fkey",
+      "description": "crewlicense.crew_id \u2192 crew.crew_id"
+    },
+    {
+      "name": "crewlicense_license_id_fkey",
+      "description": "crewlicense.license_id \u2192 license.license_id"
+    },
+    {
+      "name": "crew_rank_id_fkey",
+      "description": "crew.rank_id \u2192 crewrank.rank_id"
+    },
+    {
+      "name": "crew_base_id_fkey",
+      "description": "crew.base_id \u2192 crewbase.base_id"
+    },
+    {
+      "name": "trainingsession_program_id_fkey",
+      "description": "trainingsession.program_id \u2192 trainingprogram.program_id"
+    }
+  ],
+  "entities": [],
+  "entity_relationships": [],
+  "business_processes": [],
+  "use_cases": [],
+  "sample_queries": [],
+  "schema_patterns": [
+    {
+      "pattern": "state_machine",
+      "table": "medicalcertificate",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "trainingenrollment",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "expenseclaim",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "audit_trail",
+      "table": "notification",
+      "evidence": "created_at",
+      "description": "Columns tracking creation and modification timestamps and users"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "crewassignment",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "leaverequest",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "availability",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    },
+    {
+      "pattern": "state_machine",
+      "table": "crew",
+      "evidence": "status",
+      "description": "Rows transition through defined states"
+    }
+  ],
+  "validation_report": [
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "medicalcertificate",
+      "column": "",
+      "message": "Table 'medicalcertificate' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "medicalcertificate",
+      "column": "medical_id",
+      "message": "Column 'medicalcertificate.medical_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "medicalcertificate",
+      "column": "crew_id",
+      "message": "Column 'medicalcertificate.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "medicalcertificate",
+      "column": "issue_date",
+      "message": "Column 'medicalcertificate.issue_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "medicalcertificate",
+      "column": "expiry_date",
+      "message": "Column 'medicalcertificate.expiry_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "medicalcertificate",
+      "column": "status",
+      "message": "Column 'medicalcertificate.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "dutylog",
+      "column": "",
+      "message": "Table 'dutylog' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "dutylog",
+      "column": "duty_log_id",
+      "message": "Column 'dutylog.duty_log_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "dutylog",
+      "column": "crew_id",
+      "message": "Column 'dutylog.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "dutylog",
+      "column": "flight_id",
+      "message": "Column 'dutylog.flight_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "dutylog",
+      "column": "duty_start",
+      "message": "Column 'dutylog.duty_start' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "dutylog",
+      "column": "duty_end",
+      "message": "Column 'dutylog.duty_end' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "complianceviolation",
+      "column": "",
+      "message": "Table 'complianceviolation' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "complianceviolation",
+      "column": "violation_id",
+      "message": "Column 'complianceviolation.violation_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "complianceviolation",
+      "column": "crew_id",
+      "message": "Column 'complianceviolation.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "complianceviolation",
+      "column": "violation_type",
+      "message": "Column 'complianceviolation.violation_type' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "complianceviolation",
+      "column": "violation_date",
+      "message": "Column 'complianceviolation.violation_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "",
+      "message": "Table 'auditlog' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "audit_id",
+      "message": "Column 'auditlog.audit_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "user_id",
+      "message": "Column 'auditlog.user_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "action",
+      "message": "Column 'auditlog.action' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "table_name",
+      "message": "Column 'auditlog.table_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "record_id",
+      "message": "Column 'auditlog.record_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "auditlog",
+      "column": "timestamp",
+      "message": "Column 'auditlog.timestamp' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingenrollment",
+      "column": "",
+      "message": "Table 'trainingenrollment' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingenrollment",
+      "column": "enrollment_id",
+      "message": "Column 'trainingenrollment.enrollment_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingenrollment",
+      "column": "crew_id",
+      "message": "Column 'trainingenrollment.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingenrollment",
+      "column": "session_id",
+      "message": "Column 'trainingenrollment.session_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingenrollment",
+      "column": "status",
+      "message": "Column 'trainingenrollment.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "simulatorsession",
+      "column": "",
+      "message": "Table 'simulatorsession' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "simulatorsession",
+      "column": "simulator_id",
+      "message": "Column 'simulatorsession.simulator_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "simulatorsession",
+      "column": "crew_id",
+      "message": "Column 'simulatorsession.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "simulatorsession",
+      "column": "aircraft_type_id",
+      "message": "Column 'simulatorsession.aircraft_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "simulatorsession",
+      "column": "session_date",
+      "message": "Column 'simulatorsession.session_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "simulatorsession",
+      "column": "result",
+      "message": "Column 'simulatorsession.result' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expenseclaim",
+      "column": "",
+      "message": "Table 'expenseclaim' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expenseclaim",
+      "column": "claim_id",
+      "message": "Column 'expenseclaim.claim_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expenseclaim",
+      "column": "crew_id",
+      "message": "Column 'expenseclaim.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expenseclaim",
+      "column": "expense_type_id",
+      "message": "Column 'expenseclaim.expense_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expenseclaim",
+      "column": "amount",
+      "message": "Column 'expenseclaim.amount' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expenseclaim",
+      "column": "status",
+      "message": "Column 'expenseclaim.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "notification",
+      "column": "",
+      "message": "Table 'notification' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "notification",
+      "column": "notification_id",
+      "message": "Column 'notification.notification_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "notification",
+      "column": "crew_id",
+      "message": "Column 'notification.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "notification",
+      "column": "title",
+      "message": "Column 'notification.title' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "notification",
+      "column": "message",
+      "message": "Column 'notification.message' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "notification",
+      "column": "created_at",
+      "message": "Column 'notification.created_at' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "restperiod",
+      "column": "",
+      "message": "Table 'restperiod' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "restperiod",
+      "column": "rest_id",
+      "message": "Column 'restperiod.rest_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "restperiod",
+      "column": "crew_id",
+      "message": "Column 'restperiod.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "restperiod",
+      "column": "rest_start",
+      "message": "Column 'restperiod.rest_start' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "restperiod",
+      "column": "rest_end",
+      "message": "Column 'restperiod.rest_end' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "",
+      "message": "Table 'crewassignment' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "assignment_id",
+      "message": "Column 'crewassignment.assignment_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "crew_id",
+      "message": "Column 'crewassignment.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "flight_id",
+      "message": "Column 'crewassignment.flight_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "roster_id",
+      "message": "Column 'crewassignment.roster_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "assigned_role",
+      "message": "Column 'crewassignment.assigned_role' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewassignment",
+      "column": "status",
+      "message": "Column 'crewassignment.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "",
+      "message": "Table 'leaverequest' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "leave_id",
+      "message": "Column 'leaverequest.leave_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "crew_id",
+      "message": "Column 'leaverequest.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "leave_type_id",
+      "message": "Column 'leaverequest.leave_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "start_date",
+      "message": "Column 'leaverequest.start_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "end_date",
+      "message": "Column 'leaverequest.end_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leaverequest",
+      "column": "status",
+      "message": "Column 'leaverequest.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "availability",
+      "column": "",
+      "message": "Table 'availability' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "availability",
+      "column": "availability_id",
+      "message": "Column 'availability.availability_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "availability",
+      "column": "crew_id",
+      "message": "Column 'availability.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "availability",
+      "column": "available_date",
+      "message": "Column 'availability.available_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "availability",
+      "column": "status",
+      "message": "Column 'availability.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewemergencycontact",
+      "column": "",
+      "message": "Table 'crewemergencycontact' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewemergencycontact",
+      "column": "emergency_contact_id",
+      "message": "Column 'crewemergencycontact.emergency_contact_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewemergencycontact",
+      "column": "crew_id",
+      "message": "Column 'crewemergencycontact.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewemergencycontact",
+      "column": "contact_name",
+      "message": "Column 'crewemergencycontact.contact_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewemergencycontact",
+      "column": "relationship",
+      "message": "Column 'crewemergencycontact.relationship' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewemergencycontact",
+      "column": "phone",
+      "message": "Column 'crewemergencycontact.phone' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewcontact",
+      "column": "",
+      "message": "Table 'crewcontact' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewcontact",
+      "column": "contact_id",
+      "message": "Column 'crewcontact.contact_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewcontact",
+      "column": "crew_id",
+      "message": "Column 'crewcontact.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewcontact",
+      "column": "phone",
+      "message": "Column 'crewcontact.phone' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewcontact",
+      "column": "email",
+      "message": "Column 'crewcontact.email' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewcontact",
+      "column": "address",
+      "message": "Column 'crewcontact.address' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewaircraftrating",
+      "column": "",
+      "message": "Table 'crewaircraftrating' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewaircraftrating",
+      "column": "rating_id",
+      "message": "Column 'crewaircraftrating.rating_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewaircraftrating",
+      "column": "crew_id",
+      "message": "Column 'crewaircraftrating.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewaircraftrating",
+      "column": "aircraft_type_id",
+      "message": "Column 'crewaircraftrating.aircraft_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewaircraftrating",
+      "column": "issue_date",
+      "message": "Column 'crewaircraftrating.issue_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewaircraftrating",
+      "column": "expiry_date",
+      "message": "Column 'crewaircraftrating.expiry_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewlicense",
+      "column": "",
+      "message": "Table 'crewlicense' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewlicense",
+      "column": "crew_license_id",
+      "message": "Column 'crewlicense.crew_license_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewlicense",
+      "column": "crew_id",
+      "message": "Column 'crewlicense.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewlicense",
+      "column": "license_id",
+      "message": "Column 'crewlicense.license_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewlicense",
+      "column": "issue_date",
+      "message": "Column 'crewlicense.issue_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewlicense",
+      "column": "expiry_date",
+      "message": "Column 'crewlicense.expiry_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "",
+      "message": "Table 'crew' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "crew_id",
+      "message": "Column 'crew.crew_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "employee_no",
+      "message": "Column 'crew.employee_no' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "first_name",
+      "message": "Column 'crew.first_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "last_name",
+      "message": "Column 'crew.last_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "rank_id",
+      "message": "Column 'crew.rank_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "base_id",
+      "message": "Column 'crew.base_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "hire_date",
+      "message": "Column 'crew.hire_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crew",
+      "column": "status",
+      "message": "Column 'crew.status' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingsession",
+      "column": "",
+      "message": "Table 'trainingsession' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingsession",
+      "column": "session_id",
+      "message": "Column 'trainingsession.session_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingsession",
+      "column": "program_id",
+      "message": "Column 'trainingsession.program_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingsession",
+      "column": "session_date",
+      "message": "Column 'trainingsession.session_date' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingsession",
+      "column": "instructor",
+      "message": "Column 'trainingsession.instructor' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingprogram",
+      "column": "",
+      "message": "Table 'trainingprogram' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingprogram",
+      "column": "program_id",
+      "message": "Column 'trainingprogram.program_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingprogram",
+      "column": "program_name",
+      "message": "Column 'trainingprogram.program_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "trainingprogram",
+      "column": "validity_months",
+      "message": "Column 'trainingprogram.validity_months' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "license",
+      "column": "",
+      "message": "Table 'license' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "license",
+      "column": "license_id",
+      "message": "Column 'license.license_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "license",
+      "column": "license_type",
+      "message": "Column 'license.license_type' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "",
+      "message": "Table 'flight' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "flight_id",
+      "message": "Column 'flight.flight_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "flight_number",
+      "message": "Column 'flight.flight_number' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "origin",
+      "message": "Column 'flight.origin' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "destination",
+      "message": "Column 'flight.destination' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "departure_time",
+      "message": "Column 'flight.departure_time' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "flight",
+      "column": "arrival_time",
+      "message": "Column 'flight.arrival_time' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "roster",
+      "column": "",
+      "message": "Table 'roster' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "roster",
+      "column": "roster_id",
+      "message": "Column 'roster.roster_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "roster",
+      "column": "roster_month",
+      "message": "Column 'roster.roster_month' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "roster",
+      "column": "roster_year",
+      "message": "Column 'roster.roster_year' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "roster",
+      "column": "published",
+      "message": "Column 'roster.published' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "aircrafttype",
+      "column": "",
+      "message": "Table 'aircrafttype' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "aircrafttype",
+      "column": "aircraft_type_id",
+      "message": "Column 'aircrafttype.aircraft_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "aircrafttype",
+      "column": "aircraft_code",
+      "message": "Column 'aircrafttype.aircraft_code' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "aircrafttype",
+      "column": "aircraft_name",
+      "message": "Column 'aircrafttype.aircraft_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leavetype",
+      "column": "",
+      "message": "Table 'leavetype' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leavetype",
+      "column": "leave_type_id",
+      "message": "Column 'leavetype.leave_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "leavetype",
+      "column": "leave_name",
+      "message": "Column 'leavetype.leave_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expensetype",
+      "column": "",
+      "message": "Table 'expensetype' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expensetype",
+      "column": "expense_type_id",
+      "message": "Column 'expensetype.expense_type_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "expensetype",
+      "column": "expense_name",
+      "message": "Column 'expensetype.expense_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewbase",
+      "column": "",
+      "message": "Table 'crewbase' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewbase",
+      "column": "base_id",
+      "message": "Column 'crewbase.base_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewbase",
+      "column": "airport_code",
+      "message": "Column 'crewbase.airport_code' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewbase",
+      "column": "base_name",
+      "message": "Column 'crewbase.base_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewrank",
+      "column": "",
+      "message": "Table 'crewrank' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewrank",
+      "column": "rank_id",
+      "message": "Column 'crewrank.rank_id' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_description",
+      "table": "crewrank",
+      "column": "rank_name",
+      "message": "Column 'crewrank.rank_name' has no business description."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "medicalcertificate",
+      "column": "medical_id",
+      "message": "Column 'medicalcertificate.medical_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "medicalcertificate",
+      "column": "crew_id",
+      "message": "Column 'medicalcertificate.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "medicalcertificate",
+      "column": "issue_date",
+      "message": "Column 'medicalcertificate.issue_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "medicalcertificate",
+      "column": "expiry_date",
+      "message": "Column 'medicalcertificate.expiry_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "dutylog",
+      "column": "duty_log_id",
+      "message": "Column 'dutylog.duty_log_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "dutylog",
+      "column": "crew_id",
+      "message": "Column 'dutylog.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "dutylog",
+      "column": "flight_id",
+      "message": "Column 'dutylog.flight_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "dutylog",
+      "column": "duty_start",
+      "message": "Column 'dutylog.duty_start' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "dutylog",
+      "column": "duty_end",
+      "message": "Column 'dutylog.duty_end' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "complianceviolation",
+      "column": "violation_id",
+      "message": "Column 'complianceviolation.violation_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "complianceviolation",
+      "column": "crew_id",
+      "message": "Column 'complianceviolation.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "complianceviolation",
+      "column": "violation_type",
+      "message": "Column 'complianceviolation.violation_type' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "complianceviolation",
+      "column": "violation_date",
+      "message": "Column 'complianceviolation.violation_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "auditlog",
+      "column": "audit_id",
+      "message": "Column 'auditlog.audit_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "auditlog",
+      "column": "user_id",
+      "message": "Column 'auditlog.user_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "auditlog",
+      "column": "action",
+      "message": "Column 'auditlog.action' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "auditlog",
+      "column": "table_name",
+      "message": "Column 'auditlog.table_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "auditlog",
+      "column": "record_id",
+      "message": "Column 'auditlog.record_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "auditlog",
+      "column": "timestamp",
+      "message": "Column 'auditlog.timestamp' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingenrollment",
+      "column": "enrollment_id",
+      "message": "Column 'trainingenrollment.enrollment_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingenrollment",
+      "column": "crew_id",
+      "message": "Column 'trainingenrollment.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingenrollment",
+      "column": "session_id",
+      "message": "Column 'trainingenrollment.session_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "simulatorsession",
+      "column": "simulator_id",
+      "message": "Column 'simulatorsession.simulator_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "simulatorsession",
+      "column": "crew_id",
+      "message": "Column 'simulatorsession.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "simulatorsession",
+      "column": "aircraft_type_id",
+      "message": "Column 'simulatorsession.aircraft_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "simulatorsession",
+      "column": "session_date",
+      "message": "Column 'simulatorsession.session_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "simulatorsession",
+      "column": "result",
+      "message": "Column 'simulatorsession.result' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "expenseclaim",
+      "column": "claim_id",
+      "message": "Column 'expenseclaim.claim_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "expenseclaim",
+      "column": "crew_id",
+      "message": "Column 'expenseclaim.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "expenseclaim",
+      "column": "expense_type_id",
+      "message": "Column 'expenseclaim.expense_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "expenseclaim",
+      "column": "amount",
+      "message": "Column 'expenseclaim.amount' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "notification",
+      "column": "notification_id",
+      "message": "Column 'notification.notification_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "notification",
+      "column": "crew_id",
+      "message": "Column 'notification.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "notification",
+      "column": "title",
+      "message": "Column 'notification.title' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "notification",
+      "column": "message",
+      "message": "Column 'notification.message' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "restperiod",
+      "column": "rest_id",
+      "message": "Column 'restperiod.rest_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "restperiod",
+      "column": "crew_id",
+      "message": "Column 'restperiod.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "restperiod",
+      "column": "rest_start",
+      "message": "Column 'restperiod.rest_start' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "restperiod",
+      "column": "rest_end",
+      "message": "Column 'restperiod.rest_end' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewassignment",
+      "column": "assignment_id",
+      "message": "Column 'crewassignment.assignment_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewassignment",
+      "column": "crew_id",
+      "message": "Column 'crewassignment.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewassignment",
+      "column": "flight_id",
+      "message": "Column 'crewassignment.flight_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewassignment",
+      "column": "roster_id",
+      "message": "Column 'crewassignment.roster_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewassignment",
+      "column": "assigned_role",
+      "message": "Column 'crewassignment.assigned_role' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leaverequest",
+      "column": "leave_id",
+      "message": "Column 'leaverequest.leave_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leaverequest",
+      "column": "crew_id",
+      "message": "Column 'leaverequest.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leaverequest",
+      "column": "leave_type_id",
+      "message": "Column 'leaverequest.leave_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leaverequest",
+      "column": "start_date",
+      "message": "Column 'leaverequest.start_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leaverequest",
+      "column": "end_date",
+      "message": "Column 'leaverequest.end_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "availability",
+      "column": "availability_id",
+      "message": "Column 'availability.availability_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "availability",
+      "column": "crew_id",
+      "message": "Column 'availability.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "availability",
+      "column": "available_date",
+      "message": "Column 'availability.available_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewemergencycontact",
+      "column": "emergency_contact_id",
+      "message": "Column 'crewemergencycontact.emergency_contact_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewemergencycontact",
+      "column": "crew_id",
+      "message": "Column 'crewemergencycontact.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewemergencycontact",
+      "column": "contact_name",
+      "message": "Column 'crewemergencycontact.contact_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewemergencycontact",
+      "column": "relationship",
+      "message": "Column 'crewemergencycontact.relationship' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewcontact",
+      "column": "contact_id",
+      "message": "Column 'crewcontact.contact_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewcontact",
+      "column": "crew_id",
+      "message": "Column 'crewcontact.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewcontact",
+      "column": "address",
+      "message": "Column 'crewcontact.address' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewaircraftrating",
+      "column": "rating_id",
+      "message": "Column 'crewaircraftrating.rating_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewaircraftrating",
+      "column": "crew_id",
+      "message": "Column 'crewaircraftrating.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewaircraftrating",
+      "column": "aircraft_type_id",
+      "message": "Column 'crewaircraftrating.aircraft_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewaircraftrating",
+      "column": "issue_date",
+      "message": "Column 'crewaircraftrating.issue_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewaircraftrating",
+      "column": "expiry_date",
+      "message": "Column 'crewaircraftrating.expiry_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewlicense",
+      "column": "crew_license_id",
+      "message": "Column 'crewlicense.crew_license_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewlicense",
+      "column": "crew_id",
+      "message": "Column 'crewlicense.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewlicense",
+      "column": "license_id",
+      "message": "Column 'crewlicense.license_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewlicense",
+      "column": "issue_date",
+      "message": "Column 'crewlicense.issue_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewlicense",
+      "column": "expiry_date",
+      "message": "Column 'crewlicense.expiry_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crew",
+      "column": "crew_id",
+      "message": "Column 'crew.crew_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crew",
+      "column": "employee_no",
+      "message": "Column 'crew.employee_no' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crew",
+      "column": "rank_id",
+      "message": "Column 'crew.rank_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crew",
+      "column": "base_id",
+      "message": "Column 'crew.base_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crew",
+      "column": "hire_date",
+      "message": "Column 'crew.hire_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingsession",
+      "column": "session_id",
+      "message": "Column 'trainingsession.session_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingsession",
+      "column": "program_id",
+      "message": "Column 'trainingsession.program_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingsession",
+      "column": "session_date",
+      "message": "Column 'trainingsession.session_date' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingsession",
+      "column": "instructor",
+      "message": "Column 'trainingsession.instructor' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingprogram",
+      "column": "program_id",
+      "message": "Column 'trainingprogram.program_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingprogram",
+      "column": "program_name",
+      "message": "Column 'trainingprogram.program_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "trainingprogram",
+      "column": "validity_months",
+      "message": "Column 'trainingprogram.validity_months' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "license",
+      "column": "license_id",
+      "message": "Column 'license.license_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "license",
+      "column": "license_type",
+      "message": "Column 'license.license_type' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "flight",
+      "column": "flight_id",
+      "message": "Column 'flight.flight_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "flight",
+      "column": "flight_number",
+      "message": "Column 'flight.flight_number' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "flight",
+      "column": "origin",
+      "message": "Column 'flight.origin' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "flight",
+      "column": "destination",
+      "message": "Column 'flight.destination' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "flight",
+      "column": "departure_time",
+      "message": "Column 'flight.departure_time' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "flight",
+      "column": "arrival_time",
+      "message": "Column 'flight.arrival_time' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "roster",
+      "column": "roster_id",
+      "message": "Column 'roster.roster_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "roster",
+      "column": "roster_month",
+      "message": "Column 'roster.roster_month' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "roster",
+      "column": "roster_year",
+      "message": "Column 'roster.roster_year' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "roster",
+      "column": "published",
+      "message": "Column 'roster.published' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "aircrafttype",
+      "column": "aircraft_type_id",
+      "message": "Column 'aircrafttype.aircraft_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "aircrafttype",
+      "column": "aircraft_code",
+      "message": "Column 'aircrafttype.aircraft_code' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "aircrafttype",
+      "column": "aircraft_name",
+      "message": "Column 'aircrafttype.aircraft_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leavetype",
+      "column": "leave_type_id",
+      "message": "Column 'leavetype.leave_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "leavetype",
+      "column": "leave_name",
+      "message": "Column 'leavetype.leave_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "expensetype",
+      "column": "expense_type_id",
+      "message": "Column 'expensetype.expense_type_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "expensetype",
+      "column": "expense_name",
+      "message": "Column 'expensetype.expense_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewbase",
+      "column": "base_id",
+      "message": "Column 'crewbase.base_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewbase",
+      "column": "airport_code",
+      "message": "Column 'crewbase.airport_code' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewbase",
+      "column": "base_name",
+      "message": "Column 'crewbase.base_name' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewrank",
+      "column": "rank_id",
+      "message": "Column 'crewrank.rank_id' has no semantic type label."
+    },
+    {
+      "severity": "INFO",
+      "type": "missing_semantic_type",
+      "table": "crewrank",
+      "column": "rank_name",
+      "message": "Column 'crewrank.rank_name' has no semantic type label."
+    }
+  ]
+}
