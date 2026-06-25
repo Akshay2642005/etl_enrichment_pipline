@@ -212,7 +212,7 @@ class TestRawJsonToCanonicalSchema:
         assert result.tables[0].columns[0].is_primary_key is False
 
     def test_views_from_raw_json(self):
-        """Views provided in raw JSON are currently ignored (views list is empty)."""
+        """Views provided in raw JSON are parsed into the canonical schema."""
         raw = {
             "database_type": "postgresql",
             "schema": "public",
@@ -229,8 +229,11 @@ class TestRawJsonToCanonicalSchema:
             ],
         }
         result = raw_json_to_canonical_schema(raw)
-        # Current implementation does not parse the "views" key.
-        assert result.views == []
+        assert len(result.views) == 2
+        assert result.views[0].view_name == "active_users"
+        assert result.views[0].definition == "SELECT * FROM users WHERE active = 1"
+        assert result.views[1].view_name == "order_summary"
+        assert result.views[1].definition == "SELECT o.id, SUM(li.total) FROM orders o ..."
 
     def test_empty_json(self):
         """Passing an empty dict returns a valid CanonicalSchema with defaults."""
@@ -457,9 +460,10 @@ class TestRunPipelineFromRawJson:
 
         # Verify the output metadata was correctly assembled from the schema
         assert result["metadata"]["database_type"] == "postgresql"
-        assert result["metadata"]["schema"] == "public"
+        assert result["metadata"]["database_name"] == "public"
         assert result["metadata"]["tables_count"] == 1
         assert result["metadata"]["columns_count"] == 1
+        assert result["metadata"]["views_count"] == 0
         assert result["metadata"]["relationships_count"] == 0
 
         # Verify table and column data

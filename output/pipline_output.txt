@@ -1,3 +1,5 @@
+from sql file -----
+
 etl_enrichment_pipline git::(main)
 ➜ uv run main.py --sql-file sqlj_son/sample_schema.sql
 12:08:33 [INFO] etl_enrichment_pipeline.core.orchestrator: Parsing SQL file: sqlj_son\sample_schema.sql
@@ -48,3 +50,28 @@ etl_enrichment_pipline git::(main)
 12:48:19 [INFO] etl_enrichment_pipeline.core.pipeline: Tables: 30 | Relationships: 31 | Entities: 11 | Patterns: 13
 12:48:19 [INFO] etl_enrichment_pipeline.core.pipeline: ══════════════════════════════════════════════════
 Written to output\enriched_metadata.json
+------
+
+from --db-connect ---------
+➜ uv run main.py --db-connect
+
+--- Database Connection ---
+Database Type (postgres, mysql, mariadb, sqlserver, oracle, sqlite): postgres
+Host (e.g. localhost): localhost
+Port (5432): 5432
+Database Name: dream_shops
+Username: postgres
+Password:
+13:50:18 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Connecting to database type: postgres
+13:50:18 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Starting metadata extraction for postgres
+13:50:19 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Metadata extraction completed. JSON saved to sql_json\postgres_dream_shops_20260624_135019.json
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: ══════════════════════════════════════════════════
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline started — source: raw_metadata
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: Loaded 3 table(s), 2 relationship(s)
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline graph compiled — 11 agent nodes
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: [load_json] ▶  started
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: [load_json] ✓  completed (0.0s)
+13:50:19 [INFO] etl_enrichment_pipeline.core.pipeline: [description] ▶  started
+13:50:57 [INFO] httpx: HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
+13:50:57 [INFO] etl_enrichment_pipeline.core.pipeline: [description] ✓  completed (37.5s)
+13:50:57 [INFO] etl_enrichment_pipeline.core.pipeline: [business_role] ▶  started
