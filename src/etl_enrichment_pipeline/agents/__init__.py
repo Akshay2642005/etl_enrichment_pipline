@@ -27,6 +27,10 @@ def __getattr__(name: str) -> typing.Any:
         return _deferred[name]
 
     _import_map: dict[str, tuple[str, str]] = {
+        "consolidated_enrichment_node": (
+            "etl_enrichment_pipeline.agents.consolidated_enrichment_agent",
+            "consolidated_enrichment_node",
+        ),
         "business_role_node": (
             "etl_enrichment_pipeline.agents.business_role_agent",
             "business_role_node",
@@ -82,6 +86,7 @@ def __getattr__(name: str) -> typing.Any:
 
 __all__ = [
     "business_role_node",
+    "consolidated_enrichment_node",
     "ddl_to_json",
     "description_node",
     "domain_node",

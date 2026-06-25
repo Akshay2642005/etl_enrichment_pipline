@@ -12,16 +12,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from etl_enrichment_pipeline.agents import (
-    business_role_node,
-    description_node,
-    domain_node,
-    entity_discovery_node,
-    pattern_detection_node,
-    relationship_intelligence_node,
-    sample_query_node,
-    semantic_type_node,
-    use_case_node,
-    validation_node,
+    consolidated_enrichment_node,
 )
 from etl_enrichment_pipeline.models.canonical import (
     CanonicalSchema,
@@ -239,11 +230,14 @@ def _load_json_node(state: PipelineState) -> PipelineState:
 def build_pipeline() -> CompiledStateGraph:
     """Build the compiled LangGraph ``StateGraph`` for the enrichment pipeline.
 
-    Pipeline flow (11 agent nodes + 1 adapter node)::
+    Pipeline flow (2 nodes)::
 
-        load_json → description → business_role → domain → semantic_type
-        → entity_discovery → relationship_intelligence → use_case
-        → sample_query → pattern_detection → validation → END
+        load_json → enrichment → END
+
+    The single ``enrichment`` node internally performs one consolidated LLM
+    call for all enrichment (descriptions, roles, domains, semantic types,
+    entities, relationships, use cases, sample queries) followed by fast
+    rule-based passes (RuleEngine, pattern_detection, validation).
 
     Returns
     -------
@@ -253,47 +247,17 @@ def build_pipeline() -> CompiledStateGraph:
     """
     workflow = StateGraph(PipelineState)
 
-    # Register all nodes (wrapped with logging)
+    # Register nodes (wrapped with logging)
     workflow.add_node("load_json", _logged_node("load_json", _load_json_node))
-    workflow.add_node("description", _logged_node("description", description_node))
     workflow.add_node(
-        "business_role",
-        _logged_node("business_role", business_role_node),
+        "enrichment",
+        _logged_node("enrichment", consolidated_enrichment_node),
     )
-    workflow.add_node("domain", _logged_node("domain", domain_node))
-    workflow.add_node(
-        "semantic_type",
-        _logged_node("semantic_type", semantic_type_node),
-    )
-    workflow.add_node(
-        "entity_discovery",
-        _logged_node("entity_discovery", entity_discovery_node),
-    )
-    workflow.add_node(
-        "relationship_intelligence",
-        _logged_node("relationship_intelligence", relationship_intelligence_node),
-    )
-    workflow.add_node("use_case", _logged_node("use_case", use_case_node))
-    workflow.add_node("sample_query", _logged_node("sample_query", sample_query_node))
-    workflow.add_node(
-        "pattern_detection",
-        _logged_node("pattern_detection", pattern_detection_node),
-    )
-    workflow.add_node("validation", _logged_node("validation", validation_node))
 
-    # Wire edges — linear chain
+    # Wire edges — simple 2-node pipeline
     workflow.set_entry_point("load_json")
-    workflow.add_edge("load_json", "description")
-    workflow.add_edge("description", "business_role")
-    workflow.add_edge("business_role", "domain")
-    workflow.add_edge("domain", "semantic_type")
-    workflow.add_edge("semantic_type", "entity_discovery")
-    workflow.add_edge("entity_discovery", "relationship_intelligence")
-    workflow.add_edge("relationship_intelligence", "use_case")
-    workflow.add_edge("use_case", "sample_query")
-    workflow.add_edge("sample_query", "pattern_detection")
-    workflow.add_edge("pattern_detection", "validation")
-    workflow.add_edge("validation", END)
+    workflow.add_edge("load_json", "enrichment")
+    workflow.add_edge("enrichment", END)
 
     return workflow.compile()
 
@@ -541,7 +505,7 @@ def run_pipeline_from_raw_json(
     )
 
     graph = build_pipeline()
-    logger.info("Pipeline graph compiled — 11 agent nodes")
+    logger.info("Pipeline graph compiled — 1 consolidated enrichment node")
 
     t0 = time.time()
     result_state = graph.invoke(initial_state)
