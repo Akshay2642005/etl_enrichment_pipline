@@ -544,7 +544,7 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     try:
         from etl_enrichment_pipeline.agents.quality_agent import QualityAnalyst
         qa = QualityAnalyst(enriched_metadata=final_output)
-        q_res = qa.assess()
+        q_res = qa.assess(fast_mode=True)
         
         def _fmt(val: float) -> str:
             return f"{int(val * 100)}/100"

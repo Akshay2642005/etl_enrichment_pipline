@@ -196,6 +196,7 @@ class QualityAnalyst:
         self,
         table_name: str | None = None,
         domain: str | None = None,
+        fast_mode: bool = False,
     ) -> dict[str, Any]:
         """Run quality assessment across all 6 dimensions.
 
@@ -219,7 +220,7 @@ class QualityAnalyst:
         completeness_score = self._score_completeness(tables, issues)
         relationships_score = self._score_relationships(tables, issues)
         naming_score = self._score_naming(tables, issues)
-        documentation_score = self._score_documentation(tables, issues)
+        documentation_score = self._score_documentation(tables, issues, fast_mode=fast_mode)
         normalization_score = self._score_normalization(tables, issues)
 
         overall = (
@@ -237,6 +238,7 @@ class QualityAnalyst:
             documentation_score,
             normalization_score,
             issues,
+            fast_mode=fast_mode,
         )
 
         return {
@@ -460,13 +462,14 @@ class QualityAnalyst:
         self,
         tables: list[dict[str, Any]],
         issues: list[dict[str, Any]],
+        fast_mode: bool = False,
     ) -> float:
         """Avg description length; detect boilerplate with LLM;
         entity relationship description coverage."""
         if not tables:
             return 0.0
 
-        boilerplate_checks_remaining = _MAX_BOILERPLATE_CHECKS
+        boilerplate_checks_remaining = 0 if fast_mode else _MAX_BOILERPLATE_CHECKS
 
         # --- Table descriptions ---
         table_desc_lengths: list[int] = []
@@ -666,11 +669,21 @@ class QualityAnalyst:
         documentation: float,
         normalization: float,
         issues: list[dict[str, Any]],
+        fast_mode: bool = False,
     ) -> list[str]:
         """Generate actionable recommendations using the LLM.
 
-        Falls back to heuristic recommendations if the LLM call fails.
+        Falls back to heuristic recommendations if the LLM call fails or if fast_mode is True.
         """
+        if fast_mode:
+            return self._fallback_recommendations(
+                completeness,
+                relationships,
+                naming,
+                documentation,
+                normalization,
+            )
+
         sample_issues_text = ""
         if issues:
             sample_issues_text = "Sample issues:\n"
