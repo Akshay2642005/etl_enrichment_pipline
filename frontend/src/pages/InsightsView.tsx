@@ -115,7 +115,8 @@ export const InsightsView = () => {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-12">
+    <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="p-8 max-w-7xl mx-auto space-y-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2 flex items-center gap-3">
@@ -264,6 +265,7 @@ export const InsightsView = () => {
           ))}
         </div>
       </section>
+    </div>
     </div>
   );
 };
