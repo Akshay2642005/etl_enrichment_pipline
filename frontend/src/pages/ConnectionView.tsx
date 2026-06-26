@@ -125,7 +125,7 @@ export const ConnectionView = () => {
           if (val === 'sql') setDbType('sql');
           else setDbType(val);
         }} className="w-full flex flex-col items-center">
-          <TabsList className="flex flex-wrap w-full h-auto bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center">
+          <TabsList className="flex w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-start md:justify-center overflow-x-auto hide-scrollbar">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsTrigger
                 key={type}
@@ -141,7 +141,7 @@ export const ConnectionView = () => {
             ))}
             <TabsTrigger
               value="sql"
-              className="flex-1 min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-bold py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/30 text-slate-700 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-200 dark:hover:bg-slate-800/80 transition-all duration-300"
+              className="flex-1 min-w-[70px] md:min-w-[80px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl text-slate-600 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300"
             >
               <FileCode className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">SQL Upload</span>
             </TabsTrigger>
