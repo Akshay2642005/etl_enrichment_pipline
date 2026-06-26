@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ReactFlow, Background, Controls, MarkerType, useNodesState, useEdgesState, Position, Handle } from '@xyflow/react';
+import { ReactFlow, Background, MarkerType, useNodesState, useEdgesState, Position, Handle } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
 import dagre from 'dagre';
 import type { NormalizedSchema, NormalizedTable } from '../../lib/schema-adapter';

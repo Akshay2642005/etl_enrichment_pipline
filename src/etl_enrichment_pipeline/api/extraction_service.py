@@ -224,6 +224,14 @@ async def extract(request: Request) -> JSONResponse:
         logger.error("Extraction failed after %.1fs: %s", elapsed, exc, exc_info=True)
         return _error_json(500, "pipeline_error", str(exc))
 
+    # Save to disk so Insights and NL2SQL services can use it
+    try:
+        out_path = Path("output/enriched_metadata.json")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Failed to save enriched metadata to disk: %s", exc)
+
     elapsed = time.monotonic() - t_start
     logger.info(
         "Extraction complete — %.1fs, %d tables, %d views, %d relationships",
@@ -275,8 +283,16 @@ async def parse_sql(request: Request) -> JSONResponse:
         raise
     except Exception as exc:
         elapsed = time.monotonic() - t_start
-        logger.error("Parse-SQL failed after %.1fs: %s", elapsed, exc, exc_info=True)
+        logger.error("SQL parsing failed after %.1fs: %s", elapsed, exc, exc_info=True)
         return _error_json(500, "pipeline_error", str(exc))
+
+    # Save to disk so Insights and NL2SQL services can use it
+    try:
+        out_path = Path("output/enriched_metadata.json")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Failed to save enriched metadata to disk: %s", exc)
 
     elapsed = time.monotonic() - t_start
     logger.info(

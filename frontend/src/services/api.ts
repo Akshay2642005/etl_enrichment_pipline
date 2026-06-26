@@ -19,3 +19,14 @@ export const extractFromSql = async (sqlText: string, dbType: string, schema: st
   if (!response.ok) throw new Error(data.detail || data.error || 'Failed to parse SQL');
   return data;
 };
+
+export const generateInsights = async (domain?: string, entity?: string) => {
+  const response = await fetch('/api/v1/insights/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain: domain || null, entity: entity || null }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || data.error || 'Failed to generate insights');
+  return data;
+};
