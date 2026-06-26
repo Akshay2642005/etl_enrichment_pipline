@@ -5,12 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { Database, FileCode, Loader2, UploadCloud } from 'lucide-react';
+import { Database, FileCode, Loader2, UploadCloud, CheckCircle2 } from 'lucide-react';
 
 export const ConnectionView = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // DB State
   const [dbType, setDbType] = useState('postgres');
@@ -20,21 +21,61 @@ export const ConnectionView = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  // Validation State
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+
   // SQL State
   const [sqlDbType, setSqlDbType] = useState('postgres');
   const [sqlSchema, setSqlSchema] = useState('public');
   const [sqlDbName, setSqlDbName] = useState('');
   const [sqlFile, setSqlFile] = useState<File | null>(null);
 
+  const validateForm = () => {
+    const errors: { [key: string]: string } = {};
+    if (!host.trim()) errors.host = 'Host is required';
+    if (!port.trim()) errors.port = 'Port is required';
+    if (!database.trim()) errors.database = 'Database name is required';
+    if (!username.trim()) errors.username = 'Username is required';
+    if (!password.trim()) errors.password = 'Password is required';
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const getFriendlyErrorMessage = (rawError: string) => {
+    const lowerError = rawError.toLowerCase();
+    if (lowerError.includes('password authentication failed') || lowerError.includes('authentication failed')) {
+      return 'Authentication failed. Check your username or password.';
+    }
+    if ((lowerError.includes('does not exist') || lowerError.includes('unknown database')) && lowerError.includes('database')) {
+      return 'Database not found. Verify the database name.';
+    }
+    if (lowerError.includes('connection refused') || lowerError.includes('could not connect to server') || lowerError.includes('unable to connect') || lowerError.includes('failed to connect')) {
+      return 'Unable to connect to the database server. Check the host and port.';
+    }
+    return 'Connection failed. Please verify your database credentials.';
+  };
+
   const handleDbSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const data = await extractFromDb(dbType, { host, port, database, username, password });
-      navigate('/schema', { state: { metadata: data.data } });
+      setSuccessMessage("Metadata extracted successfully.");
+      setTimeout(() => {
+        navigate('/schema', { state: { metadata: data.data } });
+      }, 1500);
     } catch (err: any) {
-      setError(err.message);
+      console.error("Backend Error:", err);
+      setError(getFriendlyErrorMessage(err.message || String(err)));
     } finally {
       setLoading(false);
     }
@@ -42,40 +83,40 @@ export const ConnectionView = () => {
 
   const handleSqlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     if (!sqlFile) {
       setError("Please select a .sql file.");
       return;
     }
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const text = await sqlFile.text();
-      const data = await extractFromSql(text, sqlDbType, sqlSchema); // sqlDbName can be appended here if backend accepts it in future
+      const data = await extractFromSql(text, sqlDbType, sqlSchema); 
       if (sqlDbName) {
         data.data.database_name = sqlDbName;
       }
-      navigate('/schema', { state: { metadata: data.data } });
+      setSuccessMessage("Metadata extracted successfully.");
+      setTimeout(() => {
+        navigate('/schema', { state: { metadata: data.data } });
+      }, 1500);
     } catch (err: any) {
-      setError(err.message);
+      console.error("Backend Error:", err);
+      setError(getFriendlyErrorMessage(err.message || String(err)));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-start pt-12 md:justify-center md:pt-6 p-4 relative overflow-auto bg-slate-50 dark:bg-slate-950">
-      {/* Decorative Background */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-slate-50/20 to-slate-50 dark:from-blue-900/20 dark:via-slate-950/20 dark:to-slate-950 pointer-events-none" />
+    <div className="h-full flex flex-col items-center justify-start pt-12 md:justify-center md:pt-6 p-4 relative overflow-auto bg-transparent text-slate-900 dark:text-slate-50 w-full">
 
       <div className="w-full max-w-xl relative z-10">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center p-3.5 bg-blue-100 dark:bg-blue-900/40 rounded-2xl mb-5 shadow-sm">
-            <Database className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            HALO
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg max-w-md mx-auto leading-relaxed">
+        <div className="text-center mb-8 flex flex-col items-center justify-center">
+          <img src="/logo1-removebg-preview.png" alt="HALO AI AGENT SOFTWARE" className="h-48 md:h-64 w-full max-w-xl object-contain mx-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.4)]" />
+          <p className="text-slate-600 dark:text-cyan-100/70 text-base md:text-lg max-w-md mx-auto leading-relaxed -mt-8">
             Connect to your database or upload a DDL script to instantly extract schema intelligence.
           </p>
         </div>
@@ -84,12 +125,12 @@ export const ConnectionView = () => {
           if (val === 'sql') setDbType('sql');
           else setDbType(val);
         }} className="w-full flex flex-col items-center">
-          <TabsList className="flex flex-wrap w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center overflow-x-auto overflow-y-hidden">
+          <TabsList className="flex flex-wrap w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center overflow-x-auto overflow-y-hidden">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsTrigger
                 key={type}
                 value={type}
-                className="flex-1 min-w-[70px] md:min-w-[80px] text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-blue-600/20 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300"
+                className="flex-1 min-w-[70px] md:min-w-[80px] text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl text-slate-600 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300"
               >
                 {type === 'postgres' ? 'PostgreSQL' :
                   type === 'mysql' ? 'MySQL' :
@@ -100,51 +141,57 @@ export const ConnectionView = () => {
             ))}
             <TabsTrigger
               value="sql"
-              className="flex-1 min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-bold py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-indigo-600/20 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300"
+              className="flex-1 min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-bold py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/30 text-slate-700 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-200 dark:hover:bg-slate-800/80 transition-all duration-300"
             >
               <FileCode className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">SQL Upload</span>
             </TabsTrigger>
           </TabsList>
 
           <div className="w-full">
-
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsContent key={type} value={type} className="focus-visible:outline-none w-full m-0">
-                <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl shadow-blue-500/5 dark:shadow-none rounded-3xl overflow-hidden w-full">
-                  <CardHeader className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-slate-100 dark:border-slate-800/60 pb-5 px-6 md:px-8">
-                    <CardTitle className="text-xl text-slate-800 dark:text-slate-100">Database Connection</CardTitle>
-                    <CardDescription className="text-sm">Enter your credentials to securely extract schema metadata directly from the source.</CardDescription>
+                <Card className="border-slate-200/60 dark:border-cyan-900/30 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(0,229,255,0.05)] rounded-3xl overflow-hidden w-full relative">
+                  <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 pointer-events-none" />
+                  <CardHeader className="bg-slate-50/70 dark:bg-[#081120]/70 border-b border-slate-100 dark:border-cyan-900/30 pb-5 px-6 md:px-8 relative z-10">
+                    <CardTitle className="text-xl text-slate-800 dark:text-cyan-50">Database Connection</CardTitle>
+                    <CardDescription className="text-sm text-slate-500 dark:text-cyan-100/50">Enter your credentials to securely extract schema metadata directly from the source.</CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-6 px-6 md:px-8 pb-8">
-                    <form onSubmit={handleDbSubmit} className="space-y-5">
+                  <CardContent className="pt-6 px-6 md:px-8 pb-8 relative z-10">
+                    <form onSubmit={handleDbSubmit} className="space-y-5" noValidate>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                         <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Host</label>
-                          <Input className="h-10 border-slate-200 dark:border-slate-700" placeholder="localhost" value={host} onChange={(e) => setHost(e.target.value)} />
+                          <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Host</label>
+                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.host ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="localhost" value={host} onChange={(e) => { setHost(e.target.value); setValidationErrors(prev => ({...prev, host: ''})); }} />
+                          {validationErrors.host && <p className="text-xs text-red-500 mt-1">{validationErrors.host}</p>}
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Port</label>
-                          <Input className="h-10 border-slate-200 dark:border-slate-700" placeholder="5432" value={port} onChange={(e) => setPort(e.target.value)} />
+                          <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Port</label>
+                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.port ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="5432" value={port} onChange={(e) => { setPort(e.target.value); setValidationErrors(prev => ({...prev, port: ''})); }} />
+                          {validationErrors.port && <p className="text-xs text-red-500 mt-1">{validationErrors.port}</p>}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Database Name</label>
-                        <Input className="h-10 border-slate-200 dark:border-slate-700" placeholder="db_name" value={database} onChange={(e) => setDatabase(e.target.value)} />
+                        <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Database Name</label>
+                        <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.database ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="db_name" value={database} onChange={(e) => { setDatabase(e.target.value); setValidationErrors(prev => ({...prev, database: ''})); }} />
+                        {validationErrors.database && <p className="text-xs text-red-500 mt-1">{validationErrors.database}</p>}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                         <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Username</label>
-                          <Input className="h-10 border-slate-200 dark:border-slate-700" placeholder="admin" value={username} onChange={(e) => setUsername(e.target.value)} />
+                          <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Username</label>
+                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.username ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="admin" value={username} onChange={(e) => { setUsername(e.target.value); setValidationErrors(prev => ({...prev, username: ''})); }} />
+                          {validationErrors.username && <p className="text-xs text-red-500 mt-1">{validationErrors.username}</p>}
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
-                          <Input className="h-10 border-slate-200 dark:border-slate-700" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                          <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Password</label>
+                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.password ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} type="password" placeholder="••••••••" value={password} onChange={(e) => { setPassword(e.target.value); setValidationErrors(prev => ({...prev, password: ''})); }} />
+                          {validationErrors.password && <p className="text-xs text-red-500 mt-1">{validationErrors.password}</p>}
                         </div>
                       </div>
 
-                      {error && <div className="text-sm font-medium text-red-600 bg-red-50 border border-red-100 dark:bg-red-950/40 dark:border-red-900/50 dark:text-red-400 p-4 rounded-xl mt-4">{error}</div>}
+                      {error && <div className="text-sm font-medium text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/50 dark:border-red-900/50 dark:text-red-400 p-4 rounded-xl mt-4">{error}</div>}
+                      {successMessage && <div className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-cyan-950/40 dark:border-cyan-800/50 dark:text-cyan-400 p-4 rounded-xl mt-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/>{successMessage}</div>}
 
-                      <Button type="submit" className="w-full mt-6 h-12 text-base font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all duration-200" disabled={loading}>
+                      <Button type="submit" className="w-full mt-6 h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed" disabled={loading}>
                         {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Database className="mr-2 h-5 w-5" />}
                         {loading ? 'Extracting Metadata...' : 'Extract Metadata'}
                       </Button>
@@ -155,18 +202,19 @@ export const ConnectionView = () => {
             ))}
 
             <TabsContent value="sql" className="focus-visible:outline-none w-full m-0">
-              <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl shadow-indigo-500/5 dark:shadow-none rounded-3xl overflow-hidden w-full">
-                <CardHeader className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-slate-100 dark:border-slate-800/60 pb-5 px-6 md:px-8">
-                  <CardTitle className="text-xl text-slate-800 dark:text-slate-100">SQL File Upload</CardTitle>
-                  <CardDescription className="text-sm">Upload a DDL script (e.g. `schema.sql`) to parse and extract metadata without a live connection.</CardDescription>
+              <Card className="border-slate-200/60 dark:border-cyan-900/30 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(0,229,255,0.05)] rounded-3xl overflow-hidden w-full relative">
+                <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 pointer-events-none" />
+                <CardHeader className="bg-slate-50/70 dark:bg-[#081120]/70 border-b border-slate-100 dark:border-cyan-900/30 pb-5 px-6 md:px-8 relative z-10">
+                  <CardTitle className="text-xl text-slate-800 dark:text-cyan-50">SQL File Upload</CardTitle>
+                  <CardDescription className="text-sm text-slate-500 dark:text-cyan-100/50">Upload a DDL script (e.g. `schema.sql`) to parse and extract metadata without a live connection.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6 px-6 md:px-8 pb-8">
+                <CardContent className="pt-6 px-6 md:px-8 pb-8 relative z-10">
                   <form onSubmit={handleSqlSubmit} className="space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Target Database Dialect</label>
+                        <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Target Database Dialect</label>
                         <select
-                          className="flex h-10 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                          className="flex h-10 w-full rounded-md border border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] px-3 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
                           value={sqlDbType}
                           onChange={(e) => setSqlDbType(e.target.value)}
                         >
@@ -177,9 +225,9 @@ export const ConnectionView = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Schema Name</label>
+                        <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Schema Name</label>
                         <Input
-                          className="h-10 border-slate-200 dark:border-slate-700"
+                          className="h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100"
                           type="text"
                           placeholder="e.g., public"
                           value={sqlSchema}
@@ -188,9 +236,9 @@ export const ConnectionView = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Database Name (Optional)</label>
+                      <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Database Name (Optional)</label>
                       <Input
-                        className="h-10 border-slate-200 dark:border-slate-700"
+                        className="h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100"
                         type="text"
                         placeholder="e.g., my_database"
                         value={sqlDbName}
@@ -198,25 +246,27 @@ export const ConnectionView = () => {
                       />
                     </div>
                     <div className="space-y-3 pt-2">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Upload .sql File</label>
-                      <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer relative">
-                        <UploadCloud className="w-10 h-10 mb-3 text-indigo-400" />
+                      <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Upload .sql File</label>
+                      <div className="border-2 border-dashed border-slate-300 dark:border-cyan-800/50 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-[#081120]/50 transition-colors cursor-pointer relative bg-white dark:bg-[#081120]">
+                        <UploadCloud className="w-10 h-10 mb-3 text-cyan-500" />
                         <Input
                           type="file"
                           accept=".sql"
-                          className="max-w-[200px]"
+                          className="max-w-[200px] text-slate-900 dark:text-slate-100"
                           onChange={(e) => {
                             if (e.target.files && e.target.files.length > 0) {
                               setSqlFile(e.target.files[0]);
+                              setError(null);
                             }
                           }}
                         />
                       </div>
                     </div>
 
-                    {error && <div className="text-sm font-medium text-red-600 bg-red-50 border border-red-100 dark:bg-red-950/40 dark:border-red-900/50 dark:text-red-400 p-4 rounded-xl">{error}</div>}
+                    {error && <div className="text-sm font-medium text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/50 dark:border-red-900/50 dark:text-red-400 p-4 rounded-xl mt-4">{error}</div>}
+                    {successMessage && <div className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-cyan-950/40 dark:border-cyan-800/50 dark:text-cyan-400 p-4 rounded-xl mt-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/>{successMessage}</div>}
 
-                    <Button type="submit" className="w-full mt-6 h-12 text-base font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all duration-200" disabled={loading}>
+                    <Button type="submit" className="w-full mt-6 h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed" disabled={loading}>
                       {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileCode className="mr-2 h-5 w-5" />}
                       {loading ? 'Parsing SQL...' : 'Parse SQL File'}
                     </Button>
@@ -230,3 +280,4 @@ export const ConnectionView = () => {
     </div>
   );
 };
+
