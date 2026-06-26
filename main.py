@@ -24,17 +24,16 @@ import argparse
 import getpass
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 
 import yaml
 
+from etl_enrichment_pipeline.agents.extraction_agent import run_extraction_flow
 from etl_enrichment_pipeline.api.main import app as _app
 from etl_enrichment_pipeline.core.orchestrator import run_pipeline_from_sql
 from etl_enrichment_pipeline.core.pipeline import run_pipeline as _run_pipeline
 from etl_enrichment_pipeline.core.pipeline import run_pipeline_from_dict
-from etl_enrichment_pipeline.agents.extraction_agent import run_extraction_flow
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -114,10 +113,10 @@ def run_pipeline_file(file_path: str = "sql_json/raw_metadata.json") -> None:
 
 def run_pipeline_db(creds: dict, db_type: str) -> None:
     setup_logging()
-    
+
     # 1. Extract metadata dictionary directly
     schema_dict = run_extraction_flow(db_type, creds)
-    
+
     # 2. Pass dictionary directly to pipeline (no disk reload)
     result = run_pipeline_from_dict(schema_dict)
     _save_output(result)
@@ -134,53 +133,57 @@ def _save_output(result: dict) -> None:
 
 def interactive_db_flow(extract_only: bool = False) -> None:
     print("\n--- Database Connection ---")
-    db_type = input("Database Type (postgres, mysql, mariadb, sqlserver, oracle, sqlite): ").strip().lower()
-    
+    db_type = input(
+        "Database Type (postgres, mysql, mariadb, sqlserver, oracle, sqlite): "
+    ).strip().lower()
+
     # Load config file for defaults if it exists
     config_path = Path("config") / f"{db_type}.yaml"
     config_defaults = {}
     if config_path.exists():
         try:
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config_defaults = yaml.safe_load(f) or {}
         except Exception as e:
             print(f"Warning: Failed to load config {config_path}: {e}")
-            
+
     default_port = config_defaults.get("default_port", "")
-    
+
     host = input("Host (e.g. localhost): ").strip()
-    
+
     port_prompt = f"Port ({default_port}): " if default_port else "Port: "
     port = input(port_prompt).strip()
     if not port and default_port:
         port = str(default_port)
-        
+
     database = input("Database Name: ").strip()
-    
+
     creds = {
         "host": host,
         "database": database
     }
-    
+
     if port:
         creds["port"] = port
-        
+
     if db_type != "sqlite":
         username = input("Username: ").strip()
         password = getpass.getpass("Password: ")
         creds["username"] = username
         creds["password"] = password
-        
+
     # Filter out our internal keys before passing to creds
     for k, v in config_defaults.items():
-        if k not in ["default_port", "driver"]:
-            if k not in creds or not creds[k]:
-                creds[k] = v
-            
+        if k not in ["default_port", "driver"] and (k not in creds or not creds.get(k)):
+            creds[k] = v
+
     if extract_only:
         setup_logging()
         run_extraction_flow(db_type, creds)
-        print("\n[OK] Extraction complete! The schema JSON is saved in the 'sql_json' directory.")
+        print(
+            "\n[OK] Extraction complete! The schema JSON is saved in the 'sql_json' "
+            "directory."
+        )
     else:
         run_pipeline_db(creds, db_type)
 
@@ -246,7 +249,9 @@ def main() -> None:
         return
 
     # Enrichment API server (explicit "api" subcommand or no args at all)
-    if args.command == "api" or (args.command is None and not args.sql_file and not args.db_connect):
+    if args.command == "api" or (
+        args.command is None and not args.sql_file and not args.db_connect
+    ):
         run_api()
         return
 
@@ -260,11 +265,13 @@ def main() -> None:
     print("1. Run AI Pipeline from SQL File")
     print("2. Run AI Pipeline from Database Connection")
     print("3. Extract Database Schema Only (Save JSON)")
-    
+
     choice = input("Enter choice (1/2/3): ").strip()
-    
+
     if choice == "1":
-        filepath = input("Enter path to JSON file (default: sql_json/raw_metadata.json): ").strip()
+        filepath = input(
+            "Enter path to JSON file (default: sql_json/raw_metadata.json): "
+        ).strip()
         if not filepath:
             filepath = "sql_json/raw_metadata.json"
         run_pipeline_file(filepath)
