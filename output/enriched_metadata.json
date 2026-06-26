@@ -7,21 +7,29 @@
     "tables_count": 27,
     "columns_count": 118,
     "views_count": 1,
-    "relationships_count": 27
+    "relationships_count": 27,
+    "quality_scores": {
+      "overall": "83/100",
+      "completeness": "100/100",
+      "relationships": "75/100",
+      "naming": "100/100",
+      "documentation": "78/100",
+      "normalization": "60/100"
+    }
   },
   "tables": [
     {
       "table_name": "medicalcertificate",
-      "description": "Tracks medical certificates issued to crew members, including issue and expiry dates along with current validity status.",
+      "description": "Stores medical certification records for crew members, tracking issue and expiry dates along with current status.",
       "business_role": "master_data",
-      "domain": "Training & Qualifications",
+      "domain": "Crew Management",
       "columns": [
         {
           "column_name": "medical_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for medical certificate record",
+          "description": "Unique identifier for the medical certificate",
           "semantic_type": "ID"
         },
         {
@@ -29,7 +37,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the crew member holding the certificate",
           "semantic_type": "ID"
         },
         {
@@ -37,7 +45,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when medical certificate was issued",
+          "description": "Date when the medical certificate was issued",
           "semantic_type": "DATE"
         },
         {
@@ -45,7 +53,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when medical certificate expires",
+          "description": "Date when the medical certificate expires",
           "semantic_type": "DATE"
         },
         {
@@ -60,16 +68,16 @@
     },
     {
       "table_name": "dutylog",
-      "description": "Records the start and end times of crew duty periods associated with specific flights.",
+      "description": "Records duty periods for crew members, capturing start and end times linked to specific flights.",
       "business_role": "transactional",
-      "domain": "Flight Operations",
+      "domain": "Crew Operations",
       "columns": [
         {
           "column_name": "duty_log_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for duty log entry",
+          "description": "Unique identifier for the duty log entry",
           "semantic_type": "ID"
         },
         {
@@ -77,7 +85,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the crew member on duty",
           "semantic_type": "ID"
         },
         {
@@ -85,7 +93,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for associated flight",
+          "description": "Reference to the associated flight",
           "semantic_type": "ID"
         },
         {
@@ -93,7 +101,7 @@
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when duty period started",
+          "description": "Timestamp when the duty period started",
           "semantic_type": "TIMESTAMP"
         },
         {
@@ -101,23 +109,23 @@
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when duty period ended",
+          "description": "Timestamp when the duty period ended",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "complianceviolation",
-      "description": "Logs compliance violations committed by crew members, capturing the violation type and date.",
-      "business_role": "audit",
-      "domain": "Compliance & Safety",
+      "description": "Logs compliance violations identified against crew members, including violation type and date.",
+      "business_role": "transactional",
+      "domain": "Compliance",
       "columns": [
         {
           "column_name": "violation_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for compliance violation",
+          "description": "Unique identifier for the compliance violation",
           "semantic_type": "ID"
         },
         {
@@ -125,7 +133,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the crew member who violated",
           "semantic_type": "ID"
         },
         {
@@ -133,31 +141,31 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Category or type of violation",
-          "semantic_type": "DESCRIPTION"
+          "description": "Type or category of compliance violation",
+          "semantic_type": "CODE"
         },
         {
           "column_name": "violation_date",
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when violation occurred",
+          "description": "Timestamp when the violation occurred",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "auditlog",
-      "description": "Captures system-level audit trail of user actions, including the table affected and record identifier.",
+      "description": "System-level audit trail capturing user actions, affected tables, and timestamps for traceability.",
       "business_role": "audit",
-      "domain": "Compliance & Safety",
+      "domain": "Audit & Security",
       "columns": [
         {
           "column_name": "audit_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for audit log entry",
+          "description": "Unique identifier for the audit log entry",
           "semantic_type": "ID"
         },
         {
@@ -165,7 +173,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for user performing action",
+          "description": "Reference to the user who performed the action",
           "semantic_type": "ID"
         },
         {
@@ -173,7 +181,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Type of action performed by user",
+          "description": "Description of the action performed",
           "semantic_type": "DESCRIPTION"
         },
         {
@@ -181,15 +189,15 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Name of affected database table",
-          "semantic_type": "DESCRIPTION"
+          "description": "Name of the table affected by the action",
+          "semantic_type": "NAME"
         },
         {
           "column_name": "record_id",
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Identifier of the affected record",
+          "description": "Identifier of the record affected",
           "semantic_type": "ID"
         },
         {
@@ -197,23 +205,23 @@
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when audit action occurred",
+          "description": "Timestamp when the audited action occurred",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "trainingenrollment",
-      "description": "Records crew member enrollments into specific training sessions along with enrollment status.",
-      "business_role": "transactional",
-      "domain": "Training & Qualifications",
+      "description": "Tracks individual crew member enrollments in training sessions and their completion status.",
+      "business_role": "junction",
+      "domain": "Training",
       "columns": [
         {
           "column_name": "enrollment_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for training enrollment",
+          "description": "Unique identifier for the training enrollment",
           "semantic_type": "ID"
         },
         {
@@ -221,7 +229,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the enrolled crew member",
           "semantic_type": "ID"
         },
         {
@@ -229,7 +237,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for training session",
+          "description": "Reference to the training session",
           "semantic_type": "ID"
         },
         {
@@ -244,16 +252,16 @@
     },
     {
       "table_name": "simulatorsession",
-      "description": "Stores records of crew simulator training sessions, including aircraft type, session date, and result.",
+      "description": "Records simulator training sessions for crew members, including aircraft type, date, and result.",
       "business_role": "transactional",
-      "domain": "Training & Qualifications",
+      "domain": "Training",
       "columns": [
         {
           "column_name": "simulator_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for simulator session",
+          "description": "Unique identifier for the simulator session",
           "semantic_type": "ID"
         },
         {
@@ -261,7 +269,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the crew member in the session",
           "semantic_type": "ID"
         },
         {
@@ -269,7 +277,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for aircraft type",
+          "description": "Reference to the aircraft type used",
           "semantic_type": "ID"
         },
         {
@@ -277,7 +285,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when simulator session took place",
+          "description": "Date of the simulator training session",
           "semantic_type": "DATE"
         },
         {
@@ -292,16 +300,16 @@
     },
     {
       "table_name": "expenseclaim",
-      "description": "Tracks expense claims submitted by crew members, including amount, type, and approval status.",
+      "description": "Captures expense claims submitted by crew members with associated type, amount, and approval status.",
       "business_role": "transactional",
-      "domain": "Human Resources",
+      "domain": "Finance & Expenses",
       "columns": [
         {
           "column_name": "claim_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for expense claim",
+          "description": "Unique identifier for the expense claim",
           "semantic_type": "ID"
         },
         {
@@ -309,7 +317,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the crew member submitting the claim",
           "semantic_type": "ID"
         },
         {
@@ -317,7 +325,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for expense type",
+          "description": "Reference to the expense type category",
           "semantic_type": "ID"
         },
         {
@@ -340,16 +348,16 @@
     },
     {
       "table_name": "notification",
-      "description": "Stores notifications addressed to crew members with titles, messages, and creation timestamps.",
+      "description": "Stores notifications dispatched to crew members with title, message body, and creation timestamp.",
       "business_role": "transactional",
-      "domain": "Human Resources",
+      "domain": "Communications",
       "columns": [
         {
           "column_name": "notification_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for notification",
+          "description": "Unique identifier for the notification",
           "semantic_type": "ID"
         },
         {
@@ -357,7 +365,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the recipient crew member",
           "semantic_type": "ID"
         },
         {
@@ -365,39 +373,39 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Title or subject of notification",
-          "semantic_type": "DESCRIPTION"
+          "description": "Short title or subject of the notification",
+          "semantic_type": "NAME"
         },
         {
           "column_name": "message",
           "data_type": "text",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Full content text of the notification",
-          "semantic_type": "COMMENT"
+          "description": "Full text body of the notification",
+          "semantic_type": "DESCRIPTION"
         },
         {
           "column_name": "created_at",
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when notification was created",
+          "description": "Timestamp when the notification was created",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "restperiod",
-      "description": "Records mandatory and actual rest periods taken by crew members between duty assignments.",
+      "description": "Records mandatory rest periods for crew members to ensure regulatory compliance with duty time limits.",
       "business_role": "transactional",
-      "domain": "Compliance & Safety",
+      "domain": "Crew Operations",
       "columns": [
         {
           "column_name": "rest_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for rest period",
+          "description": "Unique identifier for the rest period",
           "semantic_type": "ID"
         },
         {
@@ -405,7 +413,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the crew member resting",
           "semantic_type": "ID"
         },
         {
@@ -413,7 +421,7 @@
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when rest period started",
+          "description": "Timestamp when the rest period began",
           "semantic_type": "TIMESTAMP"
         },
         {
@@ -421,23 +429,23 @@
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Timestamp when rest period ended",
+          "description": "Timestamp when the rest period ended",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "crewassignment",
-      "description": "Assigns crew members to specific flights under defined roles within published rosters.",
+      "description": "Assigns crew members to flights within specific rosters, including assigned role and current status.",
       "business_role": "transactional",
-      "domain": "Roster & Scheduling",
+      "domain": "Crew Operations",
       "columns": [
         {
           "column_name": "assignment_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for crew assignment",
+          "description": "Unique identifier for the crew assignment",
           "semantic_type": "ID"
         },
         {
@@ -445,7 +453,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for crew member",
+          "description": "Reference to the assigned crew member",
           "semantic_type": "ID"
         },
         {
@@ -453,7 +461,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for associated flight",
+          "description": "Reference to the assigned flight",
           "semantic_type": "ID"
         },
         {
@@ -461,7 +469,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Reference identifier for roster",
+          "description": "Reference to the roster entry",
           "semantic_type": "ID"
         },
         {
@@ -470,7 +478,7 @@
           "is_nullable": true,
           "is_primary_key": false,
           "description": "Role assigned to the crew member",
-          "semantic_type": "DESCRIPTION"
+          "semantic_type": "NAME"
         },
         {
           "column_name": "status",
@@ -484,7 +492,7 @@
     },
     {
       "table_name": "leaverequest",
-      "description": "Captures leave requests submitted by crew members including leave type, duration, and approval status.",
+      "description": "Manages leave requests submitted by crew members, including leave type, dates, and approval status.",
       "business_role": "transactional",
       "domain": "Human Resources",
       "columns": [
@@ -493,7 +501,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the leave request record",
+          "description": "Unique identifier for the leave request",
           "semantic_type": "ID"
         },
         {
@@ -501,7 +509,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew member",
+          "description": "Reference to the crew member",
           "semantic_type": "ID"
         },
         {
@@ -509,7 +517,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the type of leave",
+          "description": "Reference to the leave type",
           "semantic_type": "ID"
         },
         {
@@ -517,7 +525,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Start date of the leave period",
+          "description": "Start date of the leave",
           "semantic_type": "DATE"
         },
         {
@@ -525,7 +533,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "End date of the leave period",
+          "description": "End date of the leave",
           "semantic_type": "DATE"
         },
         {
@@ -540,9 +548,9 @@
     },
     {
       "table_name": "availability",
-      "description": "Records crew member availability for scheduling on specific dates with corresponding status.",
-      "business_role": "master_data",
-      "domain": "Roster & Scheduling",
+      "description": "Indicates crew member availability for specific dates with current availability status.",
+      "business_role": "transactional",
+      "domain": "Crew Operations",
       "columns": [
         {
           "column_name": "availability_id",
@@ -557,7 +565,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew member",
+          "description": "Reference to the crew member",
           "semantic_type": "ID"
         },
         {
@@ -565,7 +573,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when crew member is available for duty",
+          "description": "Date the crew member is available",
           "semantic_type": "DATE"
         },
         {
@@ -573,23 +581,23 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current availability status of the crew member",
+          "description": "Current availability status",
           "semantic_type": "STATUS"
         }
       ]
     },
     {
       "table_name": "crewemergencycontact",
-      "description": "Stores emergency contact information associated with crew members, including relationship and phone.",
+      "description": "Stores emergency contact details for crew members, including relationship and phone number.",
       "business_role": "master_data",
-      "domain": "Crew Management",
+      "domain": "Human Resources",
       "columns": [
         {
           "column_name": "emergency_contact_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the emergency contact",
+          "description": "Unique identifier for emergency contact",
           "semantic_type": "ID"
         },
         {
@@ -597,7 +605,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew member",
+          "description": "Reference to the crew member",
           "semantic_type": "ID"
         },
         {
@@ -605,7 +613,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Full name of the emergency contact person",
+          "description": "Full name of emergency contact",
           "semantic_type": "NAME"
         },
         {
@@ -613,7 +621,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Relationship of the contact to the crew member",
+          "description": "Relationship to crew member",
           "semantic_type": "DESCRIPTION"
         },
         {
@@ -621,23 +629,23 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Phone number of the emergency contact",
+          "description": "Phone number of emergency contact",
           "semantic_type": "PHONE"
         }
       ]
     },
     {
       "table_name": "crewcontact",
-      "description": "Maintains general contact information for crew members such as phone, email, and address.",
+      "description": "Holds primary contact information for crew members such as phone, email, and address.",
       "business_role": "master_data",
-      "domain": "Crew Management",
+      "domain": "Human Resources",
       "columns": [
         {
           "column_name": "contact_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for crew contact information",
+          "description": "Unique identifier for crew contact",
           "semantic_type": "ID"
         },
         {
@@ -645,7 +653,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew member",
+          "description": "Reference to the crew member",
           "semantic_type": "ID"
         },
         {
@@ -653,7 +661,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Phone number for the crew member",
+          "description": "Phone number of crew member",
           "semantic_type": "PHONE"
         },
         {
@@ -661,7 +669,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Email address for the crew member",
+          "description": "Email address of crew member",
           "semantic_type": "EMAIL"
         },
         {
@@ -669,23 +677,23 @@
           "data_type": "text",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Postal address of the crew member",
-          "semantic_type": "SEMANTIC_TYPE_UNKNOWN"
+          "description": "Postal address of crew member",
+          "semantic_type": "DESCRIPTION"
         }
       ]
     },
     {
       "table_name": "crewaircraftrating",
-      "description": "Tracks crew member qualifications to operate specific aircraft types, including validity dates.",
+      "description": "Maintains aircraft type ratings held by crew members with issue and expiry dates.",
       "business_role": "master_data",
-      "domain": "Training & Qualifications",
+      "domain": "Crew Management",
       "columns": [
         {
           "column_name": "rating_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the crew aircraft rating",
+          "description": "Unique identifier for crew aircraft rating",
           "semantic_type": "ID"
         },
         {
@@ -693,7 +701,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew member",
+          "description": "Reference to the crew member",
           "semantic_type": "ID"
         },
         {
@@ -701,7 +709,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the aircraft type",
+          "description": "Reference to aircraft type",
           "semantic_type": "ID"
         },
         {
@@ -709,7 +717,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when the aircraft rating was issued",
+          "description": "Date the rating was issued",
           "semantic_type": "DATE"
         },
         {
@@ -717,16 +725,16 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Expiration date of the aircraft rating",
+          "description": "Date the rating expires",
           "semantic_type": "DATE"
         }
       ]
     },
     {
       "table_name": "crewlicense",
-      "description": "Stores crew member licenses linked to license types with issue and expiry dates.",
+      "description": "Records licenses held by crew members along with their issue and expiry dates.",
       "business_role": "master_data",
-      "domain": "Training & Qualifications",
+      "domain": "Crew Management",
       "columns": [
         {
           "column_name": "crew_license_id",
@@ -741,7 +749,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew member",
+          "description": "Reference to the crew member",
           "semantic_type": "ID"
         },
         {
@@ -749,7 +757,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the license type",
+          "description": "Reference to the license type",
           "semantic_type": "ID"
         },
         {
@@ -757,7 +765,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when the crew license was issued",
+          "description": "Date the license was issued",
           "semantic_type": "DATE"
         },
         {
@@ -765,23 +773,23 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Expiration date of the crew license",
+          "description": "Date the license expires",
           "semantic_type": "DATE"
         }
       ]
     },
     {
       "table_name": "crew",
-      "description": "Master record of crew members containing personal details, employee number, rank, base, and employment status.",
+      "description": "Core master record containing employee details, rank, base assignment, hire date, and employment status.",
       "business_role": "master_data",
-      "domain": "Crew Management",
+      "domain": "Human Resources",
       "columns": [
         {
           "column_name": "crew_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the crew member",
+          "description": "Unique identifier for crew member",
           "semantic_type": "ID"
         },
         {
@@ -789,7 +797,7 @@
           "data_type": "character varying",
           "is_nullable": false,
           "is_primary_key": false,
-          "description": "Employee number assigned to the crew member",
+          "description": "Employee number of crew member",
           "semantic_type": "CODE"
         },
         {
@@ -797,7 +805,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "First name of the crew member",
+          "description": "First name of crew member",
           "semantic_type": "FIRST_NAME"
         },
         {
@@ -805,7 +813,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Last name of the crew member",
+          "description": "Last name of crew member",
           "semantic_type": "LAST_NAME"
         },
         {
@@ -813,7 +821,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the crew rank",
+          "description": "Reference to crew rank",
           "semantic_type": "ID"
         },
         {
@@ -821,7 +829,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the assigned base",
+          "description": "Reference to home base",
           "semantic_type": "ID"
         },
         {
@@ -829,7 +837,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when the crew member was hired",
+          "description": "Date crew member was hired",
           "semantic_type": "DATE"
         },
         {
@@ -837,23 +845,23 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Current employment status of the crew member",
+          "description": "Current employment status",
           "semantic_type": "STATUS"
         }
       ]
     },
     {
       "table_name": "trainingsession",
-      "description": "Defines scheduled training sessions associated with a training program and instructor.",
-      "business_role": "transactional",
-      "domain": "Training & Qualifications",
+      "description": "Defines scheduled training sessions linked to a program, including date and instructor.",
+      "business_role": "master_data",
+      "domain": "Training",
       "columns": [
         {
           "column_name": "session_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the training session",
+          "description": "Unique identifier for training session",
           "semantic_type": "ID"
         },
         {
@@ -861,7 +869,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Foreign key referencing the training program",
+          "description": "Reference to training program",
           "semantic_type": "ID"
         },
         {
@@ -869,7 +877,7 @@
           "data_type": "date",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date when the training session occurs",
+          "description": "Date of the training session",
           "semantic_type": "DATE"
         },
         {
@@ -877,23 +885,23 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Name of the instructor leading the session",
+          "description": "Name of the training instructor",
           "semantic_type": "NAME"
         }
       ]
     },
     {
       "table_name": "trainingprogram",
-      "description": "Reference data defining training programs and their validity period in months.",
+      "description": "Catalog of training programs offered, including program name and validity period in months.",
       "business_role": "reference",
-      "domain": "Training & Qualifications",
+      "domain": "Training",
       "columns": [
         {
           "column_name": "program_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the training program",
+          "description": "Unique identifier for training program",
           "semantic_type": "ID"
         },
         {
@@ -909,14 +917,14 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Number of months the training certification is valid",
+          "description": "Validity duration in months",
           "semantic_type": "QUANTITY"
         }
       ]
     },
     {
       "table_name": "license",
-      "description": "Reference table listing license types that can be held by crew members.",
+      "description": "Reference list of license types available in the system.",
       "business_role": "reference",
       "domain": "Reference Data",
       "columns": [
@@ -925,7 +933,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the license type",
+          "description": "Unique identifier for license type",
           "semantic_type": "ID"
         },
         {
@@ -933,15 +941,15 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Category or type description of the license",
+          "description": "Type or name of license",
           "semantic_type": "NAME"
         }
       ]
     },
     {
       "table_name": "flight",
-      "description": "Records scheduled and operated flights with origin, destination, and departure/arrival times.",
-      "business_role": "transactional",
+      "description": "Master data for flights including flight number, origin, destination, and scheduled departure/arrival times.",
+      "business_role": "dimension",
       "domain": "Flight Operations",
       "columns": [
         {
@@ -957,7 +965,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Flight number code assigned to the flight",
+          "description": "Flight number code assigned to flight",
           "semantic_type": "CODE"
         },
         {
@@ -965,23 +973,23 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Airport code where the flight departs from",
-          "semantic_type": "CODE"
+          "description": "Departure city or airport location",
+          "semantic_type": "CITY"
         },
         {
           "column_name": "destination",
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Airport code where the flight arrives",
-          "semantic_type": "CODE"
+          "description": "Arrival city or airport location",
+          "semantic_type": "CITY"
         },
         {
           "column_name": "departure_time",
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date and time of flight departure",
+          "description": "Scheduled departure date and time",
           "semantic_type": "TIMESTAMP"
         },
         {
@@ -989,23 +997,23 @@
           "data_type": "timestamp without time zone",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Date and time of flight arrival",
+          "description": "Scheduled arrival date and time",
           "semantic_type": "TIMESTAMP"
         }
       ]
     },
     {
       "table_name": "roster",
-      "description": "Defines monthly roster publications indicating the month, year, and publication status.",
+      "description": "Defines monthly roster periods by month and year, indicating whether the roster has been published.",
       "business_role": "master_data",
-      "domain": "Roster & Scheduling",
+      "domain": "Crew Operations",
       "columns": [
         {
           "column_name": "roster_id",
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the roster entry",
+          "description": "Unique identifier for the roster period",
           "semantic_type": "ID"
         },
         {
@@ -1013,7 +1021,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Month number covered by this roster period",
+          "description": "Calendar month covered by roster",
           "semantic_type": "SEMANTIC_TYPE_UNKNOWN"
         },
         {
@@ -1021,7 +1029,7 @@
           "data_type": "integer",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Year covered by this roster period",
+          "description": "Calendar year covered by roster",
           "semantic_type": "SEMANTIC_TYPE_UNKNOWN"
         },
         {
@@ -1029,14 +1037,14 @@
           "data_type": "boolean",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Flag indicating whether the roster has been published",
+          "description": "Flag indicating if roster is published",
           "semantic_type": "BOOLEAN_FLAG"
         }
       ]
     },
     {
       "table_name": "aircrafttype",
-      "description": "Reference data defining aircraft types by code and name.",
+      "description": "Reference data describing aircraft types by code and name.",
       "business_role": "reference",
       "domain": "Reference Data",
       "columns": [
@@ -1045,7 +1053,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the aircraft type",
+          "description": "Unique identifier for aircraft type",
           "semantic_type": "ID"
         },
         {
@@ -1053,7 +1061,7 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Short code identifying the aircraft type",
+          "description": "Short code identifying the aircraft",
           "semantic_type": "CODE"
         },
         {
@@ -1061,14 +1069,14 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Full descriptive name of the aircraft type",
+          "description": "Full descriptive name of aircraft",
           "semantic_type": "NAME"
         }
       ]
     },
     {
       "table_name": "leavetype",
-      "description": "Reference table enumerating types of leave available to crew members.",
+      "description": "Reference list of available leave types.",
       "business_role": "reference",
       "domain": "Reference Data",
       "columns": [
@@ -1077,7 +1085,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the leave type",
+          "description": "Unique identifier for leave type",
           "semantic_type": "ID"
         },
         {
@@ -1085,14 +1093,14 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Name of the leave type category",
+          "description": "Name describing the leave type",
           "semantic_type": "NAME"
         }
       ]
     },
     {
       "table_name": "expensetype",
-      "description": "Reference table enumerating categories of expenses claimable by crew members.",
+      "description": "Reference list of expense categories used in crew expense claims.",
       "business_role": "reference",
       "domain": "Reference Data",
       "columns": [
@@ -1101,7 +1109,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the expense type",
+          "description": "Unique identifier for expense type",
           "semantic_type": "ID"
         },
         {
@@ -1109,14 +1117,14 @@
           "data_type": "character varying",
           "is_nullable": true,
           "is_primary_key": false,
-          "description": "Name of the expense type category",
+          "description": "Name describing the expense type",
           "semantic_type": "NAME"
         }
       ]
     },
     {
       "table_name": "crewbase",
-      "description": "Reference data defining crew bases identified by airport code and base name.",
+      "description": "Reference data for crew base locations identified by airport code and base name.",
       "business_role": "reference",
       "domain": "Reference Data",
       "columns": [
@@ -1125,7 +1133,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the crew base location",
+          "description": "Unique identifier for crew base",
           "semantic_type": "ID"
         },
         {
@@ -1133,7 +1141,7 @@
           "data_type": "character varying",
           "is_nullable": false,
           "is_primary_key": false,
-          "description": "Airport code associated with the crew base",
+          "description": "Airport code where crew base is located",
           "semantic_type": "CODE"
         },
         {
@@ -1148,7 +1156,7 @@
     },
     {
       "table_name": "crewrank",
-      "description": "Reference table listing crew ranks or positions within the organization.",
+      "description": "Reference list of crew ranks recognized within the organization.",
       "business_role": "reference",
       "domain": "Reference Data",
       "columns": [
@@ -1157,7 +1165,7 @@
           "data_type": "integer",
           "is_nullable": false,
           "is_primary_key": true,
-          "description": "Unique identifier for the crew rank",
+          "description": "Unique identifier for crew rank",
           "semantic_type": "ID"
         },
         {
@@ -1165,7 +1173,7 @@
           "data_type": "character varying",
           "is_nullable": false,
           "is_primary_key": false,
-          "description": "Name of the crew rank position",
+          "description": "Name describing the crew rank",
           "semantic_type": "NAME"
         }
       ]
@@ -1427,191 +1435,195 @@
       "name": "Crew"
     },
     {
-      "name": "CrewRank"
-    },
-    {
-      "name": "CrewBase"
-    },
-    {
-      "name": "License"
-    },
-    {
-      "name": "AircraftType"
+      "name": "Qualification"
     },
     {
       "name": "Flight"
     },
     {
-      "name": "Roster"
-    },
-    {
-      "name": "DutyLog"
-    },
-    {
-      "name": "LeaveRequest"
-    },
-    {
-      "name": "ExpenseClaim"
+      "name": "RestAvailability"
     },
     {
       "name": "Training"
     },
     {
-      "name": "ComplianceViolation"
+      "name": "Compliance"
+    },
+    {
+      "name": "Leave"
+    },
+    {
+      "name": "Expense"
     },
     {
       "name": "Notification"
+    },
+    {
+      "name": "AircraftType"
+    },
+    {
+      "name": "CrewRank"
+    },
+    {
+      "name": "CrewBase"
     }
   ],
   "entity_relationships": [
     {
       "entity": "Crew",
-      "related_entities": "CrewRank, CrewBase, License, AircraftType, Flight, Roster, DutyLog, LeaveRequest, ExpenseClaim, Training, ComplianceViolation, Notification",
-      "business_meaning": "A Crew member belongs to one CrewRank and one CrewBase; holds multiple Licenses (many-to-many), is rated on multiple AircraftTypes (many-to-many), is assigned to many Flights via Roster, accumulates DutyLogs, files LeaveRequests and ExpenseClaims, enrolls in Training programs, may incur ComplianceViolations, and receives Notifications (all one-to-many from Crew)"
-    },
-    {
-      "entity": "CrewRank",
-      "related_entities": "Crew",
-      "business_meaning": "A CrewRank (e.g., Captain, First Officer) classifies many Crew members (one-to-many)"
-    },
-    {
-      "entity": "CrewBase",
-      "related_entities": "Crew",
-      "business_meaning": "A CrewBase (home airport/hub) is assigned to many Crew members (one-to-many)"
-    },
-    {
-      "entity": "License",
-      "related_entities": "Crew",
-      "business_meaning": "Licenses are held by Crew members through a many-to-many relationship; each crew member can have multiple licenses and each license type can be held by many crew members"
-    },
-    {
-      "entity": "AircraftType",
-      "related_entities": "Crew, Flight, Training",
-      "business_meaning": "AircraftTypes are the rated qualifications of Crew (many-to-many) and the aircraft flown on Flights; also referenced by Simulator sessions and Training programs (one-to-many to Flights and TrainingSessions)"
+      "related_entities": "Qualification,Flight,RestAvailability,Training,Compliance,Leave,Expense,Notification,CrewRank,CrewBase",
+      "business_meaning": "A Crew member is the central entity; they hold qualifications (licenses, ratings, medical certificates), are assigned to flights, have rest/availability records, enroll in training, may incur compliance violations, submit leave/expense claims, receive notifications, and belong to a rank and base (1:M to most, 1:1 to rank and base)"
     },
     {
       "entity": "Flight",
-      "related_entities": "AircraftType, Crew, Roster, DutyLog",
-      "business_meaning": "A Flight uses one AircraftType and is associated with Crew members via Roster assignments and DutyLog entries (one-to-many to Roster and DutyLog)"
+      "related_entities": "Crew,AircraftType",
+      "business_meaning": "Flights are operated by AircraftTypes and assigned to Crew members through roster assignments; each flight has many crew assignments (M:M via crewassignment)"
     },
     {
-      "entity": "Roster",
-      "related_entities": "Flight, Crew",
-      "business_meaning": "A Roster is a schedule plan that links Crew members to Flights through CrewAssignment (one Roster to many Crew-to-Flight assignments)"
-    },
-    {
-      "entity": "DutyLog",
-      "related_entities": "Crew, Flight",
-      "business_meaning": "A DutyLog records actual duty time for a Crew member, optionally linked to a specific Flight (one-to-many from Crew and Flight)"
-    },
-    {
-      "entity": "LeaveRequest",
-      "related_entities": "Crew, LeaveType",
-      "business_meaning": "A LeaveRequest is filed by a Crew member and categorized by one LeaveType (one-to-many from Crew, many LeaveTypes serve many requests)"
-    },
-    {
-      "entity": "ExpenseClaim",
-      "related_entities": "Crew, ExpenseType",
-      "business_meaning": "An ExpenseClaim is submitted by a Crew member and categorized by one ExpenseType (one-to-many from Crew, many ExpenseTypes serve many claims)"
+      "entity": "Qualification",
+      "related_entities": "Crew,AircraftType,License",
+      "business_meaning": "Crew members hold licenses (via crewlicense), aircraft type ratings (via crewaircraftrating linked to aircrafttype), and medical certificates; qualifications determine what crew can fly (1:M from crew)"
     },
     {
       "entity": "Training",
-      "related_entities": "TrainingProgram, TrainingSession, Crew, AircraftType",
-      "business_meaning": "A TrainingProgram contains many TrainingSessions; Crew members enroll in sessions; SimulatorSessions link Crew to specific AircraftTypes (hierarchical one-to-many with many-to-many enrollments)"
+      "related_entities": "Crew,AircraftType",
+      "business_meaning": "Training programs contain sessions; crew enroll in sessions and complete simulator sessions on specific aircraft types to maintain/rank qualifications (1:M from crew to enrollments)"
     },
     {
-      "entity": "ComplianceViolation",
+      "entity": "RestAvailability",
       "related_entities": "Crew",
-      "business_meaning": "A ComplianceViolation is recorded against a single Crew member, tracking regulatory or policy breaches (one-to-many from Crew)"
+      "business_meaning": "Crew members have rest period records and availability windows that determine flight eligibility and ensure regulatory compliance (1:M from crew)"
+    },
+    {
+      "entity": "Compliance",
+      "related_entities": "Crew",
+      "business_meaning": "Compliance violations and audit log entries track regulatory and policy breaches against crew members (1:M from crew)"
+    },
+    {
+      "entity": "Leave",
+      "related_entities": "Crew",
+      "business_meaning": "Crew members submit leave requests classified by leave type; affects availability and roster planning (1:M from crew)"
+    },
+    {
+      "entity": "Expense",
+      "related_entities": "Crew",
+      "business_meaning": "Crew members submit expense claims categorized by expense type for reimbursement (1:M from crew)"
     },
     {
       "entity": "Notification",
       "related_entities": "Crew",
-      "business_meaning": "Notifications are messages dispatched to individual Crew members (one-to-many from Crew)"
+      "business_meaning": "System notifications are dispatched to individual crew members regarding assignments, compliance, or training (1:M from crew)"
+    },
+    {
+      "entity": "AircraftType",
+      "related_entities": "Flight,Crew,Training",
+      "business_meaning": "AircraftType is a reference entity linking flights, crew ratings, and simulator sessions; defines equipment operated/flown"
+    },
+    {
+      "entity": "CrewRank",
+      "related_entities": "Crew",
+      "business_meaning": "CrewRank is a reference lookup (Captain, First Officer, etc.) assigned to crew members (1:M from rank to crew)"
+    },
+    {
+      "entity": "CrewBase",
+      "related_entities": "Crew",
+      "business_meaning": "CrewBase is a reference lookup for home airport/location assigned to crew members (1:M from base to crew)"
     }
   ],
   "business_processes": [
     {
-      "domain": "Training & Qualifications",
-      "tables": "medicalcertificate, trainingenrollment, simulatorsession, crewaircraftrating, crewlicense, trainingsession, trainingprogram"
+      "domain": "Crew Management",
+      "tables": "medicalcertificate, crewaircraftrating, crewlicense"
     },
     {
-      "domain": "Flight Operations",
-      "tables": "dutylog, flight"
+      "domain": "Crew Operations",
+      "tables": "dutylog, restperiod, crewassignment, availability, roster"
     },
     {
-      "domain": "Compliance & Safety",
-      "tables": "complianceviolation, auditlog, restperiod"
+      "domain": "Compliance",
+      "tables": "complianceviolation"
+    },
+    {
+      "domain": "Audit & Security",
+      "tables": "auditlog"
+    },
+    {
+      "domain": "Training",
+      "tables": "trainingenrollment, simulatorsession, trainingsession, trainingprogram"
+    },
+    {
+      "domain": "Finance & Expenses",
+      "tables": "expenseclaim"
+    },
+    {
+      "domain": "Communications",
+      "tables": "notification"
     },
     {
       "domain": "Human Resources",
-      "tables": "expenseclaim, notification, leaverequest"
-    },
-    {
-      "domain": "Roster & Scheduling",
-      "tables": "crewassignment, availability, roster"
-    },
-    {
-      "domain": "Crew Management",
-      "tables": "crewemergencycontact, crewcontact, crew"
+      "tables": "leaverequest, crewemergencycontact, crewcontact, crew"
     },
     {
       "domain": "Reference Data",
       "tables": "license, aircrafttype, leavetype, expensetype, crewbase, crewrank"
+    },
+    {
+      "domain": "Flight Operations",
+      "tables": "flight"
     }
   ],
   "use_cases": [
     {
-      "name": "Crew Rostering and Flight Assignment",
-      "description": "Plan and assign crew members to flights based on their rank, base, aircraft ratings, license validity, and rest period compliance to build optimized rosters.",
-      "involved_tables": "crew, crewassignment, roster, flight, crewaircraftrating, crewlicense, restperiod"
+      "name": "Roster & Flight Assignment",
+      "description": "Build crew rosters by assigning qualified crew members to flights while respecting rest periods, availability, and leave.",
+      "involved_tables": "crew, crewassignment, flight, roster, availability, restperiod, leaverequest"
     },
     {
-      "name": "Training and Certification Management",
-      "description": "Schedule training programs, enroll crew into sessions, track completion, and ensure simulator and certification requirements are met for aircraft type ratings.",
-      "involved_tables": "trainingprogram, trainingsession, trainingenrollment, simulatorsession, crew, aircrafttype"
+      "name": "Qualification & Certification Tracking",
+      "description": "Monitor crew licenses, aircraft type ratings, and medical certificate validity to ensure flight-readiness and regulatory compliance.",
+      "involved_tables": "crew, crewlicense, license, crewaircraftrating, aircrafttype, medicalcertificate"
     },
     {
-      "name": "Compliance and Duty Time Monitoring",
-      "description": "Monitor crew duty hours, rest periods, medical certificate validity, and log compliance violations to ensure regulatory adherence.",
-      "involved_tables": "dutylog, restperiod, medicalcertificate, complianceviolation, crew"
+      "name": "Training & Simulator Management",
+      "description": "Schedule training programs and simulator sessions, track crew enrollment and completion to renew or upgrade qualifications.",
+      "involved_tables": "crew, trainingprogram, trainingsession, trainingenrollment, simulatorsession, aircrafttype"
     },
     {
-      "name": "Leave and Expense Administration",
-      "description": "Process crew leave requests by type and review/approve expense claims categorized by expense type, including notification of status changes.",
-      "involved_tables": "leaverequest, leavetype, expenseclaim, expensetype, notification, crew"
+      "name": "Compliance & Duty Time Monitoring",
+      "description": "Track flight duty logs, rest periods, and compliance violations to enforce aviation regulatory limits (e.g., FDP, flight hours).",
+      "involved_tables": "crew, dutylog, flight, restperiod, complianceviolation, auditlog"
     },
     {
-      "name": "Crew Profile and Qualification Lookup",
-      "description": "Retrieve comprehensive crew profiles including rank, base, licenses, aircraft ratings, contact information, and emergency contacts for operational reference.",
-      "involved_tables": "crew, crewrank, crewbase, crewlicense, license, crewaircraftrating, crewcontact, crewemergencycontact"
+      "name": "Leave & Expense Administration",
+      "description": "Process crew leave requests and expense claims, integrating with roster planning to ensure adequate coverage.",
+      "involved_tables": "crew, leaverequest, leavetype, expenseclaim, expensetype, roster"
     }
   ],
   "sample_queries": [
     {
-      "question": "List all crew members assigned to a specific flight along with their rank and base.",
-      "sql": "SELECT c.crew_id, c.first_name, c.last_name, cr.rank_name, cb.base_name, f.flight_number, f.departure_time\nFROM crew c\nJOIN crewassignment ca ON c.crew_id = ca.crew_id\nJOIN flight f ON ca.flight_id = f.flight_id\nJOIN crewrank cr ON c.rank_id = cr.rank_id\nJOIN crewbase cb ON c.base_id = cb.base_id\nWHERE f.flight_id = :flight_id\nORDER BY cr.rank_name, c.last_name;",
+      "question": "List all active flight assignments for a given crew member including flight details",
+      "sql": "SELECT ca.assignment_id, f.flight_number, f.departure_date, f.origin, f.destination, a.type_name\nFROM crewassignment ca\nJOIN flight f ON ca.flight_id = f.flight_id\nJOIN aircrafttype a ON f.aircraft_type_id = a.aircraft_type_id\nJOIN crew c ON ca.crew_id = c.crew_id\nWHERE c.crew_id = 101 AND ca.status = 'Confirmed'\nORDER BY f.departure_date;",
       "category": "Lookup"
     },
     {
-      "question": "Find all crew members whose licenses expire within the next 90 days.",
-      "sql": "SELECT c.crew_id, c.first_name, c.last_name, l.license_name, cl.expiry_date, cl.expiry_date - CURRENT_DATE AS days_until_expiry\nFROM crew c\nJOIN crewlicense cl ON c.crew_id = cl.crew_id\nJOIN license l ON cl.license_id = l.license_id\nWHERE cl.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'\nORDER BY cl.expiry_date;",
+      "question": "Find crew members whose medical certificate expires within the next 30 days",
+      "sql": "SELECT c.crew_id, c.first_name, c.last_name, mc.expiry_date, mc.certificate_type\nFROM crew c\nJOIN medicalcertificate mc ON c.crew_id = mc.crew_id\nWHERE mc.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'\nORDER BY mc.expiry_date;",
       "category": "Reporting"
     },
     {
-      "question": "Calculate total flight hours logged by each crew member in the current month.",
-      "sql": "SELECT c.crew_id, c.first_name, c.last_name, SUM(dl.duration_hours) AS total_duty_hours\nFROM crew c\nJOIN dutylog dl ON c.crew_id = dl.crew_id\nWHERE dl.log_date >= DATE_TRUNC('month', CURRENT_DATE)\n  AND dl.log_date < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'\nGROUP BY c.crew_id, c.first_name, c.last_name\nORDER BY total_duty_hours DESC;",
+      "question": "Calculate total flight hours and duty hours per crew member for the current month",
+      "sql": "SELECT c.crew_id, c.first_name, c.last_name,\n       COUNT(DISTINCT dl.flight_id) AS flights_flown,\n       SUM(dl.duty_hours) AS total_duty_hours,\n       SUM(dl.flight_hours) AS total_flight_hours\nFROM crew c\nLEFT JOIN dutylog dl ON c.crew_id = dl.crew_id\n  AND dl.log_date >= DATE_TRUNC('month', CURRENT_DATE)\nGROUP BY c.crew_id, c.first_name, c.last_name\nORDER BY total_flight_hours DESC;",
       "category": "Aggregation"
     },
     {
-      "question": "Identify crew members with active compliance violations and their assigned base.",
-      "sql": "SELECT c.crew_id, c.first_name, c.last_name, cb.base_name, cv.violation_type, cv.violation_date, cv.severity, cv.status\nFROM crew c\nJOIN complianceviolation cv ON c.crew_id = cv.crew_id\nJOIN crewbase cb ON c.base_id = cb.base_id\nWHERE cv.status = 'Open'\nORDER BY cv.severity DESC, cv.violation_date DESC;",
-      "category": "Analytics"
+      "question": "Identify crew members with unresolved compliance violations in the last 90 days",
+      "sql": "SELECT c.crew_id, c.first_name, c.last_name, cv.violation_type, cv.violation_date, cv.severity\nFROM crew c\nJOIN complianceviolation cv ON c.crew_id = cv.crew_id\nWHERE cv.status = 'Open'\n  AND cv.violation_date >= CURRENT_DATE - INTERVAL '90 days'\nORDER BY cv.severity DESC, cv.violation_date DESC;",
+      "category": "Reporting"
     },
     {
-      "question": "Show training completion status for all crew enrolled in a specific training program.",
-      "sql": "SELECT c.crew_id, c.first_name, c.last_name, tp.program_name, ts.session_date, te.completion_status, te.score\nFROM trainingenrollment te\nJOIN crew c ON te.crew_id = c.crew_id\nJOIN trainingsession ts ON te.session_id = ts.session_id\nJOIN trainingprogram tp ON ts.program_id = tp.program_id\nWHERE tp.program_id = :program_id\nORDER BY ts.session_date DESC, c.last_name;",
-      "category": "Relationship"
+      "question": "Determine training completion rate by program",
+      "sql": "SELECT tp.program_name,\n       COUNT(te.enrollment_id) AS total_enrollments,\n       SUM(CASE WHEN te.status = 'Completed' THEN 1 ELSE 0 END) AS completed,\n       ROUND(100.0 * SUM(CASE WHEN te.status = 'Completed' THEN 1 ELSE 0 END) / COUNT(te.enrollment_id), 1) AS completion_pct\nFROM trainingprogram tp\nLEFT JOIN trainingsession ts ON tp.program_id = ts.program_id\nLEFT JOIN trainingenrollment te ON ts.session_id = te.session_id\nGROUP BY tp.program_id, tp.program_name\nORDER BY completion_pct DESC;",
+      "category": "Analytics"
     }
   ],
   "schema_patterns": [
