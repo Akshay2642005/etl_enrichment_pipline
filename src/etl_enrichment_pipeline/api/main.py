@@ -15,6 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from etl_enrichment_pipeline.api.extraction_service import ErrorDetail, ErrorResponse, router
+from etl_enrichment_pipeline.api.insights_service import router as insights_router
+from etl_enrichment_pipeline.api.quality_service import router as quality_router
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +39,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Router ──────────────────────────────────────────────────
+# ── Routers ─────────────────────────────────────────────────
 app.include_router(router)
+app.include_router(quality_router)
+app.include_router(insights_router)
 
 # ── Exception handlers ──────────────────────────────────────
 
