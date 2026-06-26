@@ -31,7 +31,7 @@ from pathlib import Path
 import yaml
 
 from etl_enrichment_pipeline.api.main import app as _app
-from etl_enrichment_pipeline.core.orchestrator import run_pipeline_from_db, run_pipeline_from_sql
+from etl_enrichment_pipeline.core.orchestrator import run_pipeline_from_sql
 from etl_enrichment_pipeline.core.pipeline import run_pipeline as _run_pipeline
 from etl_enrichment_pipeline.core.pipeline import run_pipeline_from_dict
 from etl_enrichment_pipeline.agents.extraction_agent import run_extraction_flow
