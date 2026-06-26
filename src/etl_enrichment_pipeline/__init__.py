@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0"
 
-from config.config_global import (
+from config.config_global import (  # type: ignore
     CONNECTOR_SETTINGS,
     GLOBAL_PIPELINE,
 )

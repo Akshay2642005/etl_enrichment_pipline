@@ -39,7 +39,7 @@ from etl_enrichment_pipeline.core.pipeline import run_pipeline_from_dict
 def setup_logging(level: str = "INFO") -> None:
     """Configure root logger: stderr + file output."""
     try:
-        from config.config_global import GLOBAL_PIPELINE
+        from config.config_global import GLOBAL_PIPELINE  # type: ignore
         level = GLOBAL_PIPELINE.get("log_level", level).upper()
     except Exception:
         pass
