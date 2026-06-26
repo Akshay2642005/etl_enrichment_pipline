@@ -101,8 +101,8 @@ class ContextBuilder:
     async def build_context(
         self,
         question: str,
-        vector_store: VectorStore,
-        graph_store: GraphStore,
+        vector_store: VectorStore | None = None,
+        graph_store: GraphStore | None = None,
         top_k_tables: int = 10,
         top_k_columns: int = 20,
         top_k_relationships: int = 10,
@@ -120,8 +120,8 @@ class ContextBuilder:
 
         Args:
             question: The user's natural-language question.
-            vector_store: Populated pgvector store.
-            graph_store: Populated Neo4j graph store.
+            vector_store: Populated pgvector store (``None`` = skip vector search).
+            graph_store: Populated Neo4j graph store (``None`` = skip graph traversal).
             top_k_tables: Max tables to retrieve.
             top_k_columns: Max columns to retrieve.
             top_k_relationships: Max relationships to retrieve.
@@ -133,16 +133,20 @@ class ContextBuilder:
         # --- Step 1: Embed ---
         query_embedding = self._embedding_service.generate_embeddings([question])[0]
 
-        # --- Step 2: Vector search ---
-        table_results = await vector_store.search_similar(
-            query_embedding, object_type="table", top_k=top_k_tables
-        )
-        column_results = await vector_store.search_similar(
-            query_embedding, object_type="column", top_k=top_k_columns
-        )
-        relationship_results = await vector_store.search_similar(
-            query_embedding, object_type="relationship", top_k=top_k_relationships
-        )
+        # --- Step 2: Vector search (skip when store is unavailable) ---
+        table_results: list[Any] = []
+        column_results: list[Any] = []
+        relationship_results: list[Any] = []
+        if vector_store is not None:
+            table_results = await vector_store.search_similar(
+                query_embedding, object_type="table", top_k=top_k_tables
+            )
+            column_results = await vector_store.search_similar(
+                query_embedding, object_type="column", top_k=top_k_columns
+            )
+            relationship_results = await vector_store.search_similar(
+                query_embedding, object_type="relationship", top_k=top_k_relationships
+            )
 
         # --- Step 3: Extract matched table names ---
         matched_table_names: set[str] = set()
@@ -151,10 +155,12 @@ class ContextBuilder:
         for r in column_results:
             matched_table_names.add(r.metadata["table_name"])
 
-        # --- Step 4: Graph traversal ---
-        join_paths_raw: list[JoinPath] = await graph_store.find_join_paths(
-            list(matched_table_names), max_hops=graph_hops
-        )
+        # --- Step 4: Graph traversal (skip when store is unavailable) ---
+        join_paths_raw: list[JoinPath] = []
+        if graph_store is not None:
+            join_paths_raw = await graph_store.find_join_paths(
+                list(matched_table_names), max_hops=graph_hops
+            )
 
         # Build enriched-metadata lookups
         tables_by_name, columns_by_key, all_relationships, all_entity_relationships = (
@@ -215,11 +221,15 @@ class ContextBuilder:
                 if fk_key in seen_fk:
                     continue
                 seen_fk.add(fk_key)
+                # Vector-store metadata may use child/parent keys if it was
+                # populated before the normalisation fix — handle both.
+                meta_from_table = meta.get("from_table") or meta.get("child_table", "")
+                meta_to_table = meta.get("to_table") or meta.get("parent_table", "")
                 relationships_out.append({
-                    "from_table": meta["from_table"],
-                    "from_column": meta.get("from_column", ""),
-                    "to_table": meta["to_table"],
-                    "to_column": meta.get("to_column", ""),
+                    "from_table": meta_from_table,
+                    "from_column": meta.get("from_column") or meta.get("child_column", ""),
+                    "to_table": meta_to_table,
+                    "to_column": meta.get("to_column") or meta.get("parent_column", ""),
                     "relationship_type": "foreign_key",
                     "similarity": r.similarity,
                 })
@@ -422,7 +432,24 @@ class ContextBuilder:
                 col_key = f"{name}.{col['column_name']}"
                 columns_by_key[col_key] = col
 
-        for rel in self._metadata.get("relationships", []):
+        for raw_rel in self._metadata.get("relationships", []):
+            # Normalise child/parent → from/to keys so downstream code
+            # can safely use ``rel["from_table"]`` etc. regardless of how
+            # the metadata JSON was serialised.
+            if "from_table" in raw_rel:
+                rel = raw_rel
+            else:
+                rel = {
+                    "from_table": raw_rel.get("child_table", ""),
+                    "from_column": raw_rel.get("child_column", ""),
+                    "to_table": raw_rel.get("parent_table", ""),
+                    "to_column": raw_rel.get("parent_column", ""),
+                }
+                # Preserve any extra keys (name, description, …)
+                rel.update(
+                    (k, v) for k, v in raw_rel.items()
+                    if k not in ("child_table", "child_column", "parent_table", "parent_column")
+                )
             all_relationships.append(rel)
 
         for er in self._metadata.get("entity_relationships", []):

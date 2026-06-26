@@ -25,14 +25,20 @@ uv run ruff check src/            # lint
 uv run uvicorn main:app           # start API directly (same as uv run main.py)
 ```
 
+> **Single server**: NL2SQL, quality, and insights services now run on a single FastAPI
+> server (port 8000), not separate processes.  The standalone ``nl2sql_app.py`` was
+> removed as part of that consolidation.
+
 No Makefile, no justfile, no pre-commit hooks.
 
 ## Architecture
 
 ```
-main.py                           # CLI entry point (api / pipeline)
+main.py                           # CLI entry point (api / pipeline, or nl2sql subcommand)
 src/etl_enrichment_pipeline/
-  api/main.py                     # FastAPI app (health, /enrich)
+  api/
+    main.py                       # FastAPI app (all services: enrich, NL2SQL, quality, insights)
+    shared_state.py               # Lazy singletons: metadata, embedding_service, vector_store, graph_store
   agents/                         # 1 enrichment node + rule engine
     __init__.py                    # Lazy imports (PEP 562 __getattr__) to avoid circular deps
     extraction_agent.py           # PostgreSQL, MySQL, SQL Server, Oracle, SQLite extraction
@@ -100,7 +106,18 @@ Output always written to `output/enriched_metadata.json` by `main.py`.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/health` | Health check |
+| GET | `/api/v1/nl2sql/health` | NL2SQL sub-service health |
+| POST | `/api/v1/nl2sql/generate` | Natural language → SQL generation |
+| GET | `/api/v1/quality/health` | Quality sub-service health |
+| POST | `/api/v1/quality/assess` | Assess quality of enriched metadata |
+| GET | `/api/v1/insights/health` | Insights sub-service health |
+| POST | `/api/v1/insights/generate` | Generate insights from enriched metadata |
 | POST | `/enrich` | Accept raw metadata JSON body, run pipeline, return enriched result |
+
+All sub-services share a consolidated `shared_state.py` module for lazy singletons
+(metadata, embedding_service, vector_store, graph_store).  Store initialization is
+gracefully degraded — each store initializes independently; failures set that store
+to ``None`` rather than crashing the server.
 
 `POST /enrich` writes body to a tempfile, calls `run_pipeline()`, cleans up the tempfile.
 
@@ -161,6 +178,8 @@ Supported types: `postgres`, `mysql`, `mariadb`, `sqlserver`, `oracle`, `sqlite`
 - **View parsing**: `raw_json_to_canonical_schema()` now parses the `"views"` key in input JSON into `ViewSchema` objects with columns and definitions.
 - **API /enrich write to tempfile**: The endpoint serializes the request body to a tempfile on disk, then calls `run_pipeline()` (which reads it back). Not a streaming/zero-copy path.
 - **pytest xfail / integration**: No integration test markers. Tests mock LangGraph/LLM calls. Live DB tests require actual database access — none are automated.
+- **Relationship key naming**: Raw metadata JSON uses `child_table`/`child_column`/`parent_table`/`parent_column` for relationships (see Input JSON format above). The canonical model stores them as `from_table`/`from_column`/`to_table`/`to_column`. All code paths (`embedding_service`, `context_builder`, `graph_store`) now normalise both formats — do NOT rely on a single key naming convention.
+- **Store connection timeouts**: `VectorStore` (asyncpg) and `GraphStore` (Neo4j) have 5s connection timeouts. When a store is unavailable, its reference is set to `None` and the context builder skips vector/graph queries gracefully rather than hanging.
 
 ## Test conventions
 

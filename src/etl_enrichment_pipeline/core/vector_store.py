@@ -111,11 +111,17 @@ class VectorStore:
         self._dsn = dsn or _PGVECTOR_DSN
         self._pool: asyncpg.Pool | None = None
 
+    _CONNECTION_TIMEOUT = 5  # seconds — fail fast when pgvector is unavailable
+
     async def _get_pool(self) -> asyncpg.Pool:
         if self._pool is None:
             clean_dsn, extra_kwargs = _parse_dsn(self._dsn)
             self._pool = await asyncpg.create_pool(
-                clean_dsn, min_size=1, max_size=5, **extra_kwargs
+                clean_dsn,
+                min_size=1,
+                max_size=5,
+                timeout=self._CONNECTION_TIMEOUT,
+                **extra_kwargs,
             )
         return self._pool
 
