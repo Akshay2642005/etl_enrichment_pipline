@@ -454,6 +454,10 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
                         rel.to_table,
                         rel.to_column,
                     ),
+                    "child_table": rel.from_table,
+                    "child_column": rel.from_column,
+                    "parent_table": rel.to_table,
+                    "parent_column": rel.to_column,
                 }
             )
 

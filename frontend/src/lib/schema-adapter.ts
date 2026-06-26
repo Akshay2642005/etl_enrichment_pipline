@@ -139,9 +139,17 @@ export function normalizeSchema(rawJson: any): NormalizedSchema {
   } 
   // Parse Enriched Output (from pipeline.py)
   else {
-    // Pipeline outputs relationships as: { "name": "...", "description": "child.col \u2192 parent.col" }
+    // Pipeline outputs relationships as: { "name": "...", "description": "...", "child_table": "...", "parent_table": "..." }
     (rawJson.relationships || []).forEach((r: any) => {
-      if (r.description && r.description.includes(' \u2192 ')) {
+      if (r.child_table && r.parent_table) {
+        globalRelationships.push({
+          name: r.name,
+          childTable: r.child_table,
+          childColumn: r.child_column || '',
+          parentTable: r.parent_table,
+          parentColumn: r.parent_column || ''
+        });
+      } else if (r.description && r.description.includes(' \u2192 ')) {
         const [child, parent] = r.description.split(' \u2192 ');
         const [childTable, childCol] = child.split('.');
         const [parentTable, parentCol] = parent.split('.');
