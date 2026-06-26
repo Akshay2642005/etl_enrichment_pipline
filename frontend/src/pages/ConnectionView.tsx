@@ -125,7 +125,7 @@ export const ConnectionView = () => {
           if (val === 'sql') setDbType('sql');
           else setDbType(val);
         }} className="w-full flex flex-col items-center">
-          <TabsList className="flex flex-wrap w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center overflow-x-auto overflow-y-hidden">
+          <TabsList className="flex flex-wrap w-full h-auto bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsTrigger
                 key={type}
