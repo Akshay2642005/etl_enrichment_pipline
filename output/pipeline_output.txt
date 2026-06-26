@@ -16,3 +16,7 @@
 22:26:09 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline finished — 93.8s total
 22:26:09 [INFO] etl_enrichment_pipeline.core.pipeline: Tables: 30 | Relationships: 31 | Entities: 10 | Patterns: 13
 22:26:09 [INFO] etl_enrichment_pipeline.core.pipeline: ══════════════════════════════════════════════════
+12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Connecting to database type: postgres
+12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Starting metadata extraction for postgres
+12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Raw metadata written to sql_json/postgres_crew_20260626_123405.json
+12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Metadata extraction completed. JSON saved to sql_json\postgres_crew_20260626_123405.json
