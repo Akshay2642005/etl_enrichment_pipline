@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { InteractiveGraph } from '../components/diagram/InteractiveGraph';
 import { TableDetailsModal } from '../components/dashboard/TableDetailsModal';
+import { ViewDetailsModal } from '../components/dashboard/ViewDetailsModal';
 import { normalizeSchema } from '../lib/schema-adapter';
-import type { NormalizedTable } from '../lib/schema-adapter';
+import type { NormalizedTable, NormalizedView } from '../lib/schema-adapter';
 import { Database, Table as TableIcon, LayoutDashboard, ChevronDown, ChevronRight, Eye, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 
@@ -12,7 +13,9 @@ export const SchemaView = () => {
   const rawMetadata = location.state?.metadata;
   
   const [selectedTable, setSelectedTable] = useState<NormalizedTable | null>(null);
+  const [selectedView, setSelectedView] = useState<NormalizedView | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'graph'>('overview');
   const [tablesExpanded, setTablesExpanded] = useState(true);
   const [viewsExpanded, setViewsExpanded] = useState(true);
@@ -147,13 +150,14 @@ export const SchemaView = () => {
               {viewsExpanded && (
                 <div className="mt-1">
                   {filteredViews.map(v => (
-                    <div
+                    <button
                       key={v.viewName}
-                      className="w-full flex items-center gap-2 px-6 py-1.5 text-sm text-emerald-700 dark:text-emerald-400 opacity-80"
+                      onClick={() => { setSelectedView(v); setIsViewModalOpen(true); }}
+                      className="w-full flex items-center gap-2 px-6 py-1.5 text-sm text-emerald-700 dark:text-emerald-400 opacity-80 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span className="truncate">{v.viewName}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -213,6 +217,13 @@ export const SchemaView = () => {
         onClose={() => setIsModalOpen(false)} 
         table={selectedTable} 
         metrics={schema.metrics} 
+      />
+
+      {/* View Details Modal */}
+      <ViewDetailsModal 
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        view={selectedView}
       />
 
     </div>
