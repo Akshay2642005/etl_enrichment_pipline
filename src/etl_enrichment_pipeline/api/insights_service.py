@@ -131,10 +131,22 @@ def _get_graph_store() -> GraphStore:
 async def _ensure_stores_initialized() -> None:
     global _store_initialized
     if not _store_initialized:
-        vs = _get_vector_store()
-        await vs.initialize_schema()
-        gs = _get_graph_store()
-        await gs.initialize_schema()
+        try:
+            vs = _get_vector_store()
+            await vs.initialize_schema()
+        except Exception as e:
+            logger.warning(f"Failed to initialize VectorStore (pgvector): {e}. Proceeding without vector search.")
+            global _vector_store
+            _vector_store = None
+            
+        try:
+            gs = _get_graph_store()
+            await gs.initialize_schema()
+        except Exception as e:
+            logger.warning(f"Failed to initialize GraphStore (Neo4j): {e}. Proceeding without graph search.")
+            global _graph_store
+            _graph_store = None
+            
         _store_initialized = True
 
 
@@ -163,8 +175,8 @@ async def generate_insights(request: InsightsRequest) -> InsightsResponse:
 
         generator = InsightsGenerator(
             enriched_metadata=metadata,
-            vector_store=_get_vector_store(),
-            graph_store=_get_graph_store(),
+            vector_store=_vector_store,
+            graph_store=_graph_store,
         )
 
         result = await generator.generate(
