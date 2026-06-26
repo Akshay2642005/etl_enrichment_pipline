@@ -67,11 +67,11 @@ export const SchemaView = () => {
   const filteredViews = schema.views.filter(v => v.viewName.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-transparent text-slate-900 dark:text-slate-50 overflow-hidden w-full">
       
       {/* Left Sidebar */}
-      <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-10 shadow-sm h-full">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+      <aside className="w-72 bg-white dark:bg-[#0F172A]/80 backdrop-blur-xl border-r border-slate-200 dark:border-cyan-900/30 flex flex-col z-10 shadow-sm h-full">
+        <div className="p-4 border-b border-slate-200 dark:border-cyan-900/30 bg-slate-50/50 dark:bg-[#081120]/50">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
               <Database className="w-4 h-4 text-white" />
@@ -86,8 +86,8 @@ export const SchemaView = () => {
             onClick={() => { setActiveTab('overview'); setSelectedTable(null); }}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'overview' 
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' 
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                ? 'bg-blue-100 text-blue-700 dark:bg-cyan-950/40 dark:text-cyan-400 border border-transparent dark:border-cyan-800/50' 
+                : 'text-slate-600 hover:bg-slate-100 dark:text-cyan-100/70 dark:hover:bg-slate-800/50'
             }`}
           >
             <LayoutDashboard className="w-4 h-4" /> Schema Overview
@@ -102,7 +102,7 @@ export const SchemaView = () => {
               placeholder="Filter objects..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-100 dark:bg-slate-800 border-0 rounded-md py-2 pl-9 pr-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+              className="w-full bg-slate-100 dark:bg-[#081120] border-0 rounded-md py-2 pl-9 pr-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none transition-shadow text-slate-900 dark:text-slate-100"
             />
           </div>
         </div>
@@ -125,8 +125,8 @@ export const SchemaView = () => {
                     onClick={() => handleSidebarTableSelect(t)}
                     className={`w-full flex items-center gap-2 px-6 py-1.5 text-sm transition-colors ${
                       selectedTable?.tableName === t.tableName 
-                        ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
-                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'
+                        ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-500' 
+                        : 'text-slate-600 hover:bg-slate-50 dark:text-cyan-100/70 dark:hover:bg-slate-800/50'
                     }`}
                   >
                     <TableIcon className="w-3.5 h-3.5 opacity-70" />
@@ -167,7 +167,7 @@ export const SchemaView = () => {
       </aside>
 
       {/* Center Panel */}
-      <main className="flex-1 relative bg-slate-50 dark:bg-slate-950 flex flex-col">
+      <main className="flex-1 relative bg-transparent flex flex-col">
         {activeTab === 'overview' ? (
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-4xl mx-auto space-y-6">
@@ -187,10 +187,10 @@ export const SchemaView = () => {
                   { label: 'Primary Keys', value: stats.totalPKs },
                   { label: 'Foreign Keys', value: stats.totalFKs },
                 ].map((s, i) => (
-                  <Card key={i} className="shadow-sm border-slate-200 dark:border-slate-800">
+                  <Card key={i} className="shadow-sm border-slate-200 dark:border-cyan-900/30 bg-white dark:bg-[#0F172A]/80 backdrop-blur-xl">
                     <CardContent className="p-4">
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{s.label}</p>
-                      <p className="text-xl font-bold text-slate-800 dark:text-slate-100 truncate">{s.value}</p>
+                      <p className="text-xs font-medium text-slate-500 dark:text-cyan-100/50 mb-1">{s.label}</p>
+                      <p className="text-xl font-bold text-slate-800 dark:text-cyan-50 truncate">{s.value}</p>
                     </CardContent>
                   </Card>
                 ))}

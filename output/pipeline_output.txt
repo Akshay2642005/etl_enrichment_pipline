@@ -20,6 +20,18 @@
 12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Starting metadata extraction for postgres
 12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Raw metadata written to sql_json/postgres_crew_20260626_123405.json
 12:34:05 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Metadata extraction completed. JSON saved to sql_json\postgres_crew_20260626_123405.json
+12:38:39 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Connecting to database type: postgres
+12:38:39 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Starting metadata extraction for postgres
+12:38:39 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Raw metadata written to sql_json/postgres_horizon_grs_20260626_123839.json
+12:38:39 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Metadata extraction completed. JSON saved to sql_json\postgres_horizon_grs_20260626_123839.json
+12:43:59 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Connecting to database type: postgres
+12:43:59 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Starting metadata extraction for postgres
+12:43:59 [ERROR] etl_enrichment_pipeline.agents.extraction_agent: Failed to extract schema from postgres: connection to server at "localhost" (::1), port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+12:48:32 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Connecting to database type: postgres
+12:48:32 [INFO] etl_enrichment_pipeline.agents.extraction_agent: Starting metadata extraction for postgres
+12:48:32 [ERROR] etl_enrichment_pipeline.agents.extraction_agent: Failed to extract schema from postgres: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "crew" does not exist
+
 15:00:04 [INFO] etl_enrichment_pipeline.core.pipeline: ══════════════════════════════════════════════════
 15:00:04 [INFO] etl_enrichment_pipeline.core.pipeline: Pipeline started — source: sql_json/postgres_crew_20260626_122905.json
 15:00:04 [INFO] etl_enrichment_pipeline.core.pipeline: Loaded 27 table(s), 1 view(s), 27 relationship(s)
