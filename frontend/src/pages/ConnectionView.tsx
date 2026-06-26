@@ -113,7 +113,7 @@ export const ConnectionView = () => {
   return (
     <div className="h-full flex flex-col items-center justify-start pt-12 md:justify-center md:pt-6 p-4 relative overflow-auto bg-transparent text-slate-900 dark:text-slate-50 w-full">
 
-      <div className="w-full max-w-xl relative z-10">
+      <div className="w-full max-w-3xl relative z-10">
         <div className="text-center mb-8 flex flex-col items-center justify-center">
           <img src="/logo1-removebg-preview.png" alt="HALO AI AGENT SOFTWARE" className="h-48 md:h-64 w-full max-w-xl object-contain mx-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.4)]" />
           <p className="text-slate-600 dark:text-cyan-100/70 text-base md:text-lg max-w-md mx-auto leading-relaxed -mt-8">
@@ -147,7 +147,7 @@ export const ConnectionView = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="w-full">
+          <div className="w-full max-w-xl mx-auto">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsContent key={type} value={type} className="focus-visible:outline-none w-full m-0">
                 <Card className="border-slate-200/60 dark:border-cyan-900/30 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(0,229,255,0.05)] rounded-3xl overflow-hidden w-full relative">
