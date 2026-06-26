@@ -60,10 +60,10 @@ class QualityResponse(BaseModel):
     documentation: float = Field(default=0.0, ge=0.0, le=1.0)
     normalization: float = Field(default=0.0, ge=0.0, le=1.0)
     issues: list[dict[str, Any]] = Field(
-        default_factory=list, description="List of quality issues found"
+        default=[], description="List of quality issues found"
     )
     recommendations: list[str] = Field(
-        default_factory=list, description="Actionable improvement recommendations"
+        default=[], description="Actionable improvement recommendations"
     )
 
 
