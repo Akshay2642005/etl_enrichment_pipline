@@ -113,7 +113,7 @@ export const ConnectionView = () => {
   return (
     <div className="h-full flex flex-col items-center justify-start pt-12 md:justify-center md:pt-6 p-4 relative overflow-auto bg-transparent text-slate-900 dark:text-slate-50 w-full">
 
-      <div className="w-full max-w-xl relative z-10">
+      <div className="w-full max-w-3xl relative z-10">
         <div className="text-center mb-8 flex flex-col items-center justify-center">
           <img src="/logo1-removebg-preview.png" alt="HALO AI AGENT SOFTWARE" className="h-48 md:h-64 w-full max-w-xl object-contain mx-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.4)]" />
           <p className="text-slate-600 dark:text-cyan-100/70 text-base md:text-lg max-w-md mx-auto leading-relaxed -mt-8">
@@ -125,7 +125,7 @@ export const ConnectionView = () => {
           if (val === 'sql') setDbType('sql');
           else setDbType(val);
         }} className="w-full flex flex-col items-center">
-          <TabsList className="flex flex-wrap w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center overflow-x-auto overflow-y-hidden">
+          <TabsList className="flex w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-start md:justify-center overflow-x-auto hide-scrollbar">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsTrigger
                 key={type}
@@ -141,13 +141,13 @@ export const ConnectionView = () => {
             ))}
             <TabsTrigger
               value="sql"
-              className="flex-1 min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-bold py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/30 text-slate-700 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-200 dark:hover:bg-slate-800/80 transition-all duration-300"
+              className="flex-1 min-w-[70px] md:min-w-[80px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl text-slate-600 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300"
             >
               <FileCode className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">SQL Upload</span>
             </TabsTrigger>
           </TabsList>
 
-          <div className="w-full">
+          <div className="w-full max-w-xl mx-auto">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsContent key={type} value={type} className="focus-visible:outline-none w-full m-0">
                 <Card className="border-slate-200/60 dark:border-cyan-900/30 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(0,229,255,0.05)] rounded-3xl overflow-hidden w-full relative">
