@@ -141,7 +141,6 @@ export const InteractiveGraph = ({ schema, selectedTable, onNodeClick }: Interac
         maxZoom={1.5}
       >
         <Background color="#cbd5e1" gap={16} />
-        <Controls className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 fill-slate-700 dark:fill-slate-200" />
       </ReactFlow>
     </div>
   );
