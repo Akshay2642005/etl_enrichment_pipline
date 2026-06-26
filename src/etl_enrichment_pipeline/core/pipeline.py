@@ -527,7 +527,7 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
                 }
             )
 
-    return FinalOutput(
+    final_output = FinalOutput(
         metadata=metadata,
         tables=tables,
         views=views,
@@ -540,6 +540,27 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
         schema_patterns=schema_patterns,
         validation_report=validation_report,
     ).model_dump()
+
+    try:
+        from etl_enrichment_pipeline.agents.quality_agent import QualityAnalyst
+        qa = QualityAnalyst(enriched_metadata=final_output)
+        q_res = qa.assess()
+        
+        def _fmt(val: float) -> str:
+            return f"{int(val * 100)}/100"
+            
+        final_output["metadata"]["quality_scores"] = {
+            "overall": _fmt(q_res.get("overall_score", 0.0)),
+            "completeness": _fmt(q_res.get("completeness", 0.0)),
+            "relationships": _fmt(q_res.get("relationships", 0.0)),
+            "naming": _fmt(q_res.get("naming_convention", 0.0)),
+            "documentation": _fmt(q_res.get("documentation", 0.0)),
+            "normalization": _fmt(q_res.get("normalization", 0.0))
+        }
+    except Exception as e:
+        logger.warning(f"Quality assessment failed during final output assembly: {e}")
+
+    return final_output
 
 
 # ---------------------------------------------------------------------------
