@@ -25,7 +25,6 @@ from etl_enrichment_pipeline.core.pipeline import (
     run_pipeline_from_raw_json,
 )
 from etl_enrichment_pipeline.core.orchestrator import (
-    run_pipeline_from_db,
     run_pipeline_from_sql,
 )
 from etl_enrichment_pipeline.models.canonical import CanonicalSchema, ColumnSchema, RelationshipSchema, TableSchema, ViewSchema
@@ -578,74 +577,6 @@ class TestRunPipelineFromSql:
         assert len(captured_pipeline_args) == 1
         assert captured_pipeline_args[0][0] == ddl_result
         assert captured_pipeline_args[0][1] == "ddl:test_schema"
-
-
-# ============================================================================
-# run_pipeline_from_db
-# ============================================================================
-
-
-class TestRunPipelineFromDb:
-    """Tests for the live-database → pipeline bridge."""
-
-    def test_happy_path(self, monkeypatch, tmp_path):
-        """Verify correct system is found and credentials passed to extractor."""
-        output_dir = tmp_path / "output"
-
-        extract_result = {"database_type": "postgresql", "schema": "public", "tables": [], "views": []}
-        pipeline_result = {"metadata": {}, "tables": [], "views": []}
-
-        captured_extract_args = []
-        captured_pipeline_args = []
-
-        def mock_extract(creds):
-            captured_extract_args.append(creds)
-            return extract_result
-
-        def mock_run_pipeline_from_raw_json(raw_json, source_label):
-            captured_pipeline_args.append((raw_json, source_label))
-            return pipeline_result
-
-        monkeypatch.setattr(
-            "etl_enrichment_pipeline.core.orchestrator.extract_postgres_schema",
-            mock_extract,
-        )
-        monkeypatch.setattr(
-            "etl_enrichment_pipeline.core.orchestrator.run_pipeline_from_raw_json",
-            mock_run_pipeline_from_raw_json,
-        )
-
-        result = run_pipeline_from_db(
-            system_name="Crew Management System",
-            output_dir=str(output_dir),
-        )
-
-        assert result == pipeline_result
-
-        # extract_postgres_schema called with correct credentials
-        assert len(captured_extract_args) == 1
-        creds = captured_extract_args[0]
-        assert creds["host"] == "localhost"
-        assert creds["database"] == "crew"
-
-        # run_pipeline_from_raw_json called with correct source label
-        assert len(captured_pipeline_args) == 1
-        assert captured_pipeline_args[0][1] == "db:Crew Management System"
-
-        # Intermediate JSON file was persisted
-        intermediate = output_dir / "raw_from_db_Crew Management System.json"
-        assert intermediate.exists()
-        assert json.loads(intermediate.read_text(encoding="utf-8")) == extract_result
-
-    def test_unknown_system_raises_value_error(self):
-        """Unknown system_name must raise ValueError with available systems."""
-        with pytest.raises(ValueError) as exc_info:
-            run_pipeline_from_db(system_name="Nonexistent System")
-
-        msg = str(exc_info.value)
-        assert "No PostgreSQL configuration found" in msg
-        assert "Nonexistent System" in msg
-        assert "Crew Management System" in msg  # the only active entry
 
 
 # ============================================================================

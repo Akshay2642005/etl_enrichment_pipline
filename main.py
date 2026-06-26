@@ -40,7 +40,7 @@ from etl_enrichment_pipeline.agents.extraction_agent import run_extraction_flow
 def setup_logging(level: str = "INFO") -> None:
     """Configure root logger: stderr + file output."""
     try:
-        from etl_enrichment_pipeline.config.config_global import GLOBAL_PIPELINE
+        from config.config_global import GLOBAL_PIPELINE
         level = GLOBAL_PIPELINE.get("log_level", level).upper()
     except Exception:
         pass
