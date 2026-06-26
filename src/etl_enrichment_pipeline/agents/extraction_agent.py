@@ -19,17 +19,30 @@ def extract_schema_generic(db_type: str, creds: dict) -> dict:
     logger.info(f"Starting metadata extraction for {db_type}")
 
     if db_type == "postgres":
-        return extract_postgres_schema(creds)
+        data = extract_postgres_schema(creds)
     elif db_type in ("mysql", "mariadb"):
-        return extract_mysql_schema(creds)
+        data = extract_mysql_schema(creds)
     elif db_type == "sqlserver":
-        return extract_sqlserver_schema(creds)
+        data = extract_sqlserver_schema(creds)
     elif db_type == "oracle":
-        return extract_oracle_schema(creds)
+        data = extract_oracle_schema(creds)
     elif db_type == "sqlite":
-        return extract_sqlite_schema(creds)
+        data = extract_sqlite_schema(creds)
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
+
+    # Write to sql_json
+    os.makedirs("sql_json", exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    db_name = creds.get("database", "unknown")
+    if db_type == "sqlite":
+        db_name = os.path.basename(db_name)
+    filename = f"sql_json/{db_type}_{db_name}_{timestamp}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    logger.info(f"Raw metadata written to {filename}")
+
+    return data
 
 
 def extract_postgres_schema(creds: dict) -> dict:

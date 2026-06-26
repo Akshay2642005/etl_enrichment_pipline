@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0"
 
-from etl_enrichment_pipeline.config import (
+from config.config_global import (  # type: ignore
     CONNECTOR_SETTINGS,
     GLOBAL_PIPELINE,
 )
