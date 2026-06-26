@@ -60,19 +60,19 @@ class InsightsResponse(BaseModel):
     """Response body containing all four insight categories."""
 
     kpis: list[dict[str, Any]] = Field(
-        default_factory=list,
+        default=[],
         description="Key Performance Indicators (3-6 items)",
     )
     insights: list[dict[str, Any]] = Field(
-        default_factory=list,
+        default=[],
         description="Data-driven business insights (3-5 items)",
     )
     opportunities: list[dict[str, Any]] = Field(
-        default_factory=list,
+        default=[],
         description="Operational improvement opportunities (2-4 items)",
     )
     art_of_the_possible: list[dict[str, Any]] = Field(
-        default_factory=list,
+        default=[],
         description="Transformative / visionary capabilities (2-3 items)",
     )
 

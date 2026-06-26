@@ -17,17 +17,17 @@ class FinalOutput(BaseModel):
     are represented as top-level fields.
     """
 
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    tables: list[dict[str, Any]] = Field(default_factory=list)
-    views: list[dict[str, Any]] = Field(default_factory=list)
-    relationships: list[dict[str, str]] = Field(default_factory=list)
-    entities: list[dict[str, str]] = Field(default_factory=list)
-    entity_relationships: list[dict[str, str]] = Field(default_factory=list)
-    business_processes: list[dict[str, str]] = Field(default_factory=list)
-    use_cases: list[dict[str, str]] = Field(default_factory=list)
-    sample_queries: list[dict[str, str]] = Field(default_factory=list)
-    schema_patterns: list[dict[str, str]] = Field(default_factory=list)
-    validation_report: list[dict[str, str]] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default={})
+    tables: list[dict[str, Any]] = Field(default=[])
+    views: list[dict[str, Any]] = Field(default=[])
+    relationships: list[dict[str, str]] = Field(default=[])
+    entities: list[dict[str, str]] = Field(default=[])
+    entity_relationships: list[dict[str, str]] = Field(default=[])
+    business_processes: list[dict[str, str]] = Field(default=[])
+    use_cases: list[dict[str, str]] = Field(default=[])
+    sample_queries: list[dict[str, str]] = Field(default=[])
+    schema_patterns: list[dict[str, str]] = Field(default=[])
+    validation_report: list[dict[str, str]] = Field(default=[])
 
 
 __all__ = ["FinalOutput"]
