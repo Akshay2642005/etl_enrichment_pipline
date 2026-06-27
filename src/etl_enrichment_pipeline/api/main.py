@@ -44,17 +44,34 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
             name="store-loader",
         )
         try:
-            await load_enriched_metadata()
-            logger.info("Schema stores populated — all services ready")
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "Schema stores not populated (%s: %s) — run the enrichment pipeline first. "
-                "NL2SQL / Insights / Quality may return empty results until "
-                "stores are populated.",
-                type(exc).__name__,
-                exc,
-            )
-        yield
+            yield
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
+async def _populate_stores() -> None:
+    """Background task: load enriched metadata into vector + graph stores.
+
+    The embedding model (sentence-transformers) and store connections
+    are initialised lazily here, so the server is ready to accept
+    requests immediately while this runs.
+    """
+    try:
+        await load_enriched_metadata()
+        logger.info("Schema stores populated — all services ready")
+    except FileNotFoundError:
+        logger.warning(
+            "Enriched metadata not found — run the enrichment pipeline first. "
+            "NL2SQL / Insights / Quality may return empty results until "
+            "stores are populated."
+        )
+    except Exception:
+        logger.exception(
+            "Failed to populate schema stores — NL2SQL/Insights/Quality "
+            "may return empty results."
+        )
 
 
 app = FastAPI(
