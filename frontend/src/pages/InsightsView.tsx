@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Target, Lightbulb, TrendingUp, Rocket, Loader2, RefreshCw, AlertCircle, Database } from 'lucide-react';
-import { generateInsights } from '../services/api';
+import { useEffect } from 'react';
+import { Target, Lightbulb, TrendingUp, Rocket, Loader2, RefreshCw, AlertCircle, Database, Server } from 'lucide-react';
+import { generateInsights, fetchEmbeddingStatus } from '../services/api';
+import { useAppStore } from '../store/useAppStore';
 
 interface KPI {
   name: string;
@@ -41,9 +42,43 @@ interface InsightsData {
 }
 
 export const InsightsView = () => {
-  const [data, setData] = useState<InsightsData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const data = useAppStore((s) => s.insightsData);
+  const setData = useAppStore((s) => s.setInsightsData);
+  const isLoading = useAppStore((s) => s.insightsLoading);
+  const setIsLoading = useAppStore((s) => s.setInsightsLoading);
+  const error = useAppStore((s) => s.insightsError);
+  const setError = useAppStore((s) => s.setInsightsError);
+  const embeddingStatus = useAppStore((s) => s.embeddingStatus);
+  const setEmbeddingStatus = useAppStore((s) => s.setEmbeddingStatus);
+  const metadata = useAppStore((s) => s.metadata);
+  const insightsData = data as InsightsData | null;
+
+  useEffect(() => {
+    if (!metadata || insightsData) return;
+
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const status = await fetchEmbeddingStatus();
+        if (!cancelled) setEmbeddingStatus(status);
+      } catch {
+        /* server unreachable */
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    const timeout = setTimeout(() => {
+      cancelled = true;
+      clearInterval(interval);
+    }, 300_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [metadata, insightsData, setEmbeddingStatus]);
 
   const handleGenerate = async () => {
     setIsLoading(true);
@@ -58,7 +93,31 @@ export const InsightsView = () => {
     }
   };
 
-  if (!data && !isLoading && !error) {
+  // Show embedding progress when metadata exists but embedding hasn't finished yet
+  if (metadata && !insightsData && !isLoading && !error && embeddingStatus.status === 'embedding') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto text-center px-4">
+        <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6">
+          <Server className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+          Embedding Schema Vectors
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">
+          The enriched metadata is being vectorized and indexed into the knowledge stores.
+          Insights generation will be available once indexing completes.
+        </p>
+        <div className="w-full max-w-sm bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2 overflow-hidden">
+          <div className="bg-indigo-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+        </div>
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+          Indexing in progress&hellip;
+        </p>
+      </div>
+    );
+  }
+
+  if (!insightsData && !isLoading && !error) {
     return (
       <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center px-4">
         <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-6">
@@ -70,6 +129,12 @@ export const InsightsView = () => {
         <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">
           Generate powerful KPIs, data-driven insights, operational opportunities, and transformative capabilities directly from your enriched schema metadata using our AI.
         </p>
+        {embeddingStatus.status === 'failed' && (
+          <div className="mb-6 w-full max-w-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-700 dark:text-amber-400">
+            <AlertCircle className="w-4 h-4 inline mr-1" />
+            Background embedding encountered an error. Insights can still be generated from the enriched metadata directly.
+          </div>
+        )}
         <button
           onClick={handleGenerate}
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors"
@@ -142,7 +207,7 @@ export const InsightsView = () => {
           Key Performance Indicators (KPIs)
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data?.kpis?.map((kpi, idx) => (
+          {insightsData?.kpis?.map((kpi, idx) => (
             <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2">
                 {kpi.category}
@@ -176,7 +241,7 @@ export const InsightsView = () => {
           Data-Driven Insights
         </h2>
         <div className="space-y-4">
-          {data?.insights?.map((insight, idx) => (
+          {insightsData?.insights?.map((insight, idx) => (
             <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col md:flex-row gap-6">
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{insight.finding}</h3>
@@ -206,7 +271,7 @@ export const InsightsView = () => {
           Operational Opportunities
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {data?.opportunities?.map((opp, idx) => (
+          {insightsData?.opportunities?.map((opp, idx) => (
             <div key={idx} className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-3">
                 <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full">
@@ -241,7 +306,7 @@ export const InsightsView = () => {
           Art of the Possible
         </h2>
         <div className="space-y-6">
-          {data?.art_of_the_possible?.map((art, idx) => (
+          {insightsData?.art_of_the_possible?.map((art, idx) => (
             <div key={idx} className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-purple-100 dark:border-purple-900/30 rounded-xl p-8 shadow-sm">
               <h3 className="text-2xl font-bold text-indigo-900 dark:text-indigo-300 mb-4">{art.title}</h3>
               <p className="text-indigo-800/80 dark:text-indigo-200/80 mb-6 text-lg">{art.description}</p>

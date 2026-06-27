@@ -6,8 +6,9 @@ Task 6 of the nl2sql-service plan.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, cast
+import re
+from dataclasses import dataclass
+from typing import Any
 
 from etl_enrichment_pipeline.core.context_builder import SchemaContext
 from etl_enrichment_pipeline.core.llm import get_llm
@@ -34,8 +35,7 @@ class GenerationResult:
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT = (
-    "You are an expert PostgreSQL SQL generator for aviation, "
-    "airport operations, HR, and equipment maintenance domains.\n"
+    "You are an expert PostgreSQL SQL generator.\n"
     "\n"
     "SQL Generation Rules:\n"
     "- Use table aliases for all tables in the query\n"
@@ -46,26 +46,30 @@ _SYSTEM_PROMPT = (
     "expressions)\n"
     "- Only use tables and columns from the provided context \u2014 "
     "never invent tables or columns\n"
-    "- Output ONLY valid PostgreSQL SQL (no explanations or markdown "
-    "in the SQL output)\n"
     "- Use uppercase for SQL keywords, lowercase for identifiers\n"
     "- End every statement with a semicolon\n"
+    "\n"
+    "Output Instructions:\n"
+    "- Return ONLY the SQL query starting with SELECT/INSERT/UPDATE/DELETE\n"
+    "- Do NOT include any markdown, explanations, or backticks\n"
+    "- Do NOT wrap the SQL in ```sql ... ``` or any other formatting\n"
+    "- Just the raw SQL statement, nothing else\n"
     "\n"
     "Examples:\n"
     "\n"
     "Question: Show employees working in the HR department\n"
-    "SQL: SELECT e.* FROM employee e JOIN departmentsss d "
+    "SELECT e.* FROM employee e JOIN departmentsss d "
     "ON e.department_id = d.department_id "
     "WHERE d.department_name = 'HR';\n"
     "\n"
     "Question: List all flights with their baggage count\n"
-    "SQL: SELECT f.flight_number, COUNT(b.baggage_id) AS baggage_count "
+    "SELECT f.flight_number, COUNT(b.baggage_id) AS baggage_count "
     "FROM flight f LEFT JOIN baggage b "
     "ON f.flight_id = b.flight_id "
     "GROUP BY f.flight_number;\n"
     "\n"
     "Question: Find equipment needing maintenance in the next 7 days\n"
-    "SQL: SELECT e.equipment_name, e.last_maintenance_date "
+    "SELECT e.equipment_name, e.last_maintenance_date "
     "FROM equipment e "
     "WHERE e.last_maintenance_date <= CURRENT_DATE + INTERVAL '7 days';"
 )
@@ -98,6 +102,40 @@ class NL2SQLGenerator:
     # Public API
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _extract_sql(text: str) -> str:
+        """Extract a SQL statement from LLM response text.
+
+        Handles common wrapping formats: markdown code blocks,
+        ``sql`` prefixes, or plain SQL text.
+        """
+        # Strip markdown code blocks first
+        text = text.strip()
+        # ```sql ... ``` or ``` ... ```
+        block_match = re.search(
+            r"```(?:sql)?\s*\n?(.*?)\n?```", text, re.DOTALL | re.IGNORECASE
+        )
+        if block_match:
+            text = block_match.group(1).strip()
+
+        # Remove a leading "SQL:" label if present
+        text = re.sub(r"^(?:SQL|sql)\s*:\s*", "", text).strip()
+
+        # Find the first SQL statement (starts with SELECT/INSERT/UPDATE/DELETE/WITH)
+        stmt_match = re.search(
+            r"\b(SELECT\b.*?;|INSERT\b.*?;|UPDATE\b.*?;|DELETE\b.*?;|WITH\b.*?;)",
+            text,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if stmt_match:
+            return stmt_match.group(1).strip()
+
+        # Fallback: if the whole thing looks like SQL, return it
+        if text.upper().startswith("SELECT") or text.upper().startswith("WITH"):
+            return text
+
+        return ""
+
     def generate(self, question: str, context: SchemaContext) -> GenerationResult:
         """Convert a natural-language question to PostgreSQL SQL.
 
@@ -116,50 +154,38 @@ class NL2SQLGenerator:
         )
 
         try:
-            structured_llm = self._llm.with_structured_output(
-                GenerationResult, method="function_calling"
-            )
-            result = cast(
-                "GenerationResult",
-                structured_llm.invoke(
-                    [
-                        {"role": "system", "content": _SYSTEM_PROMPT},
-                        {"role": "user", "content": user_prompt},
-                    ]
-                ),
+            response = self._llm.invoke(
+                [
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ]
             )
 
-            if result is None:
-                logger.warning("LLM returned None \u2014 returning empty GenerationResult")
+            raw_text = getattr(response, "content", str(response)) or ""
+            sql = self._extract_sql(raw_text)
+
+            if not sql:
+                logger.warning(
+                    "LLM returned no extractable SQL — response: %.200s", raw_text
+                )
                 return GenerationResult(
                     sql="",
                     confidence=0.0,
-                    explanation="LLM returned no result",
+                    explanation="LLM did not return a valid SQL statement",
                     context_used=self._summarize_context(context),
                 )
 
-            # Handle dict result (some providers return dict instead of GenerationResult)
-            if isinstance(result, dict):
-                result = GenerationResult(
-                    sql=result.get("sql", "") or "",
-                    confidence=float(result.get("confidence", 0.0) or 0.0),
-                    explanation=result.get("explanation"),
-                    context_used=result.get("context_used"),
-                )
-
-            if not result.sql.strip():
-                logger.warning("LLM returned empty SQL \u2014 returning low-confidence result")
-                result.confidence = 0.0
-                result.context_used = self._summarize_context(context)
-                return result
-
-            result.context_used = self._summarize_context(context)
             logger.info(
-                "Generated SQL (confidence=%.2f): %.80s",
-                result.confidence,
-                result.sql.replace("\n", " "),
+                "Generated SQL (%.1f chars): %.80s",
+                len(sql),
+                sql.replace("\n", " "),
             )
-            return result
+            return GenerationResult(
+                sql=sql,
+                confidence=0.8,
+                explanation=None,
+                context_used=self._summarize_context(context),
+            )
 
         except Exception:
             logger.exception(
@@ -178,40 +204,24 @@ class NL2SQLGenerator:
 
     @staticmethod
     def _format_context(context: SchemaContext) -> str:
-        """Format a ``SchemaContext`` into a structured prompt section."""
+        """Format a ``SchemaContext`` into a compact prompt section.
+
+        Only includes what the LLM needs for SQL generation: table/column
+        names, data types, PK flags, and FK relationships. Strips human-
+        readable descriptions and semantic types to keep the prompt small.
+        """
         sections: list[str] = []
 
         if context.tables:
             lines: list[str] = ["### Tables"]
             for tbl in context.tables:
                 tbl_name = tbl.get("table_name", "")
-                desc = tbl.get("description", "")
-                role = tbl.get("business_role", "")
                 lines.append(f"  Table: {tbl_name}")
-                if desc:
-                    lines.append(f"    Description: {desc}")
-                if role:
-                    lines.append(f"    Business Role: {role}")
                 for col in tbl.get("columns", []):
                     col_name = col.get("column_name", "")
                     data_type = col.get("data_type", "")
-                    sem_type = col.get("semantic_type", "")
-                    col_desc = col.get("description", "")
-                    pk = "PK" if col.get("is_primary_key") else ""
-                    extras = f"  [{sem_type}]" if sem_type else ""
-                    extras += f"  {col_desc}" if col_desc else ""
-                    extras += f"  {pk}" if pk else ""
-                    lines.append(f"    - {col_name} ({data_type}){extras}")
-            sections.append("\n".join(lines))
-
-        if context.columns:
-            lines = ["### Relevant Columns"]
-            for col in context.columns:
-                lines.append(
-                    f"  {col.get('table_name', '')}.{col.get('column_name', '')}"
-                    f"  ({col.get('data_type', '')})"
-                    f"  [{col.get('semantic_type', '')}]"
-                )
+                    pk = " PK" if col.get("is_primary_key") else ""
+                    lines.append(f"    - {col_name} ({data_type}){pk}")
             sections.append("\n".join(lines))
 
         if context.relationships:
@@ -233,17 +243,6 @@ class NL2SQLGenerator:
                         f"    {step['from_table']}.{step['from_column']}"
                         f"  \u2192  {step['to_table']}.{step['to_column']}"
                     )
-            sections.append("\n".join(lines))
-
-        if context.entity_relationships:
-            lines = ["### Entity Relationships"]
-            for er in context.entity_relationships:
-                meaning = er.get("business_meaning", "")
-                extra = f"  :  {meaning}" if meaning else ""
-                lines.append(
-                    f"  {er.get('entity', '')}  \u2192  "
-                    f"{er.get('related_entities', '')}{extra}"
-                )
             sections.append("\n".join(lines))
 
         return "\n\n".join(sections).strip() if sections else "(no schema context)"

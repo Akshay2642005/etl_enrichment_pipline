@@ -272,9 +272,9 @@ class QualityAnalyst:
 
         for table in tables:
             tname = table["table_name"]
-            has_desc = bool(table.get("description", "").strip())
-            has_role = bool(table.get("business_role", "").strip())
-            has_domain = bool(table.get("domain", "").strip())
+            has_desc = bool((table.get("description") or "").strip())
+            has_role = bool((table.get("business_role") or "").strip())
+            has_domain = bool((table.get("domain") or "").strip())
 
             if has_desc and has_role and has_domain:
                 table_ok += 1
@@ -313,8 +313,8 @@ class QualityAnalyst:
             for col in table.get("columns", []):
                 cname = col["column_name"]
                 col_total += 1
-                has_col_desc = bool(col.get("description", "").strip())
-                has_semantic = bool(col.get("semantic_type", "").strip())
+                has_col_desc = bool((col.get("description") or "").strip())
+                has_semantic = bool((col.get("semantic_type") or "").strip())
                 if has_col_desc and has_semantic:
                     col_ok += 1
 
@@ -476,7 +476,7 @@ class QualityAnalyst:
         table_boilerplate = 0
 
         for table in tables:
-            desc = table.get("description", "").strip()
+            desc = (table.get("description") or "").strip()
             if desc:
                 table_desc_lengths.append(len(desc))
                 if len(desc) < 80 and boilerplate_checks_remaining > 0:
@@ -513,7 +513,7 @@ class QualityAnalyst:
         for table in tables:
             tname = table["table_name"]
             for col in table.get("columns", []):
-                desc = col.get("description", "").strip()
+                desc = (col.get("description") or "").strip()
                 if desc:
                     col_desc_lengths.append(len(desc))
                     if len(desc) < 60 and boilerplate_checks_remaining > 0:
@@ -550,7 +550,7 @@ class QualityAnalyst:
         # --- Entity relationship coverage ---
         entity_rels = self._metadata.get("entity_relationships", [])
         er_with_meaning = sum(
-            1 for er in entity_rels if bool(er.get("business_meaning", "").strip())
+            1 for er in entity_rels if bool((er.get("business_meaning") or "").strip())
         )
         er_coverage = er_with_meaning / max(len(entity_rels), 1) if entity_rels else 1.0
 

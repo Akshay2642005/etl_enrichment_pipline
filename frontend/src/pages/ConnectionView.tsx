@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { extractFromDb, extractFromSql } from '../services/api';
+import { useAppStore } from '../store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,26 +10,35 @@ import { Database, FileCode, Loader2, UploadCloud, CheckCircle2 } from 'lucide-r
 
 export const ConnectionView = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  // DB State
-  const [dbType, setDbType] = useState('postgres');
-  const [host, setHost] = useState('localhost');
-  const [port, setPort] = useState('5432');
-  const [database, setDatabase] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-
-  // Validation State
-  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
-
-  // SQL State
-  const [sqlDbType, setSqlDbType] = useState('postgres');
-  const [sqlSchema, setSqlSchema] = useState('public');
-  const [sqlDbName, setSqlDbName] = useState('');
-  const [sqlFile, setSqlFile] = useState<File | null>(null);
+  const setMetadata = useAppStore((s) => s.setMetadata);
+  const loading = useAppStore((s) => s.loading);
+  const setLoading = useAppStore((s) => s.setLoading);
+  const error = useAppStore((s) => s.connectionError);
+  const setError = useAppStore((s) => s.setConnectionError);
+  const successMessage = useAppStore((s) => s.successMessage);
+  const setSuccessMessage = useAppStore((s) => s.setSuccessMessage);
+  const dbType = useAppStore((s) => s.dbType);
+  const setDbType = useAppStore((s) => s.setDbType);
+  const host = useAppStore((s) => s.host);
+  const setHost = useAppStore((s) => s.setHost);
+  const port = useAppStore((s) => s.port);
+  const setPort = useAppStore((s) => s.setPort);
+  const database = useAppStore((s) => s.database);
+  const setDatabase = useAppStore((s) => s.setDatabase);
+  const username = useAppStore((s) => s.username);
+  const setUsername = useAppStore((s) => s.setUsername);
+  const password = useAppStore((s) => s.password);
+  const setPassword = useAppStore((s) => s.setPassword);
+  const validationErrors = useAppStore((s) => s.validationErrors);
+  const setValidationErrors = useAppStore((s) => s.setValidationErrors);
+  const sqlDbType = useAppStore((s) => s.sqlDbType);
+  const setSqlDbType = useAppStore((s) => s.setSqlDbType);
+  const sqlSchema = useAppStore((s) => s.sqlSchema);
+  const setSqlSchema = useAppStore((s) => s.setSqlSchema);
+  const sqlDbName = useAppStore((s) => s.sqlDbName);
+  const setSqlDbName = useAppStore((s) => s.setSqlDbName);
+  const sqlFile = useAppStore((s) => s.sqlFile);
+  const setSqlFile = useAppStore((s) => s.setSqlFile);
 
   const validateForm = () => {
     const errors: { [key: string]: string } = {};
@@ -69,6 +79,7 @@ export const ConnectionView = () => {
     setSuccessMessage(null);
     try {
       const data = await extractFromDb(dbType, { host, port, database, username, password });
+      setMetadata(data.data);
       setSuccessMessage("Metadata extracted successfully.");
       setTimeout(() => {
         navigate('/schema', { state: { metadata: data.data } });
@@ -98,6 +109,7 @@ export const ConnectionView = () => {
       if (sqlDbName) {
         data.data.database_name = sqlDbName;
       }
+      setMetadata(data.data);
       setSuccessMessage("Metadata extracted successfully.");
       setTimeout(() => {
         navigate('/schema', { state: { metadata: data.data } });
@@ -113,7 +125,7 @@ export const ConnectionView = () => {
   return (
     <div className="h-full flex flex-col items-center justify-start pt-12 md:justify-center md:pt-6 p-4 relative overflow-auto bg-transparent text-slate-900 dark:text-slate-50 w-full">
 
-      <div className="w-full max-w-xl relative z-10">
+      <div className="w-full max-w-3xl relative z-10">
         <div className="text-center mb-8 flex flex-col items-center justify-center">
           <img src="/logo1-removebg-preview.png" alt="HALO AI AGENT SOFTWARE" className="h-48 md:h-64 w-full max-w-xl object-contain mx-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.4)]" />
           <p className="text-slate-600 dark:text-cyan-100/70 text-base md:text-lg max-w-md mx-auto leading-relaxed -mt-8">
@@ -123,9 +135,9 @@ export const ConnectionView = () => {
 
         <Tabs value={dbType} onValueChange={(val) => {
           if (val === 'sql') setDbType('sql');
-          else setDbType(val);
+          else setDbType(val as any);
         }} className="w-full flex flex-col items-center">
-          <TabsList className="flex flex-wrap w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-center overflow-x-auto overflow-y-hidden">
+          <TabsList className="flex w-full bg-white/80 dark:bg-[#081120]/80 backdrop-blur-xl border border-slate-200/60 dark:border-cyan-900/30 shadow-sm rounded-2xl p-1.5 mb-8 gap-1 md:gap-1.5 justify-start md:justify-center overflow-x-auto hide-scrollbar">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsTrigger
                 key={type}
@@ -149,7 +161,7 @@ export const ConnectionView = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="w-full">
+          <div className="w-full max-w-xl mx-auto">
             {['postgres', 'mysql', 'mariadb', 'sqlserver', 'oracle', 'sqlite'].map((type) => (
               <TabsContent key={type} value={type} className="focus-visible:outline-none w-full m-0">
                 <Card className="border-slate-200/60 dark:border-cyan-900/30 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(0,229,255,0.05)] rounded-3xl overflow-hidden w-full relative">

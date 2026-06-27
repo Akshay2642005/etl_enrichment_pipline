@@ -31,6 +31,72 @@ def service(mock_model):
 
 
 @pytest.fixture
+def sample_metadata_child_keys():
+    """Same structure as sample_metadata but uses child/parent relationship keys."""
+    return {
+        "tables": [
+            {
+                "table_name": "employee",
+                "description": "Employee records",
+                "business_role": "master_data",
+                "domain": "HR",
+                "columns": [
+                    {
+                        "column_name": "employee_id",
+                        "data_type": "int",
+                        "semantic_type": "ID",
+                        "description": "Unique ID",
+                        "is_primary_key": True,
+                        "is_nullable": False,
+                    },
+                    {
+                        "column_name": "dept_id",
+                        "data_type": "int",
+                        "semantic_type": "ID",
+                        "description": "Department FK",
+                        "is_primary_key": False,
+                        "is_nullable": True,
+                    },
+                ],
+            },
+            {
+                "table_name": "department",
+                "description": "Departments",
+                "business_role": "master_data",
+                "domain": "HR",
+                "columns": [
+                    {
+                        "column_name": "id",
+                        "data_type": "int",
+                        "semantic_type": "ID",
+                        "description": "Dept ID",
+                        "is_primary_key": True,
+                        "is_nullable": False,
+                    }
+                ],
+            },
+        ],
+        "relationships": [
+            {
+                "name": "fk_employee_department",
+                "description": "Links employee to their department",
+                "child_table": "employee",
+                "child_column": "dept_id",
+                "parent_table": "department",
+                "parent_column": "id",
+            }
+        ],
+        "entity_relationships": [
+            {
+                "entity": "Employee",
+                "related_entities": "Department",
+                "business_meaning": "An employee belongs to one department",
+            }
+        ],
+    }
+
+
+@pytest.fixture
 def sample_metadata():
     return {
         "tables": [
@@ -141,6 +207,24 @@ class TestEmbedSchemaObjects:
         fk_keys = {r.object_key for r in rel_embs}
         assert "relationship:employee.department_id->departmentsss.department_id" in fk_keys
         assert "entity_relationship:Employee->Department" in fk_keys
+
+    def test_relationship_embeddings_with_child_parent_keys(
+        self, service, mock_model, sample_metadata_child_keys
+    ):
+        """embed_schema_objects normalises child/parent → from/to keys."""
+        results = service.embed_schema_objects(sample_metadata_child_keys)
+        rel_embs = [r for r in results if r.object_type == "relationship"]
+        assert len(rel_embs) == 2
+        fk_keys = {r.object_key for r in rel_embs}
+        assert "relationship:employee.dept_id->department.id" in fk_keys, (
+            f"Expected relationship:employee.dept_id->department.id, got {fk_keys}"
+        )
+        # Verify metadata was normalised to from/to keys
+        fk_meta = {r.object_key: r.metadata for r in rel_embs if r.object_type == "relationship"}
+        for meta in fk_meta.values():
+            if meta.get("relationship_type") == "foreign_key":
+                assert "from_table" in meta, f"from_table missing in {meta}"
+                assert "to_table" in meta, f"to_table missing in {meta}"
 
     def test_empty_metadata_returns_empty_list(self, service, mock_model):
         mock_model.encode.return_value = np.array([])

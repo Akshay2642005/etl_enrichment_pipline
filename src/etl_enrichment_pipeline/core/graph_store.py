@@ -52,11 +52,14 @@ class GraphStore:
         self._password = password or _NEO4J_PASSWORD
         self._driver: AsyncDriver | None = None
 
+    _CONNECTION_TIMEOUT = 5  # seconds — fail fast when Neo4j is unavailable
+
     async def _get_driver(self) -> AsyncDriver:
         if self._driver is None:
             self._driver = AsyncGraphDatabase.driver(
                 self._uri,
                 auth=(self._user, self._password),
+                connection_timeout=self._CONNECTION_TIMEOUT,
             )
         return self._driver
 
@@ -127,16 +130,22 @@ class GraphStore:
 
             # --- relationships → FK_TO edges ---
             for rel in metadata.get("relationships", []):
+                # Normalise child/parent → from/to keys so Cypher params are
+                # always populated regardless of how the metadata was serialised.
+                from_table = rel.get("from_table") or rel.get("child_table", "")
+                from_column = rel.get("from_column") or rel.get("child_column", "")
+                to_table = rel.get("to_table") or rel.get("parent_table", "")
+                to_column = rel.get("to_column") or rel.get("parent_column", "")
                 await session.run(
                     (
                         "MATCH (from_col:Column {table: $from_table, name: $from_column}) "
                         "MATCH (to_col:Column {table: $to_table, name: $to_column}) "
                         "MERGE (from_col)-[:FK_TO]->(to_col)"
                     ),
-                    from_table=rel["from_table"],
-                    from_column=rel["from_column"],
-                    to_table=rel["to_table"],
-                    to_column=rel["to_column"],
+                    from_table=from_table,
+                    from_column=from_column,
+                    to_table=to_table,
+                    to_column=to_column,
                 )
 
             # --- entities → Entity nodes ---

@@ -59,15 +59,15 @@ def _mock_all_services(monkeypatch: pytest.MonkeyPatch, sample_context: SchemaCo
     mocks: dict[str, MagicMock] = {}
     mock_emb = MagicMock()
     mock_emb.generate_embeddings.return_value = [[0.1] * 384]
-    monkeypatch.setattr("etl_enrichment_pipeline.api.nl2sql_service._get_embedding_service", lambda: mock_emb)
+    monkeypatch.setattr("etl_enrichment_pipeline.api.shared_state.get_embedding_service", lambda: mock_emb)
     mocks["embedding"] = mock_emb
     mock_vs = MagicMock()
     mock_vs.search_similar.return_value = []
-    monkeypatch.setattr("etl_enrichment_pipeline.api.nl2sql_service._get_vector_store", lambda: mock_vs)
+    monkeypatch.setattr("etl_enrichment_pipeline.api.shared_state.get_vector_store", lambda: mock_vs)
     mocks["vector_store"] = mock_vs
     mock_gs = MagicMock()
     mock_gs.find_join_paths.return_value = []
-    monkeypatch.setattr("etl_enrichment_pipeline.api.nl2sql_service._get_graph_store", lambda: mock_gs)
+    monkeypatch.setattr("etl_enrichment_pipeline.api.shared_state.get_graph_store", lambda: mock_gs)
     mocks["graph_store"] = mock_gs
     mock_cb = MagicMock()
     mock_cb.build_context = AsyncMock(return_value=sample_context)
@@ -85,7 +85,7 @@ def _mock_all_services(monkeypatch: pytest.MonkeyPatch, sample_context: SchemaCo
     async def _noop() -> None:
         return None
 
-    monkeypatch.setattr("etl_enrichment_pipeline.api.nl2sql_service._ensure_stores_initialized", _noop)
+    monkeypatch.setattr("etl_enrichment_pipeline.api.shared_state.ensure_stores_initialized", _noop)
     return mocks
 
 

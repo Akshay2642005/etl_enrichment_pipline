@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from etl_enrichment_pipeline.agents.ddl_parser import ddl_to_json
 from etl_enrichment_pipeline.agents.extraction_agent import extract_schema_generic
 from etl_enrichment_pipeline.core.pipeline import run_pipeline_from_raw_json
+from etl_enrichment_pipeline.core.store_loader import load_enriched_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +35,64 @@ logger = logging.getLogger(__name__)
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="pipeline")
 
+# Embedding status tracker — frontend polls this after pipeline runs
+_EMBEDDING_STATUS: dict[str, Any] = {
+    "status": "idle",
+    "updated_at": None,
+    "error": None,
+}
+
 
 def _run_pipeline(raw_json: dict[str, Any], source_label: str) -> dict[str, Any]:
     """Run the enrichment pipeline (blocking — called in executor thread)."""
     return run_pipeline_from_raw_json(raw_json, source_label=source_label)
+
+
+async def _embed_in_background() -> None:
+    """Load enriched metadata into pgvector + Neo4j in background.
+
+    Fire-and-forget — updates _EMBEDDING_STATUS, never raises.
+    """
+    _EMBEDDING_STATUS.update(
+        {
+            "status": "embedding",
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "error": None,
+        }
+    )
+    try:
+        result = await load_enriched_metadata()
+        _EMBEDDING_STATUS.update(
+            {
+                "status": "complete",
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "error": None,
+            }
+        )
+        logger.info(
+            "Background embedding complete — %d tables indexed",
+            len(result.get("tables", [])),
+        )
+    except FileNotFoundError:
+        _EMBEDDING_STATUS.update(
+            {
+                "status": "failed",
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "error": "Enriched metadata file not found",
+            }
+        )
+        logger.warning(
+            "Enriched metadata file not found — skipping background embedding"
+        )  # noqa: E501
+    except Exception:
+        _EMBEDDING_STATUS.update(
+            {
+                "status": "failed",
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "error": "Embedding failed (stores may be unavailable)",
+            }
+        )
+        logger.exception("Background embedding failed (stores may be unavailable)")
 
 
 # ===================================================================
@@ -90,9 +145,7 @@ class ErrorDetail(BaseModel):
 
     code: str = Field(..., description="Machine-readable error code")
     message: str = Field(..., description="Human-readable error message")
-    details: str | None = Field(
-        default=None, description="Optional additional context"
-    )
+    details: str | None = Field(default=None, description="Optional additional context")
 
 
 class ErrorResponse(BaseModel):
@@ -185,6 +238,12 @@ async def health() -> JSONResponse:
     )
 
 
+@router.get("/embedding/status")
+async def embedding_status() -> JSONResponse:
+    """Return the current embedding status for frontend polling."""
+    return JSONResponse(content=_EMBEDDING_STATUS, status_code=200)
+
+
 @router.post(
     "/extract",
     summary="Extract and enrich schema from a live database",
@@ -201,7 +260,9 @@ async def extract(request: Request) -> JSONResponse:
     try:
         body_raw: dict[str, Any] = await request.json()
     except json.JSONDecodeError as exc:
-        return _error_json(400, "invalid_json", f"Request body is not valid JSON: {exc}")  # noqa: E501
+        return _error_json(
+            400, "invalid_json", f"Request body is not valid JSON: {exc}"
+        )  # noqa: E501
 
     try:
         parsed = ExtractDBRequest.model_validate(body_raw)
@@ -231,6 +292,15 @@ async def extract(request: Request) -> JSONResponse:
         out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     except Exception as exc:
         logger.warning("Failed to save enriched metadata to disk: %s", exc)
+
+    _EMBEDDING_STATUS.update(
+        {
+            "status": "embedding",
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "error": None,
+        }
+    )
+    asyncio.ensure_future(_embed_in_background())
 
     elapsed = time.monotonic() - t_start
     logger.info(
@@ -263,7 +333,9 @@ async def parse_sql(request: Request) -> JSONResponse:
     try:
         body_raw: dict[str, Any] = await request.json()
     except json.JSONDecodeError as exc:
-        return _error_json(400, "invalid_json", f"Request body is not valid JSON: {exc}")  # noqa: E501
+        return _error_json(
+            400, "invalid_json", f"Request body is not valid JSON: {exc}"
+        )  # noqa: E501
 
     try:
         parsed = ParseSQLRequest.model_validate(body_raw)
@@ -293,6 +365,15 @@ async def parse_sql(request: Request) -> JSONResponse:
         out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     except Exception as exc:
         logger.warning("Failed to save enriched metadata to disk: %s", exc)
+
+    _EMBEDDING_STATUS.update(
+        {
+            "status": "embedding",
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "error": None,
+        }
+    )
+    asyncio.ensure_future(_embed_in_background())
 
     elapsed = time.monotonic() - t_start
     logger.info(

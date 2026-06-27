@@ -348,6 +348,45 @@ def _describe_relationship(
     return f"each {child} references {parent} via {from_column}"
 
 
+def _relationship_label(
+    from_table: str,
+    from_column: str,
+    to_table: str,
+    to_column: str,
+) -> str:
+    """Generate a concise natural-language label for a FK relationship.
+
+    Returns a short verb phrase like "categorized by", "belongs to",
+    "reports to", or "references".
+    """
+    child = _singular(from_table)
+    parent = _singular(to_table)
+    fk_lower = from_column.lower()
+    parent_lower = parent.lower()
+
+    # FK column contains parent table name — direct association
+    if fk_lower == f"{parent_lower}_id" or parent_lower in fk_lower:
+        if parent_lower in ("manager", "supervisor", "lead", "head"):
+            return "reports to"
+        return "categorized by"
+
+    # Self-referencing FK (e.g. employee.manager_id → employee.id)
+    if from_table == to_table and from_column != to_column:
+        if parent_lower in fk_lower or parent_lower in ("manager", "supervisor"):
+            return "reports to"
+        return "refers to"
+
+    # FK column is just "id" or "{table}_id"
+    if fk_lower in ("id", f"{from_table}_id"):
+        return "associated with"
+
+    # FK column starts with parent name
+    if fk_lower.startswith(parent_lower):
+        return "categorized by"
+
+    return "references"
+
+
 def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     """Build a ``FinalOutput``-compatible dict from a completed ``PipelineState``.
 
@@ -440,20 +479,24 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     relationships: list[dict[str, str]] = []
     if schema:
         for rel in schema.relationships:
-            # Build a descriptive name: prefer constraint_name, else generate one
-            rel_name = (
-                rel.constraint_name
-                or f"fk_{rel.from_table}_{rel.from_column}_{rel.to_table}"
-            )
             relationships.append(
                 {
-                    "name": rel_name,
+                    "name": _relationship_label(
+                        rel.from_table,
+                        rel.from_column,
+                        rel.to_table,
+                        rel.to_column,
+                    ),
                     "description": _describe_relationship(
                         rel.from_table,
                         rel.from_column,
                         rel.to_table,
                         rel.to_column,
                     ),
+                    "from_table": rel.from_table,
+                    "from_column": rel.from_column,
+                    "to_table": rel.to_table,
+                    "to_column": rel.to_column,
                     "child_table": rel.from_table,
                     "child_column": rel.from_column,
                     "parent_table": rel.to_table,

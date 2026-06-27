@@ -86,10 +86,9 @@ class InsightsResult:
 # Prompt templates
 # ---------------------------------------------------------------------------
 
-_SYSTEM_PROMPT = """You are an expert aviation / airport operations business analyst.
-Given the schema context below, generate business intelligence across four
-categories. Use ONLY the tables, columns, and relationships from the provided
-context — never invent tables or columns.
+_SYSTEM_PROMPT = """You are an expert business data analyst. Given the schema context
+below, generate business intelligence across four categories. Use ONLY the tables,
+columns, and relationships from the provided context — never invent tables or columns.
 
 SCHEMA CONTEXT:
 {schema_context}
@@ -101,17 +100,19 @@ SCHEMA CONTEXT:
 OUTPUT REQUIREMENTS:
 
 ### KPIs (3-6 items)
-Key Performance Indicators relevant to airport operations. Each KPI must include
+Key Performance Indicators relevant to the schema's domain (e.g. Sales, Operations,
+Workforce, Customer, Inventory, Financial, Logistics, etc.). Each KPI must include
 a realistic SQL query that uses ONLY tables and columns from the context.
 
-Category must be one of: "Workforce", "Operations", "Equipment", "Baggage",
-"Financial", "Customer Service", "Safety", "Compliance".
+Category must be one of the following or another domain-appropriate category:
+"Workforce", "Operations", "Equipment", "Inventory", "Sales", "Financial",
+"Customer Service", "Logistics", "Compliance", "Marketing", "Product".
 
-Potential value describes the business benefit (e.g. "Reduces turnaround time
-by 15%", "Saves $200K/year in overtime").
+Potential value describes the business benefit (e.g. "Increases revenue by 15%",
+"Saves $200K/year", "Reduces churn by 10%").
 
 ### Insights (3-5 items)
-Data-driven findings about the airport domain that could be surfaced from the
+Data-driven findings about the business domain that could be surfaced from the
 schema. Each insight needs:
 - A specific, actionable finding
 - Supporting evidence (tables/columns that back it up)
@@ -133,12 +134,13 @@ Transformative capabilities that could be built on top of the data.
 Return valid JSON matching the output schema exactly.
 """
 
-_USER_PROMPT = """Based on the aviation / airport operations schema context above,
-generate a complete set of KPIs, Insights, Opportunities, and Art of the Possible.
+_USER_PROMPT = """Based on the schema context above, generate a complete set of KPIs,
+Insights, Opportunities, and Art of the Possible relevant to the business domain
+reflected in the tables.
 
 Ensure every SQL query references ONLY tables and columns present in the schema
-context. Use realistic airport operations categories (Workforce, Operations,
-Equipment, Baggage, etc.)."""
+context. Choose categories that match the actual domain (e.g. Sales, Inventory,
+Customer, Operations, Workforce, etc.)."""
 
 # ---------------------------------------------------------------------------
 # Field-name constants for serialisation (used by InsightsGenerator)
@@ -315,7 +317,10 @@ def _build_domain_filter(
                     f"({er.get('business_meaning', '')})."
                 )
     if not parts:
-        return "No domain or entity filter — cover all aspects of airport operations."
+        return (
+            "No domain or entity filter — cover all aspects of the "
+            "business domain reflected in the schema context."
+        )
     return " ".join(parts)
 
 
@@ -483,7 +488,7 @@ class InsightsGenerator:
             query_parts.append(f"domain {domain}")
         if entity:
             query_parts.append(f"entity {entity}")
-        query = " ".join(query_parts) if query_parts else "airport operations schema"
+        query = " ".join(query_parts) if query_parts else "business schema"
 
         retrieved_tables: list[str] = []
         retrieved_entities: list[dict[str, Any]] = []
