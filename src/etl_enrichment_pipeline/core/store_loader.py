@@ -9,6 +9,7 @@ Or call :func:`load_enriched_metadata` programmatically after a pipeline run.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -66,8 +67,13 @@ async def load_enriched_metadata(
 
     # --- 1. Generate embeddings ---
     logger.info("Generating embeddings for schema objects ...")
-    embedding_service = EmbeddingService()
-    embeddings = embedding_service.embed_schema_objects(metadata)
+    loop = asyncio.get_running_loop()
+    # Initialise the service (loads weights) in a thread so it doesn't block the event loop
+    embedding_service = await loop.run_in_executor(None, EmbeddingService)
+    # Generate embeddings for the entire schema in a thread
+    embeddings = await loop.run_in_executor(
+        None, embedding_service.embed_schema_objects, metadata
+    )
     logger.info("Generated %d embeddings", len(embeddings))
 
     # --- 2. Upsert into pgvector ---
@@ -77,6 +83,12 @@ async def load_enriched_metadata(
         await vector_store.initialize_schema()
         await vector_store.upsert_embeddings(embeddings)
         logger.info("pgvector store populated successfully")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "pgvector store unavailable (%s: %s) — NL2SQL vector search will be skipped.",
+            type(exc).__name__,
+            exc,
+        )
     finally:
         await vector_store.close()
 
@@ -87,6 +99,12 @@ async def load_enriched_metadata(
         await graph_store.initialize_schema()
         await graph_store.load_schema(metadata)
         logger.info("Neo4j graph populated successfully")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Neo4j graph store unavailable (%s: %s) — graph-based queries will be skipped.",
+            type(exc).__name__,
+            exc,
+        )
     finally:
         await graph_store.close()
 
