@@ -5,6 +5,7 @@ Task 7 of the nl2sql-service plan.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -215,7 +216,14 @@ async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None]:
         # Lazy-init only: validate metadata file exists, defer everything else
         # to first request (embedding model, stores, services).
         load_metadata()
-        logger.info("NL2SQL services registered (lazy init on first request)")
+        loop = asyncio.get_running_loop()
+        # Initialise the heavy embedding model in a background thread to avoid blocking the event loop
+        await loop.run_in_executor(None, get_embedding_service)
+        await ensure_stores_initialized()
+        _get_context_builder()
+        _get_nl2sql_generator()
+        _get_sql_validator()
+        logger.info("NL2SQL services initialized")
         yield
     finally:
         await close_shared_stores()
