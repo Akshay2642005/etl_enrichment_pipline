@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Plug, FileJson, Lightbulb, Bot, Menu } from 'lucide-react';
+import { useAppStore } from '../../store/useAppStore';
 
 export const MainLayout = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const isCollapsed = useAppStore((s) => s.sidebarCollapsed);
+  const setIsCollapsed = useAppStore((s) => s.setSidebarCollapsed);
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-[#020617] overflow-hidden text-slate-900 dark:text-slate-50">

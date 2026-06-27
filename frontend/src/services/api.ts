@@ -20,6 +20,12 @@ export const extractFromSql = async (sqlText: string, dbType: string, schema: st
   return data;
 };
 
+export const fetchEmbeddingStatus = async () => {
+  const response = await fetch('/embedding/status');
+  if (!response.ok) throw new Error('Failed to fetch embedding status');
+  return response.json();
+};
+
 export const generateInsights = async (domain?: string, entity?: string) => {
   const response = await fetch('/api/v1/insights/generate', {
     method: 'POST',

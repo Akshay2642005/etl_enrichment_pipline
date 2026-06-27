@@ -1,25 +1,36 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { InteractiveGraph } from '../components/diagram/InteractiveGraph';
 import { TableDetailsModal } from '../components/dashboard/TableDetailsModal';
 import { ViewDetailsModal } from '../components/dashboard/ViewDetailsModal';
 import { normalizeSchema } from '../lib/schema-adapter';
 import type { NormalizedTable, NormalizedView } from '../lib/schema-adapter';
+import { useAppStore } from '../store/useAppStore';
 import { Database, Table as TableIcon, LayoutDashboard, ChevronDown, ChevronRight, Eye, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 
 export const SchemaView = () => {
   const location = useLocation();
-  const rawMetadata = location.state?.metadata;
-  
-  const [selectedTable, setSelectedTable] = useState<NormalizedTable | null>(null);
-  const [selectedView, setSelectedView] = useState<NormalizedView | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'graph'>('overview');
-  const [tablesExpanded, setTablesExpanded] = useState(true);
-  const [viewsExpanded, setViewsExpanded] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const storeMetadata = useAppStore((s) => s.metadata);
+  const selectedTable = useAppStore((s) => s.selectedTable) as NormalizedTable | null;
+  const setSelectedTable = useAppStore((s) => s.setSelectedTable);
+  const selectedView = useAppStore((s) => s.selectedView) as NormalizedView | null;
+  const setSelectedView = useAppStore((s) => s.setSelectedView);
+  const isModalOpen = useAppStore((s) => s.isModalOpen);
+  const setIsModalOpen = useAppStore((s) => s.setIsModalOpen);
+  const isViewModalOpen = useAppStore((s) => s.isViewModalOpen);
+  const setIsViewModalOpen = useAppStore((s) => s.setIsViewModalOpen);
+  const activeTab = useAppStore((s) => s.schemaActiveTab);
+  const setActiveTab = useAppStore((s) => s.setSchemaActiveTab);
+  const tablesExpanded = useAppStore((s) => s.tablesExpanded);
+  const setTablesExpanded = useAppStore((s) => s.setTablesExpanded);
+  const viewsExpanded = useAppStore((s) => s.viewsExpanded);
+  const setViewsExpanded = useAppStore((s) => s.setViewsExpanded);
+  const searchQuery = useAppStore((s) => s.searchQuery);
+  const setSearchQuery = useAppStore((s) => s.setSearchQuery);
+
+  // Read from location state (fresh pipeline run) or zustand store (tab switch)
+  const rawMetadata = location.state?.metadata ?? storeMetadata;
 
   // Memoize the normalized schema
   const schema = useMemo(() => {

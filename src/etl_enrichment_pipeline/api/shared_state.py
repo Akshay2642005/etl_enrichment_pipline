@@ -33,7 +33,6 @@ METADATA_PATH = str(_DEFAULT_METADATA_PATH)
 # Lazy singleton state
 # ---------------------------------------------------------------------------
 
-_metadata: dict[str, Any] | None = None
 _embedding_service: EmbeddingService | None = None
 _vector_store: VectorStore | None = None
 _graph_store: GraphStore | None = None
@@ -46,7 +45,9 @@ _store_initialized: bool = False
 
 
 def load_metadata(path_override: str | None = None) -> dict[str, Any]:
-    """Lazy-load enriched metadata from disk.
+    """Read enriched metadata from disk.
+
+    Always reads from disk — never returns a stale cached copy.
 
     Args:
         path_override: Optional explicit path.  Falls back to ``METADATA_PATH``
@@ -55,19 +56,13 @@ def load_metadata(path_override: str | None = None) -> dict[str, Any]:
     Returns:
         The parsed metadata dictionary, or ``{}`` if the file does not exist.
     """
-    global _metadata
-    if _metadata is not None:
-        return _metadata
-
     import os
 
     path = Path(path_override or os.getenv("METADATA_PATH", METADATA_PATH))
     if not path.exists():
         logger.warning("Metadata file not found at %s — using empty metadata", path)
-        _metadata = {}
-    else:
-        _metadata = json.loads(path.read_text(encoding="utf-8"))
-    return _metadata
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def get_embedding_service() -> EmbeddingService:
