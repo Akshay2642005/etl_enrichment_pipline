@@ -205,10 +205,13 @@ class EmbeddingService:
         rel_metadatas: list[dict[str, Any]] = []
 
         for rel in relationships:
-            from_table = rel["from_table"]
-            from_col = rel["from_column"]
-            to_table = rel["to_table"]
-            to_col = rel["to_column"]
+            # The metadata may use child_table/child_column/parent_table/parent_column
+            # (canonical JSON) or from_table/from_column/to_table/to_column (raw schema).
+            # Support both naming conventions.
+            from_table = rel.get("from_table") or rel["child_table"]
+            from_col = rel.get("from_column") or rel["child_column"]
+            to_table = rel.get("to_table") or rel["parent_table"]
+            to_col = rel.get("to_column") or rel["parent_column"]
 
             text = (
                 f"Foreign Key: {from_table}.{from_col} -> {to_table}.{to_col}\n"

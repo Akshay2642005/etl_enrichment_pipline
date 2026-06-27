@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 import os
 import traceback
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,9 +18,33 @@ from fastapi.responses import JSONResponse
 
 from etl_enrichment_pipeline.api.extraction_service import ErrorDetail, ErrorResponse, router
 from etl_enrichment_pipeline.api.insights_service import router as insights_router
+from etl_enrichment_pipeline.api.nl2sql_service import (
+    nl2sql_lifespan,
+    router as nl2sql_router,
+)
 from etl_enrichment_pipeline.api.quality_service import router as quality_router
+from etl_enrichment_pipeline.core.store_loader import load_enriched_metadata
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Initialize NL2SQL services and load enriched metadata into stores."""
+    async with nl2sql_lifespan(app):
+        try:
+            await load_enriched_metadata()
+            logger.info("Schema stores populated — all services ready")
+        except (FileNotFoundError, KeyError) as exc:
+            logger.warning(
+                "Schema stores not populated (%s: %s) — run the enrichment pipeline first. "
+                "NL2SQL / Insights / Quality may return empty results until "
+                "stores are populated.",
+                type(exc).__name__,
+                exc,
+            )
+        yield
+
 
 app = FastAPI(
     title="ETL Schema Intelligence",
@@ -28,6 +54,7 @@ app = FastAPI(
         "and returns fully enriched schema metadata."
     ),
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # ── CORS ────────────────────────────────────────────────────
@@ -43,6 +70,7 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(quality_router)
 app.include_router(insights_router)
+app.include_router(nl2sql_router)
 
 # ── Exception handlers ──────────────────────────────────────
 
