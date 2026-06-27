@@ -6,11 +6,12 @@ Lean app setup only.  Router and schemas live in
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import traceback
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -36,8 +37,12 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Initialize NL2SQL services and load enriched metadata into stores."""
+    """Start background store population — does not block server startup."""
     async with nl2sql_lifespan(app):
+        task = asyncio.create_task(
+            _populate_stores(),
+            name="store-loader",
+        )
         try:
             await load_enriched_metadata()
             logger.info("Schema stores populated — all services ready")
