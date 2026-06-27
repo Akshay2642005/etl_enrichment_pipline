@@ -5,6 +5,7 @@ Task 7 of the nl2sql-service plan.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
@@ -210,7 +211,9 @@ async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None, None]:
     """
     try:
         load_metadata()
-        get_embedding_service()
+        loop = asyncio.get_running_loop()
+        # Initialise the heavy embedding model in a background thread to avoid blocking the event loop
+        await loop.run_in_executor(None, get_embedding_service)
         await ensure_stores_initialized()
         _get_context_builder()
         _get_nl2sql_generator()

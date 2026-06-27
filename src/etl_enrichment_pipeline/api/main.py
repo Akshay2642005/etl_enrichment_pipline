@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         try:
             await load_enriched_metadata()
             logger.info("Schema stores populated — all services ready")
-        except (FileNotFoundError, KeyError) as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Schema stores not populated (%s: %s) — run the enrichment pipeline first. "
                 "NL2SQL / Insights / Quality may return empty results until "
