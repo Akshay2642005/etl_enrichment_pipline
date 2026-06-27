@@ -62,17 +62,12 @@ def setup_logging(level: str = "INFO") -> None:
         console.setFormatter(log_fmt)
         root.addHandler(console)
 
-    # ── File handler for pipeline log output ─────────────────────
-    if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
-        log_dir = Path(__file__).resolve().parent / "output"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        file_h = logging.FileHandler(
-            filename=log_dir / "pipeline_output.txt",
-            mode="a",
-            encoding="utf-8",
-        )
-        file_h.setFormatter(log_fmt)
-        root.addHandler(file_h)
+    # ── In-memory ring buffer for pipeline logs ─────────────────
+    from etl_enrichment_pipeline.core.log_buffer import buffer
+
+    if not any(isinstance(h, type(buffer)) for h in root.handlers):
+        buffer.setFormatter(log_fmt)
+        root.addHandler(buffer)
 
 # ---------------------------------------------------------------
 # Exposed for:  uv run uvicorn main:app
