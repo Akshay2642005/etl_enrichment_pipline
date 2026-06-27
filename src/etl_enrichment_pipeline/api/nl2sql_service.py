@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class NL2SQLRequest(BaseModel):
     question: str = Field(..., description="Natural-language question to convert to SQL")
-    context_limit: int = Field(default=10, ge=1, le=500, description="Max schema context items to retrieve (1–500)")
+    context_limit: int = Field(default=3, ge=1, le=500, description="Max schema context items to retrieve (1–500)")
     include_explanation: bool = Field(default=False, description="Whether to include explanation in response")
 
 

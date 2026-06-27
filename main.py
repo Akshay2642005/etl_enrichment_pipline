@@ -86,7 +86,7 @@ def run_api() -> None:
 
     uvicorn.run(
         "src.etl_enrichment_pipeline.api.main:app",
-        host="0.0.0.0",
+        host="localhost",
         port=8000,
         reload=True,
     )

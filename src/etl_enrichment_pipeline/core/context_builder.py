@@ -7,6 +7,7 @@ LLM prompt formatting — no LLM calls, no SQL generation.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from dataclasses import dataclass, field
@@ -138,15 +139,20 @@ class ContextBuilder:
         column_results: list[Any] = []
         relationship_results: list[Any] = []
         if vector_store is not None:
-            table_results = await vector_store.search_similar(
-                query_embedding, object_type="table", top_k=top_k_tables
+            # Run all 3 searches in parallel — they're independent DB calls
+            search_results = await asyncio.gather(
+                vector_store.search_similar(
+                    query_embedding, object_type="table", top_k=top_k_tables
+                ),
+                vector_store.search_similar(
+                    query_embedding, object_type="column", top_k=top_k_columns
+                ),
+                vector_store.search_similar(
+                    query_embedding, object_type="relationship",
+                    top_k=top_k_relationships
+                ),
             )
-            column_results = await vector_store.search_similar(
-                query_embedding, object_type="column", top_k=top_k_columns
-            )
-            relationship_results = await vector_store.search_similar(
-                query_embedding, object_type="relationship", top_k=top_k_relationships
-            )
+            table_results, column_results, relationship_results = search_results
 
         # --- Step 3: Extract matched table names ---
         matched_table_names: set[str] = set()
@@ -155,9 +161,9 @@ class ContextBuilder:
         for r in column_results:
             matched_table_names.add(r.metadata["table_name"])
 
-        # --- Step 4: Graph traversal (skip when store is unavailable) ---
+        # --- Step 4: Graph traversal (skip when store is unavailable or no matches) ---
         join_paths_raw: list[JoinPath] = []
-        if graph_store is not None:
+        if graph_store is not None and matched_table_names:
             join_paths_raw = await graph_store.find_join_paths(
                 list(matched_table_names), max_hops=graph_hops
             )
