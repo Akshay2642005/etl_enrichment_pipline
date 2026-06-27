@@ -37,7 +37,7 @@ export const ConnectionView = () => {
     if (!database.trim()) errors.database = 'Database name is required';
     if (!username.trim()) errors.username = 'Username is required';
     if (!password.trim()) errors.password = 'Password is required';
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -94,7 +94,7 @@ export const ConnectionView = () => {
     setSuccessMessage(null);
     try {
       const text = await sqlFile.text();
-      const data = await extractFromSql(text, sqlDbType, sqlSchema); 
+      const data = await extractFromSql(text, sqlDbType, sqlSchema);
       if (sqlDbName) {
         data.data.database_name = sqlDbName;
       }
@@ -130,7 +130,8 @@ export const ConnectionView = () => {
               <TabsTrigger
                 key={type}
                 value={type}
-                className="flex-1 min-w-[70px] md:min-w-[80px] text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl text-slate-600 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300"
+                disabled={loading}
+                className="flex-1 min-w-[70px] md:min-w-[80px] text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl text-slate-600 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {type === 'postgres' ? 'PostgreSQL' :
                   type === 'mysql' ? 'MySQL' :
@@ -141,7 +142,8 @@ export const ConnectionView = () => {
             ))}
             <TabsTrigger
               value="sql"
-              className="flex-1 min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-bold py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/30 text-slate-700 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-200 dark:hover:bg-slate-800/80 transition-all duration-300"
+              disabled={loading}
+              className="flex-1 min-w-[70px] md:min-w-[80px] flex items-center justify-center gap-1.5 text-[11px] md:text-xs font-semibold py-2.5 px-2 rounded-xl text-slate-600 dark:text-cyan-100/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileCode className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">SQL Upload</span>
             </TabsTrigger>
@@ -161,35 +163,35 @@ export const ConnectionView = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Host</label>
-                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.host ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="localhost" value={host} onChange={(e) => { setHost(e.target.value); setValidationErrors(prev => ({...prev, host: ''})); }} />
+                          <Input disabled={loading} className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.host ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="localhost" value={host} onChange={(e) => { setHost(e.target.value); setValidationErrors(prev => ({ ...prev, host: '' })); }} />
                           {validationErrors.host && <p className="text-xs text-red-500 mt-1">{validationErrors.host}</p>}
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Port</label>
-                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.port ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="5432" value={port} onChange={(e) => { setPort(e.target.value); setValidationErrors(prev => ({...prev, port: ''})); }} />
+                          <Input disabled={loading} className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.port ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="5432" value={port} onChange={(e) => { setPort(e.target.value); setValidationErrors(prev => ({ ...prev, port: '' })); }} />
                           {validationErrors.port && <p className="text-xs text-red-500 mt-1">{validationErrors.port}</p>}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Database Name</label>
-                        <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.database ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="db_name" value={database} onChange={(e) => { setDatabase(e.target.value); setValidationErrors(prev => ({...prev, database: ''})); }} />
+                        <Input disabled={loading} className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.database ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="db_name" value={database} onChange={(e) => { setDatabase(e.target.value); setValidationErrors(prev => ({ ...prev, database: '' })); }} />
                         {validationErrors.database && <p className="text-xs text-red-500 mt-1">{validationErrors.database}</p>}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Username</label>
-                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.username ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="admin" value={username} onChange={(e) => { setUsername(e.target.value); setValidationErrors(prev => ({...prev, username: ''})); }} />
+                          <Input disabled={loading} className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.username ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="admin" value={username} onChange={(e) => { setUsername(e.target.value); setValidationErrors(prev => ({ ...prev, username: '' })); }} />
                           {validationErrors.username && <p className="text-xs text-red-500 mt-1">{validationErrors.username}</p>}
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Password</label>
-                          <Input className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.password ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} type="password" placeholder="••••••••" value={password} onChange={(e) => { setPassword(e.target.value); setValidationErrors(prev => ({...prev, password: ''})); }} />
+                          <Input disabled={loading} className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.password ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} type="password" placeholder="••••••••" value={password} onChange={(e) => { setPassword(e.target.value); setValidationErrors(prev => ({ ...prev, password: '' })); }} />
                           {validationErrors.password && <p className="text-xs text-red-500 mt-1">{validationErrors.password}</p>}
                         </div>
                       </div>
 
                       {error && <div className="text-sm font-medium text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/50 dark:border-red-900/50 dark:text-red-400 p-4 rounded-xl mt-4">{error}</div>}
-                      {successMessage && <div className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-cyan-950/40 dark:border-cyan-800/50 dark:text-cyan-400 p-4 rounded-xl mt-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/>{successMessage}</div>}
+                      {successMessage && <div className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-cyan-950/40 dark:border-cyan-800/50 dark:text-cyan-400 p-4 rounded-xl mt-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5" />{successMessage}</div>}
 
                       <Button type="submit" className="w-full mt-6 h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed" disabled={loading}>
                         {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Database className="mr-2 h-5 w-5" />}
@@ -264,7 +266,7 @@ export const ConnectionView = () => {
                     </div>
 
                     {error && <div className="text-sm font-medium text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/50 dark:border-red-900/50 dark:text-red-400 p-4 rounded-xl mt-4">{error}</div>}
-                    {successMessage && <div className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-cyan-950/40 dark:border-cyan-800/50 dark:text-cyan-400 p-4 rounded-xl mt-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/>{successMessage}</div>}
+                    {successMessage && <div className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-cyan-950/40 dark:border-cyan-800/50 dark:text-cyan-400 p-4 rounded-xl mt-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5" />{successMessage}</div>}
 
                     <Button type="submit" className="w-full mt-6 h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed" disabled={loading}>
                       {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileCode className="mr-2 h-5 w-5" />}
