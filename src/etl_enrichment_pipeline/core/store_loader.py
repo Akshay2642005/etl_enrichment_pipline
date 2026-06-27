@@ -1,23 +1,30 @@
 """Load enriched metadata into pgvector and Neo4j stores.
 
+Uses the shared lazy singletons from :mod:`~etl_enrichment_pipeline.api.shared_state`
+so the embedding model, pgvector connection, and Neo4j connection are only
+initialised once across the entire application.
+
 Run standalone::
 
     uv run python -m etl_enrichment_pipeline.core.store_loader
-
-Or call :func:`load_enriched_metadata` programmatically after a pipeline run.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 from pathlib import Path
 from typing import Any
 
-from etl_enrichment_pipeline.core.embedding_service import EmbeddingService
-from etl_enrichment_pipeline.core.graph_store import GraphStore
-from etl_enrichment_pipeline.core.vector_store import VectorStore
+from etl_enrichment_pipeline.api.shared_state import (
+    close_stores,
+    ensure_stores_initialized,
+    get_embedding_service,
+    get_graph_store,
+    get_vector_store,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +42,9 @@ async def load_enriched_metadata(
     Reads the enriched metadata JSON, generates embeddings for every schema
     object (tables, columns, relationships), upserts them into the pgvector
     store, and loads the schema structure into the Neo4j graph store.
+
+    Uses the shared lazy singletons so the embedding model, vector-store
+    connection pool, and graph-store driver are only initialised once.
 
     Args:
         metadata_path: Path to ``enriched_metadata.json``. Falls back to the
@@ -64,31 +74,36 @@ async def load_enriched_metadata(
         rels_count,
     )
 
-    # --- 1. Generate embeddings ---
+    # --- 1. Generate embeddings (shared singleton — loads model once) ---
     logger.info("Generating embeddings for schema objects ...")
-    embedding_service = EmbeddingService()
+    embedding_service = get_embedding_service()
     embeddings = embedding_service.embed_schema_objects(metadata)
     logger.info("Generated %d embeddings", len(embeddings))
 
-    # --- 2. Upsert into pgvector ---
+    # --- 2. Upsert into pgvector (shared connection pool) ---
     logger.info("Upserting embeddings into pgvector ...")
-    vector_store = VectorStore()
-    try:
-        await vector_store.initialize_schema()
-        await vector_store.upsert_embeddings(embeddings)
-        logger.info("pgvector store populated successfully")
-    finally:
-        await vector_store.close()
+    await ensure_stores_initialized()
+    vector_store = get_vector_store()
+    if vector_store is not None:
+        try:
+            await vector_store.upsert_embeddings(embeddings)
+            logger.info("pgvector store populated successfully")
+        except Exception:
+            logger.exception("Failed to upsert embeddings into pgvector")
+    else:
+        logger.warning("VectorStore unavailable — skipping pgvector upsert")
 
-    # --- 3. Load into Neo4j ---
+    # --- 3. Load into Neo4j (shared driver) ---
     logger.info("Loading schema into Neo4j ...")
-    graph_store = GraphStore()
-    try:
-        await graph_store.initialize_schema()
-        await graph_store.load_schema(metadata)
-        logger.info("Neo4j graph populated successfully")
-    finally:
-        await graph_store.close()
+    graph_store = get_graph_store()
+    if graph_store is not None:
+        try:
+            await graph_store.load_schema(metadata)
+            logger.info("Neo4j graph populated successfully")
+        except Exception:
+            logger.exception("Failed to load schema into Neo4j")
+    else:
+        logger.warning("GraphStore unavailable — skipping Neo4j load")
 
     logger.info("Store loading complete — ready for NL2SQL queries")
     return metadata
@@ -100,12 +115,13 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-    await load_enriched_metadata()
+    try:
+        await load_enriched_metadata()
+    finally:
+        await close_stores()
 
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(main())
 
 

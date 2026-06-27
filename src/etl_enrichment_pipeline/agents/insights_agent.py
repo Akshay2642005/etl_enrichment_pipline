@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, cast
 from etl_enrichment_pipeline.core.llm import get_llm
 
 if TYPE_CHECKING:
+    from etl_enrichment_pipeline.core.embedding_service import EmbeddingService
     from etl_enrichment_pipeline.core.graph_store import GraphStore
     from etl_enrichment_pipeline.core.vector_store import VectorStore
 
@@ -350,6 +351,7 @@ class InsightsGenerator:
         enriched_metadata: dict[str, Any],
         vector_store: VectorStore | None = None,
         graph_store: GraphStore | None = None,
+        embedding_service: EmbeddingService | None = None,
     ) -> None:
         """Initialize the insights generator.
 
@@ -364,10 +366,14 @@ class InsightsGenerator:
             graph_store: Optional ``GraphStore`` for entity-relationship
                 traversal.  When provided, the generator discovers join
                 paths between matched tables.
+            embedding_service: Optional shared ``EmbeddingService``
+                singleton.  When omitted a new instance is created on
+                demand (less efficient).
         """
         self._metadata = enriched_metadata
         self._vector_store = vector_store
         self._graph_store = graph_store
+        self._embedding_service = embedding_service
         self._llm = get_llm()
 
     # ------------------------------------------------------------------
@@ -500,7 +506,7 @@ class InsightsGenerator:
                     EmbeddingService,
                 )
 
-                emb_service = EmbeddingService()
+                emb_service = self._embedding_service or EmbeddingService()
                 query_emb = emb_service.generate_embeddings([query])[0]
                 table_results = await self._vector_store.search_similar(
                     query_emb, object_type="table", top_k=10

@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from etl_enrichment_pipeline.agents.insights_agent import InsightsGenerator
 from etl_enrichment_pipeline.api.shared_state import (
     ensure_stores_initialized,
+    get_embedding_service,
     get_graph_store,
     get_vector_store,
     load_metadata,
@@ -104,6 +105,7 @@ async def generate_insights(request: InsightsRequest) -> InsightsResponse:
             enriched_metadata=metadata,
             vector_store=get_vector_store(),
             graph_store=get_graph_store(),
+            embedding_service=get_embedding_service(),
         )
 
         result = await generator.generate(

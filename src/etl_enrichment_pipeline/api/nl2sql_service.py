@@ -6,23 +6,26 @@ Task 7 of the nl2sql-service plan.
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from etl_enrichment_pipeline.agents.nl2sql_generator import NL2SQLGenerator
-from etl_enrichment_pipeline.core.context_builder import ContextBuilder
-from etl_enrichment_pipeline.core.sql_validator import SQLValidator
 from etl_enrichment_pipeline.api.shared_state import (
     close_stores as close_shared_stores,
+)
+from etl_enrichment_pipeline.api.shared_state import (
     ensure_stores_initialized,
     get_embedding_service,
     get_graph_store,
     get_vector_store,
     load_metadata,
 )
+from etl_enrichment_pipeline.core.context_builder import ContextBuilder
+from etl_enrichment_pipeline.core.sql_validator import SQLValidator
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +194,7 @@ async def health() -> dict[str, Any]:
 
 
 @asynccontextmanager
-async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None, None]:
+async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None]:
     """Lifespan context manager for NL2SQL service lifecycle.
 
     Usage in the FastAPI app (``main.py``)::
@@ -209,13 +212,10 @@ async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None, None]:
         app.include_router(nl2sql_router)
     """
     try:
+        # Lazy-init only: validate metadata file exists, defer everything else
+        # to first request (embedding model, stores, services).
         load_metadata()
-        get_embedding_service()
-        await ensure_stores_initialized()
-        _get_context_builder()
-        _get_nl2sql_generator()
-        _get_sql_validator()
-        logger.info("NL2SQL services initialized")
+        logger.info("NL2SQL services registered (lazy init on first request)")
         yield
     finally:
         await close_shared_stores()

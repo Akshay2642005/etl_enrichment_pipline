@@ -6,11 +6,12 @@ Lean app setup only.  Router and schemas live in
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import traceback
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -36,20 +37,41 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Initialize NL2SQL services and load enriched metadata into stores."""
+    """Start background store population — does not block server startup."""
     async with nl2sql_lifespan(app):
+        task = asyncio.create_task(
+            _populate_stores(),
+            name="store-loader",
+        )
         try:
-            await load_enriched_metadata()
-            logger.info("Schema stores populated — all services ready")
-        except (FileNotFoundError, KeyError) as exc:
-            logger.warning(
-                "Schema stores not populated (%s: %s) — run the enrichment pipeline first. "
-                "NL2SQL / Insights / Quality may return empty results until "
-                "stores are populated.",
-                type(exc).__name__,
-                exc,
-            )
-        yield
+            yield
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
+async def _populate_stores() -> None:
+    """Background task: load enriched metadata into vector + graph stores.
+
+    The embedding model (sentence-transformers) and store connections
+    are initialised lazily here, so the server is ready to accept
+    requests immediately while this runs.
+    """
+    try:
+        await load_enriched_metadata()
+        logger.info("Schema stores populated — all services ready")
+    except FileNotFoundError:
+        logger.warning(
+            "Enriched metadata not found — run the enrichment pipeline first. "
+            "NL2SQL / Insights / Quality may return empty results until "
+            "stores are populated."
+        )
+    except Exception:
+        logger.exception(
+            "Failed to populate schema stores — NL2SQL/Insights/Quality "
+            "may return empty results."
+        )
 
 
 app = FastAPI(
