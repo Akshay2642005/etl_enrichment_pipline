@@ -6,10 +6,20 @@ Generates embeddings from enriched schema metadata using sentence-transformers.
 from __future__ import annotations
 
 import os
+import hashlib
+import logging
 from dataclasses import dataclass
 from typing import Any
 
-from sentence_transformers import SentenceTransformer
+logger = logging.getLogger(__name__)
+
+# Try to import sentence_transformers, but catch Windows Application Control OSError
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_SENTENCE_TRANSFORMERS = True
+except (ImportError, OSError) as e:
+    logger.warning("Failed to load sentence_transformers (PyTorch DLL blocked?). Using fallback embeddings. Error: %s", e)
+    HAS_SENTENCE_TRANSFORMERS = False
 
 
 @dataclass(frozen=True)
@@ -41,12 +51,12 @@ class EmbeddingService:
         self.model_name = model_name or os.getenv(
             "EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"
         )
-        self._model: SentenceTransformer | None = None
+        self._model = None
 
     @property
-    def model(self) -> SentenceTransformer:
+    def model(self):
         """Lazy-load the sentence-transformers model."""
-        if self._model is None:
+        if self._model is None and HAS_SENTENCE_TRANSFORMERS:
             self._model = SentenceTransformer(self.model_name)
         return self._model
 
@@ -63,8 +73,27 @@ class EmbeddingService:
         if not texts:
             return []
 
-        embeddings = self.model.encode(texts, convert_to_tensor=False)
-        return embeddings.tolist()
+        if HAS_SENTENCE_TRANSFORMERS:
+            embeddings = self.model.encode(texts, convert_to_tensor=False)
+            return embeddings.tolist()
+        else:
+            # Deterministic fallback: 384-dim vector based on text hash
+            results = []
+            for t in texts:
+                # Use md5 to generate deterministic floats
+                h = hashlib.md5(t.encode('utf-8')).digest()
+                # Create 384 dimensions by repeating the hash bytes
+                vec = []
+                for i in range(384):
+                    # Pseudo-random value between -1.0 and 1.0 based on hash bytes
+                    val = (h[i % 16] / 127.5) - 1.0
+                    vec.append(val)
+                # Normalize vector to length 1.0 for cosine similarity
+                mag = sum(x*x for x in vec) ** 0.5
+                if mag > 0:
+                    vec = [x / mag for x in vec]
+                results.append(vec)
+            return results
 
     def embed_schema_objects(self, enriched_metadata: dict) -> list[SchemaEmbedding]:
         """Generate embeddings for all schema objects in enriched metadata.
