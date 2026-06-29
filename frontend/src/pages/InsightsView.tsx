@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Target, Lightbulb, TrendingUp, Rocket, Loader2, RefreshCw, AlertCircle, Database, Server } from 'lucide-react';
 import { generateInsights, fetchEmbeddingStatus } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
@@ -51,10 +51,21 @@ export const InsightsView = () => {
   const embeddingStatus = useAppStore((s) => s.embeddingStatus);
   const setEmbeddingStatus = useAppStore((s) => s.setEmbeddingStatus);
   const metadata = useAppStore((s) => s.metadata);
-  const insightsData = data as InsightsData | null;
+  const [activeTab, setActiveTab] = useState<string>('Overview');
+
+  // Normalize data so it supports both the old flat structure (defaults to Overview) and the new tabbed structure
+  let currentTabsData: Record<string, InsightsData> = {};
+  if (data) {
+    if (data.kpis) {
+      currentTabsData = { Overview: data as any };
+    } else {
+      currentTabsData = data as any;
+    }
+  }
+  const insightsData = currentTabsData[activeTab] || null;
 
   useEffect(() => {
-    if (!metadata || insightsData) return;
+    if (!metadata || data) return;
 
     let cancelled = false;
     const poll = async () => {
@@ -78,14 +89,15 @@ export const InsightsView = () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [metadata, insightsData, setEmbeddingStatus]);
+  }, [metadata, data, setEmbeddingStatus]);
 
   const handleGenerate = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await generateInsights();
-      setData(result);
+      const domainParam = activeTab === 'Overview' ? undefined : activeTab;
+      const result = await generateInsights(domainParam);
+      setData({ ...currentTabsData, [activeTab]: result });
     } catch (err: any) {
       setError(err.message || 'Failed to generate insights.');
     } finally {
@@ -93,8 +105,10 @@ export const InsightsView = () => {
     }
   };
 
-  // Show embedding progress when metadata exists but embedding hasn't finished yet
-  if (metadata && !insightsData && !isLoading && !error && embeddingStatus.status === 'embedding') {
+  const TABS = ['Overview', 'Operations', 'Finance', 'Marketing', 'Sales', 'Human Resources', 'IT'];
+
+  // Show embedding progress when metadata exists but nothing is loaded yet
+  if (metadata && !data && !isLoading && !error && embeddingStatus.status === 'embedding') {
     return (
       <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto text-center px-4">
         <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6">
@@ -124,10 +138,12 @@ export const InsightsView = () => {
           <Lightbulb className="w-10 h-10 text-blue-600 dark:text-blue-400" />
         </div>
         <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-          AI Business Insights
+          {activeTab === 'Overview' ? 'AI Business Insights' : `${activeTab} Insights`}
         </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">
-          Generate powerful KPIs, data-driven insights, operational opportunities, and transformative capabilities directly from your enriched schema metadata using our AI.
+          {activeTab === 'Overview' 
+            ? 'Generate powerful KPIs, data-driven insights, operational opportunities, and transformative capabilities directly from your enriched schema metadata using our AI.'
+            : `Generate specialized KPIs, insights, and opportunities tailored specifically for the ${activeTab} domain.`}
         </p>
         {embeddingStatus.status === 'failed' && (
           <div className="mb-6 w-full max-w-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-700 dark:text-amber-400">
@@ -140,7 +156,7 @@ export const InsightsView = () => {
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors"
         >
           <RefreshCw className="w-5 h-5" />
-          Generate Insights
+          Generate {activeTab} Insights
         </button>
       </div>
     );
@@ -151,7 +167,7 @@ export const InsightsView = () => {
       <div className="flex flex-col items-center justify-center h-full">
         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
         <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300">
-          Generating Insights...
+          Generating {activeTab} Insights...
         </h3>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-md text-center">
           Our AI is analyzing the database schema, evaluating domain contexts, and synthesizing business intelligence. This may take up to a minute.
@@ -196,11 +212,29 @@ export const InsightsView = () => {
           className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium shadow-sm transition-colors text-sm"
         >
           <RefreshCw className="w-4 h-4" />
-          Regenerate
+          Regenerate {activeTab}
         </button>
       </div>
 
-      {/* KPIs Section */}
+      <div className="flex space-x-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 hide-scrollbar">
+        {TABS.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-2.5 whitespace-nowrap font-semibold text-sm rounded-t-xl transition-all ${
+              activeTab === tab
+                ? 'bg-blue-50 dark:bg-slate-800/80 text-blue-700 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {insightsData ? (
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* KPIs Section */}
       <section>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
           <Target className="w-6 h-6 text-blue-500" />
@@ -329,6 +363,8 @@ export const InsightsView = () => {
           ))}
         </div>
       </section>
+        </div>
+      ) : null}
     </div>
   );
 };
