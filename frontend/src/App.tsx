@@ -7,12 +7,14 @@ import { ConnectionView } from './pages/ConnectionView';
 import { SchemaView } from './pages/SchemaView';
 import { InsightsView } from './pages/InsightsView';
 import { SqlAgentView } from './pages/SqlAgentView';
+import { NewsletterOverlay } from './components/NewsletterOverlay';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <NewsletterOverlay />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<MainLayout />}>
