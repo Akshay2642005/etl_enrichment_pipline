@@ -51,13 +51,16 @@ export const InsightsView = () => {
   const embeddingStatus = useAppStore((s) => s.embeddingStatus);
   const setEmbeddingStatus = useAppStore((s) => s.setEmbeddingStatus);
   const metadata = useAppStore((s) => s.metadata);
-  const [activeTab, setActiveTab] = useState<string>('Overview');
+  
+  const TABS = ['Operations', 'Finance', 'Marketing', 'Sales', 'Human Resources', 'IT'];
+  const [activeTab, setActiveTab] = useState<string>(TABS[0]);
 
-  // Normalize data so it supports both the old flat structure (defaults to Overview) and the new tabbed structure
+  // Normalize data so it supports a tabbed structure
   let currentTabsData: Record<string, InsightsData> = {};
   if (data) {
     if (data.kpis) {
-      currentTabsData = { Overview: data as any };
+      // Legacy flat structure - move to Operations so it's not lost immediately, or leave it.
+      currentTabsData = { [TABS[0]]: data as any };
     } else {
       currentTabsData = data as any;
     }
@@ -95,17 +98,24 @@ export const InsightsView = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const domainParam = activeTab === 'Overview' ? undefined : activeTab;
-      const result = await generateInsights(domainParam);
-      setData({ ...currentTabsData, [activeTab]: result });
+      let current = { ...currentTabsData };
+      
+      // Generate for all domains sequentially so the UI updates progressively
+      for (const tab of TABS) {
+        try {
+          const result = await generateInsights(tab);
+          current = { ...current, [tab]: result };
+          setData(current); // Update store progressively
+        } catch (e) {
+          console.error(`Failed to generate for ${tab}:`, e);
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to generate insights.');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const TABS = ['Overview', 'Operations', 'Finance', 'Marketing', 'Sales', 'Human Resources', 'IT'];
 
   // Show embedding progress when metadata exists but nothing is loaded yet
   if (metadata && !data && !isLoading && !error && embeddingStatus.status === 'embedding') {
@@ -138,12 +148,10 @@ export const InsightsView = () => {
           <Lightbulb className="w-10 h-10 text-blue-600 dark:text-blue-400" />
         </div>
         <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-          {activeTab === 'Overview' ? 'AI Business Insights' : `${activeTab} Insights`}
+          {activeTab} Insights
         </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">
-          {activeTab === 'Overview' 
-            ? 'Generate powerful KPIs, data-driven insights, operational opportunities, and transformative capabilities directly from your enriched schema metadata using our AI.'
-            : `Generate specialized KPIs, insights, and opportunities tailored specifically for the ${activeTab} domain.`}
+          Generate specialized KPIs, insights, and opportunities tailored specifically for Operations, Finance, and other domains across your enterprise.
         </p>
         {embeddingStatus.status === 'failed' && (
           <div className="mb-6 w-full max-w-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-700 dark:text-amber-400">
@@ -156,13 +164,13 @@ export const InsightsView = () => {
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors"
         >
           <RefreshCw className="w-5 h-5" />
-          Generate {activeTab} Insights
+          Generate Domain Insights
         </button>
       </div>
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !insightsData) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
@@ -170,7 +178,7 @@ export const InsightsView = () => {
           Generating {activeTab} Insights...
         </h3>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-md text-center">
-          Our AI is analyzing the database schema, evaluating domain contexts, and synthesizing business intelligence. This may take up to a minute.
+          Our AI is analyzing the database schema, evaluating domain contexts, and synthesizing business intelligence. Generating for all domains may take a few moments.
         </p>
       </div>
     );
@@ -204,165 +212,170 @@ export const InsightsView = () => {
             Schema Insights
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            AI-generated business intelligence derived from your metadata.
+            AI-generated business intelligence tailored by domain.
           </p>
         </div>
         <button
           onClick={handleGenerate}
-          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium shadow-sm transition-colors text-sm"
+          disabled={isLoading}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium shadow-sm transition-colors text-sm disabled:opacity-50"
         >
-          <RefreshCw className="w-4 h-4" />
-          Regenerate {activeTab}
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {isLoading ? 'Generating...' : 'Regenerate All'}
         </button>
       </div>
 
       <div className="flex space-x-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 hide-scrollbar">
-        {TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2.5 whitespace-nowrap font-semibold text-sm rounded-t-xl transition-all ${
-              activeTab === tab
-                ? 'bg-blue-50 dark:bg-slate-800/80 text-blue-700 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {TABS.map(tab => {
+          const isGeneratingThisTab = isLoading && !currentTabsData[tab];
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-2 px-5 py-2.5 whitespace-nowrap font-semibold text-sm rounded-t-xl transition-all ${
+                activeTab === tab
+                  ? 'bg-blue-50 dark:bg-slate-800/80 text-blue-700 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              }`}
+            >
+              {tab}
+              {isGeneratingThisTab && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
+            </button>
+          );
+        })}
       </div>
 
       {insightsData ? (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* KPIs Section */}
-      <section>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <Target className="w-6 h-6 text-blue-500" />
-          Key Performance Indicators (KPIs)
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {insightsData?.kpis?.map((kpi, idx) => (
-            <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2">
-                {kpi.category}
-              </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3">{kpi.name}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{kpi.description}</p>
-              
-              <div className="mt-auto">
-                <div className="bg-slate-50 dark:bg-slate-950 rounded-lg p-3 border border-slate-100 dark:border-slate-800 mb-3">
-                  <div className="text-xs text-slate-500 dark:text-slate-500 mb-1 flex items-center gap-1">
-                    <Database className="w-3 h-3" /> Potential Value
+          <section>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <Target className="w-6 h-6 text-blue-500" />
+              Key Performance Indicators (KPIs)
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {insightsData?.kpis?.map((kpi, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2">
+                    {kpi.category}
                   </div>
-                  <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{kpi.potential_value}</div>
-                </div>
-                {kpi.sql_query && (
-                  <div className="bg-slate-900 dark:bg-black rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">SQL Query Example:</div>
-                    <code className="text-xs text-green-400 font-mono break-words">{kpi.sql_query}</code>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Insights Section */}
-      <section>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <Lightbulb className="w-6 h-6 text-yellow-500" />
-          Data-Driven Insights
-        </h2>
-        <div className="space-y-4">
-          {insightsData?.insights?.map((insight, idx) => (
-            <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col md:flex-row gap-6">
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{insight.finding}</h3>
-                <p className="text-slate-600 dark:text-slate-400">{insight.supporting_evidence}</p>
-              </div>
-              <div className="md:w-64 shrink-0 flex flex-col justify-center space-y-3 pl-0 md:pl-6 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 pt-4 md:pt-0">
-                <div>
-                  <div className="text-xs text-slate-500 mb-1">Impact</div>
-                  <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{insight.impact}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-slate-500 mb-1">Confidence Score</div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.max(10, (insight.confidence || 0) * 100)}%` }}></div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3">{kpi.name}</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{kpi.description}</p>
+                  
+                  <div className="mt-auto">
+                    <div className="bg-slate-50 dark:bg-slate-950 rounded-lg p-3 border border-slate-100 dark:border-slate-800 mb-3">
+                      <div className="text-xs text-slate-500 dark:text-slate-500 mb-1 flex items-center gap-1">
+                        <Database className="w-3 h-3" /> Potential Value
+                      </div>
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{kpi.potential_value}</div>
+                    </div>
+                    {kpi.sql_query && (
+                      <div className="bg-slate-900 dark:bg-black rounded-lg p-3">
+                        <div className="text-xs text-slate-400 mb-1">SQL Query Example:</div>
+                        <code className="text-xs text-green-400 font-mono break-words">{kpi.sql_query}</code>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* Opportunities Section */}
-      <section>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <TrendingUp className="w-6 h-6 text-emerald-500" />
-          Operational Opportunities
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {insightsData?.opportunities?.map((opp, idx) => (
-            <div key={idx} className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full">
-                  {opp.area}
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{opp.description}</h3>
-              
-              <div className="space-y-4 mt-6">
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Potential Value</div>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{opp.potential_value}</p>
+          {/* Insights Section */}
+          <section>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <Lightbulb className="w-6 h-6 text-yellow-500" />
+              Data-Driven Insights
+            </h2>
+            <div className="space-y-4">
+              {insightsData?.insights?.map((insight, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{insight.finding}</h3>
+                    <p className="text-slate-600 dark:text-slate-400">{insight.supporting_evidence}</p>
+                  </div>
+                  <div className="md:w-64 shrink-0 flex flex-col justify-center space-y-3 pl-0 md:pl-6 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 pt-4 md:pt-0">
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">Impact</div>
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{insight.impact}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">Confidence Score</div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.max(10, (insight.confidence || 0) * 100)}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Effort / Complexity</div>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{opp.effort}</p>
-                </div>
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
-                  <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase mb-2">Suggested Approach</div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{opp.suggested_approach}</p>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* Art of the Possible Section */}
-      <section>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <Rocket className="w-6 h-6 text-purple-500" />
-          Art of the Possible
-        </h2>
-        <div className="space-y-6">
-          {insightsData?.art_of_the_possible?.map((art, idx) => (
-            <div key={idx} className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-purple-100 dark:border-purple-900/30 rounded-xl p-8 shadow-sm">
-              <h3 className="text-2xl font-bold text-indigo-900 dark:text-indigo-300 mb-4">{art.title}</h3>
-              <p className="text-indigo-800/80 dark:text-indigo-200/80 mb-6 text-lg">{art.description}</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white/60 dark:bg-slate-900/60 rounded-lg p-4">
-                  <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Technologies</div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">{art.technologies_needed}</div>
+          {/* Opportunities Section */}
+          <section>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <TrendingUp className="w-6 h-6 text-emerald-500" />
+              Operational Opportunities
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {insightsData?.opportunities?.map((opp, idx) => (
+                <div key={idx} className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full">
+                      {opp.area}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{opp.description}</h3>
+                  
+                  <div className="space-y-4 mt-6">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Potential Value</div>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{opp.potential_value}</p>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Effort / Complexity</div>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{opp.effort}</p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
+                      <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase mb-2">Suggested Approach</div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{opp.suggested_approach}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white/60 dark:bg-slate-900/60 rounded-lg p-4">
-                  <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Complexity</div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">{art.complexity}</div>
-                </div>
-                <div className="bg-white/60 dark:bg-slate-900/60 rounded-lg p-4">
-                  <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Business Value</div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">{art.business_value}</div>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
+
+          {/* Art of the Possible Section */}
+          <section>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <Rocket className="w-6 h-6 text-purple-500" />
+              Art of the Possible
+            </h2>
+            <div className="space-y-6">
+              {insightsData?.art_of_the_possible?.map((art, idx) => (
+                <div key={idx} className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-purple-100 dark:border-purple-900/30 rounded-xl p-8 shadow-sm">
+                  <h3 className="text-2xl font-bold text-indigo-900 dark:text-indigo-300 mb-4">{art.title}</h3>
+                  <p className="text-indigo-800/80 dark:text-indigo-200/80 mb-6 text-lg">{art.description}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white/60 dark:bg-slate-900/60 rounded-lg p-4">
+                      <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Technologies</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">{art.technologies_needed}</div>
+                    </div>
+                    <div className="bg-white/60 dark:bg-slate-900/60 rounded-lg p-4">
+                      <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Complexity</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">{art.complexity}</div>
+                    </div>
+                    <div className="bg-white/60 dark:bg-slate-900/60 rounded-lg p-4">
+                      <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Business Value</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">{art.business_value}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       ) : null}
     </div>
