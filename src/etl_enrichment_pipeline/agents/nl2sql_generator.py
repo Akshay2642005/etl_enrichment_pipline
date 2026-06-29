@@ -1,6 +1,9 @@
 """NL2SQL generator — converts natural language to PostgreSQL SQL.
 
 Task 6 of the nl2sql-service plan.
+
+Includes schema-aware guardrails that reject out-of-scope questions before
+generating SQL and enforce strict table/column existence constraints.
 """
 
 from __future__ import annotations
@@ -22,12 +25,34 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GenerationResult:
-    """Result from the NL2SQL generator for a single question."""
+    """Result from the NL2SQL generator for a single question.
+
+    Attributes:
+        sql: The generated SQL statement (empty when status is OUT_OF_SCOPE).
+        confidence: Confidence score (0.0 for OUT_OF_SCOPE).
+        explanation: Optional explanation of the generated SQL.
+        context_used: Summary of schema context used for generation.
+        status: ``"SUCCESS"`` or ``"OUT_OF_SCOPE"``.
+        reason: Populated when status is ``"OUT_OF_SCOPE"``.
+    """
 
     sql: str = ""
     confidence: float = 0.0
     explanation: str | None = None
     context_used: dict | None = None
+    status: str = "SUCCESS"
+    reason: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Placeholder SQL patterns to reject after generation
+# ---------------------------------------------------------------------------
+
+_PLACEHOLDER_SQL_PATTERNS: list[re.Pattern] = [
+    re.compile(r"\bSELECT\s+0\b", re.IGNORECASE),
+    re.compile(r"\bSELECT\s+NULL\b", re.IGNORECASE),
+    re.compile(r"\bSELECT\s+\d+\s+AS\s+", re.IGNORECASE),
+]
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +62,23 @@ class GenerationResult:
 _SYSTEM_PROMPT = (
     "You are an expert PostgreSQL SQL generator.\n"
     "\n"
-    "SQL Generation Rules:\n"
+    "## Guardrails (must follow these rules strictly)\n"
+    "\n"
+    "1. **Schema-only answers**: Only use tables, views, and columns from the "
+    "provided Schema Context. Never invent tables, views, or columns.\n"
+    "2. **Out-of-scope detection**: If the question references entities, "
+    "metrics, or concepts that do not appear in the Schema Context, do NOT "
+    "generate SQL. Instead respond with exactly:\n"
+    "   OUT_OF_SCOPE: Question cannot be answered using the available "
+    "database schema.\n"
+    "3. **No fabricated data**: Never generate placeholder or fallback SQL "
+    "such as SELECT 0, SELECT NULL, hardcoded counts, or any query that "
+    "references tables or columns not present in the schema.\n"
+    "4. **When uncertain, reject**: If you are unsure whether the question "
+    "maps to the schema, return OUT_OF_SCOPE rather than generating "
+    "potentially incorrect SQL.\n"
+    "\n"
+    "## SQL Generation Rules\n"
     "- Use table aliases for all tables in the query\n"
     "- Use explicit JOINs (INNER JOIN or LEFT JOIN) \u2014 never use "
     "implicit comma joins\n"
@@ -49,16 +90,16 @@ _SYSTEM_PROMPT = (
     "- Use uppercase for SQL keywords, lowercase for identifiers\n"
     "- End every statement with a semicolon\n"
     "\n"
-    "Output Instructions:\n"
-    "- Return ONLY the SQL query starting with SELECT/INSERT/UPDATE/DELETE\n"
-    "- Do NOT include any markdown, explanations, or backticks\n"
-    "- Do NOT wrap the SQL in ```sql ... ``` or any other formatting\n"
-    "- Just the raw SQL statement, nothing else\n"
+    "## Output Format\n"
+    "- If the question is answerable: Return ONLY the raw SQL query. "
+    "No markdown, no backticks, no explanations, no ```sql blocks.\n"
+    "- If the question is NOT answerable: Return exactly:\n"
+    "  OUT_OF_SCOPE: <specific reason>\n"
     "\n"
     "Examples:\n"
     "\n"
     "Question: Show employees working in the HR department\n"
-    "SELECT e.* FROM employee e JOIN departmentsss d "
+    "SELECT e.* FROM employee e JOIN department d "
     "ON e.department_id = d.department_id "
     "WHERE d.department_name = 'HR';\n"
     "\n"
@@ -139,6 +180,12 @@ class NL2SQLGenerator:
     def generate(self, question: str, context: SchemaContext) -> GenerationResult:
         """Convert a natural-language question to PostgreSQL SQL.
 
+        Applies schema guardrails before and after generation:
+
+        * Pre-check: empty schema context → OUT_OF_SCOPE
+        * LLM generation with guardrail-aware system prompt
+        * Post-check: placeholder/fabricated SQL → OUT_OF_SCOPE
+
         Args:
             question: The user's natural-language question.
             context: ``SchemaContext`` with tables, columns,
@@ -146,8 +193,21 @@ class NL2SQLGenerator:
 
         Returns:
             A ``GenerationResult`` with the generated SQL, confidence
-            score, optional explanation, and context summary.
+            score, optional explanation, context summary, and scope status.
         """
+        # ── Pre-check: Empty schema context ─────────────────────────────
+        if not context.tables:
+            logger.info(
+                "OUT_OF_SCOPE (no schema context) — question: %.80s", question
+            )
+            return GenerationResult(
+                status="OUT_OF_SCOPE",
+                reason="Question cannot be answered using the available "
+                "database schema — no matching tables found.",
+                context_used=self._summarize_context(context),
+            )
+
+        # ── Generate ────────────────────────────────────────────────────
         schema_text = self._format_context(context)
         user_prompt = _USER_PROMPT_TEMPLATE.format(
             question=question, schema_context=schema_text
@@ -162,16 +222,48 @@ class NL2SQLGenerator:
             )
 
             raw_text = getattr(response, "content", str(response)) or ""
-            sql = self._extract_sql(raw_text)
+            trimmed = raw_text.strip()
+
+            # ── Check if LLM returned OUT_OF_SCOPE ──────────────────────
+            if trimmed.upper().startswith("OUT_OF_SCOPE"):
+                reason = trimmed[len("OUT_OF_SCOPE:"):].strip()
+                if not reason:
+                    reason = "Question cannot be answered using the "
+                    "available database schema."
+                logger.info("LLM returned OUT_OF_SCOPE: %s", reason)
+                return GenerationResult(
+                    status="OUT_OF_SCOPE",
+                    reason=reason,
+                    context_used=self._summarize_context(context),
+                )
+
+            sql = self._extract_sql(trimmed)
 
             if not sql:
                 logger.warning(
-                    "LLM returned no extractable SQL — response: %.200s", raw_text
+                    "LLM returned no extractable SQL — response: %.200s",
+                    raw_text,
                 )
                 return GenerationResult(
-                    sql="",
-                    confidence=0.0,
+                    status="OUT_OF_SCOPE",
+                    reason="Question cannot be answered using the available "
+                    "database schema.",
                     explanation="LLM did not return a valid SQL statement",
+                    context_used=self._summarize_context(context),
+                )
+
+            # ── Post-check: placeholder / fabricated SQL ─────────────────
+            if self._is_placeholder_sql(sql):
+                logger.warning(
+                    "LLM returned placeholder SQL — rejecting: %.100s",
+                    sql.replace("\n", " "),
+                )
+                return GenerationResult(
+                    status="OUT_OF_SCOPE",
+                    reason="Question cannot be answered using the available "
+                    "database schema.",
+                    explanation="LLM returned placeholder SQL instead of a "
+                    "real query",
                     context_used=self._summarize_context(context),
                 )
 
@@ -192,8 +284,9 @@ class NL2SQLGenerator:
                 "NL2SQL generation failed \u2014 returning graceful degradation result"
             )
             return GenerationResult(
-                sql="",
-                confidence=0.0,
+                status="OUT_OF_SCOPE",
+                reason="Question cannot be answered using the available "
+                "database schema.",
                 explanation="NL2SQL generation failed due to an error",
                 context_used=self._summarize_context(context),
             )
@@ -201,6 +294,15 @@ class NL2SQLGenerator:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _is_placeholder_sql(sql: str) -> bool:
+        """Detect placeholder or fabricated SQL patterns.
+
+        Returns ``True`` if the SQL matches known placeholder patterns
+        (SELECT 0, SELECT NULL, hardcoded scalar values).
+        """
+        return any(pattern.search(sql) for pattern in _PLACEHOLDER_SQL_PATTERNS)
 
     @staticmethod
     def _format_context(context: SchemaContext) -> str:

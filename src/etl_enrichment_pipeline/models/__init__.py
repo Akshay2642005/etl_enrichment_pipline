@@ -12,6 +12,12 @@ from etl_enrichment_pipeline.models.canonical import (
     TriggerSchema,
     ViewSchema,
 )
+from etl_enrichment_pipeline.models.connection_schema import (
+    ConnectionCredentials,
+    CREATE_SAVED_CONNECTIONS_TABLE_SQL,
+    SavedConnection,
+    SavedConnectionSummary,
+)
 from etl_enrichment_pipeline.models.final_output import FinalOutput
 from etl_enrichment_pipeline.models.pipeline_state import (
     BusinessRoleMap,
@@ -39,6 +45,11 @@ __all__ = [
     "TableSchema",
     "TriggerSchema",
     "ViewSchema",
+    # connection_schema
+    "ConnectionCredentials",
+    "CREATE_SAVED_CONNECTIONS_TABLE_SQL",
+    "SavedConnection",
+    "SavedConnectionSummary",
     # pipeline_state
     "BusinessRoleMap",
     "DescriptionMap",
