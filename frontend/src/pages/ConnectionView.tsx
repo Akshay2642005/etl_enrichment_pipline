@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { extractFromDb, extractFromSql } from '../services/api';
+import { extractAndSaveDb, extractFromSql, fetchConnectionDetails } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -17,6 +17,10 @@ export const ConnectionView = () => {
   const setError = useAppStore((s) => s.setConnectionError);
   const successMessage = useAppStore((s) => s.successMessage);
   const setSuccessMessage = useAppStore((s) => s.setSuccessMessage);
+  const connectionName = useAppStore((s) => s.connectionName);
+  const setConnectionName = useAppStore((s) => s.setConnectionName);
+  const connectionDescription = useAppStore((s) => s.connectionDescription);
+  const setConnectionDescription = useAppStore((s) => s.setConnectionDescription);
   const dbType = useAppStore((s) => s.dbType);
   const setDbType = useAppStore((s) => s.setDbType);
   const host = useAppStore((s) => s.host);
@@ -42,6 +46,7 @@ export const ConnectionView = () => {
 
   const validateForm = () => {
     const errors: { [key: string]: string } = {};
+    if (!connectionName.trim()) errors.connectionName = 'Connection Name is required';
     if (!host.trim()) errors.host = 'Host is required';
     if (!port.trim()) errors.port = 'Port is required';
     if (!database.trim()) errors.database = 'Database name is required';
@@ -78,11 +83,32 @@ export const ConnectionView = () => {
     setError(null);
     setSuccessMessage(null);
     try {
-      const data = await extractFromDb(dbType, { host, port, database, username, password });
-      setMetadata(data.data);
-      setSuccessMessage("Metadata extracted successfully.");
+      // Extract, generate insights, and save connection in one call
+      const savedConnection = await extractAndSaveDb(
+        connectionName, 
+        connectionDescription, 
+        dbType, 
+        { host, port, database, username, password },
+        true // generate insights
+      );
+      
+      setSuccessMessage("Metadata extracted and connection saved successfully!");
+      
+      // Fetch full details and update store so they can view insights immediately
+      try {
+        const details = await fetchConnectionDetails(savedConnection.id);
+        if (details.enriched_schema) setMetadata(details.enriched_schema);
+        if (details.insights) {
+          const setInsightsData = useAppStore.getState().setInsightsData;
+          setInsightsData(details.insights);
+        }
+      } catch (detailsErr) {
+        console.error("Failed to preload connection details:", detailsErr);
+        // It saved, but we couldn't load details. Just route to dashboard.
+      }
+
       setTimeout(() => {
-        navigate('/schema', { state: { metadata: data.data } });
+        navigate('/dashboard');
       }, 1500);
     } catch (err: any) {
       console.error("Backend Error:", err);
@@ -172,6 +198,16 @@ export const ConnectionView = () => {
                   </CardHeader>
                   <CardContent className="pt-6 px-6 md:px-8 pb-8 relative z-10">
                     <form onSubmit={handleDbSubmit} className="space-y-5" noValidate>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Connection Name <span className="text-red-500">*</span></label>
+                        <Input disabled={loading} className={`h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100 ${validationErrors.connectionName ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''}`} placeholder="e.g. Production PostgreSQL" value={connectionName} onChange={(e) => { setConnectionName(e.target.value); setValidationErrors(prev => ({ ...prev, connectionName: '' })); }} />
+                        {validationErrors.connectionName && <p className="text-xs text-red-500 mt-1">{validationErrors.connectionName}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Description (Optional)</label>
+                        <Input disabled={loading} className="h-10 border-slate-200 dark:border-slate-700 dark:focus-visible:ring-cyan-500 bg-white dark:bg-[#081120] text-slate-900 dark:text-slate-100" placeholder="e.g. Core application database" value={connectionDescription} onChange={(e) => setConnectionDescription(e.target.value)} />
+                      </div>
+                      
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700 dark:text-cyan-100">Host</label>

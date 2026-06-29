@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Plug, FileJson, Lightbulb, Bot, Menu } from 'lucide-react';
+import { Plug, FileJson, Lightbulb, Bot, Menu, LayoutDashboard } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export const MainLayout = () => {
@@ -24,19 +24,19 @@ export const MainLayout = () => {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 relative z-10 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 relative z-10 custom-scrollbar flex flex-col">
           <NavLink
-            to="/connection"
+            to="/dashboard"
             className={({ isActive }) =>
               `flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 ${isActive
                 ? 'bg-blue-50 text-cyan-600 font-semibold dark:bg-cyan-950/40 dark:text-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.15)] border border-blue-100 dark:border-cyan-800/50'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-cyan-100 border border-transparent'
               }`
             }
-            title={isCollapsed ? "Connection" : undefined}
+            title={isCollapsed ? "Dashboard" : undefined}
           >
-            <Plug className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span className="truncate">Connection</span>}
+            <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+            {!isCollapsed && <span className="truncate">Dashboard</span>}
           </NavLink>
 
           <NavLink
@@ -79,6 +79,22 @@ export const MainLayout = () => {
           >
             <Bot className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span className="truncate">Matrices</span>}
+          </NavLink>
+
+          <div className="flex-1"></div>
+
+          <NavLink
+            to="/connection"
+            className={({ isActive }) =>
+              `flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-3 rounded-xl transition-all duration-300 ${isActive
+                ? 'bg-blue-50 text-cyan-600 font-semibold dark:bg-cyan-950/40 dark:text-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.15)] border border-blue-100 dark:border-cyan-800/50'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-cyan-100 border border-transparent'
+              }`
+            }
+            title={isCollapsed ? "Connection" : undefined}
+          >
+            <Plug className="w-5 h-5 flex-shrink-0" />
+            {!isCollapsed && <span className="truncate">Connection</span>}
           </NavLink>
         </nav>
       </aside>

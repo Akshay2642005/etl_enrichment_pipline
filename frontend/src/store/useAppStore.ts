@@ -16,6 +16,10 @@ export interface AppState {
   setSidebarCollapsed: (v: boolean) => void;
 
   // Connection — DB form
+  connectionName: string;
+  setConnectionName: (v: string) => void;
+  connectionDescription: string;
+  setConnectionDescription: (v: string) => void;
   dbType: TabType;
   setDbType: (v: TabType) => void;
   host: string;
@@ -93,6 +97,10 @@ export const useAppStore = create<AppState>()((set) => ({
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
 
   // Connection — DB form defaults
+  connectionName: '',
+  setConnectionName: (connectionName) => set({ connectionName }),
+  connectionDescription: '',
+  setConnectionDescription: (connectionDescription) => set({ connectionDescription }),
   dbType: 'postgres',
   setDbType: (dbType) => set({ dbType }),
   host: 'localhost',
@@ -184,5 +192,7 @@ export const useAppStore = create<AppState>()((set) => ({
       loading: false,
       validationErrors: {},
       sqlFile: null,
+      connectionName: '',
+      connectionDescription: '',
     }),
 }));
