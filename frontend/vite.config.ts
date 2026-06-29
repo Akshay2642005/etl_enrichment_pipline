@@ -10,6 +10,7 @@ export default defineConfig({
       '/extract': 'http://127.0.0.1:8000',
       '/parse-sql': 'http://127.0.0.1:8000',
       '/api': 'http://127.0.0.1:8000',
+      '/connections': 'http://127.0.0.1:8000',
     }
   }
 })

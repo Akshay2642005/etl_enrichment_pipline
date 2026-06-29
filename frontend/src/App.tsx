@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from './components/layout/MainLayout';
+import { DashboardView } from './pages/DashboardView';
 import { ConnectionView } from './pages/ConnectionView';
 import { SchemaView } from './pages/SchemaView';
 import { InsightsView } from './pages/InsightsView';
@@ -15,7 +16,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<Navigate to="/connection" replace />} />
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardView />} />
             <Route path="connection" element={<ConnectionView />} />
             <Route path="schema" element={<SchemaView />} />
             <Route path="insights" element={<InsightsView />} />

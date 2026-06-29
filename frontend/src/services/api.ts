@@ -9,6 +9,23 @@ export const extractFromDb = async (dbType: string, creds: any) => {
   return data;
 };
 
+export const extractAndSaveDb = async (name: string, description: string, dbType: string, creds: any, generateInsights: boolean = true) => {
+  const response = await fetch('/connections/extract-and-save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      name, 
+      description, 
+      database_type: dbType, 
+      credentials: creds,
+      generate_insights: generateInsights
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || data.error || 'Failed to extract and save connection');
+  return data;
+};
+
 export const extractFromSql = async (sqlText: string, dbType: string, schema: string = 'public') => {
   const response = await fetch('/parse-sql', {
     method: 'POST',
@@ -34,5 +51,19 @@ export const generateInsights = async (domain?: string, entity?: string) => {
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || data.error || 'Failed to generate insights');
+  return data;
+};
+
+export const fetchSavedConnections = async () => {
+  const response = await fetch('/connections');
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || data.error || 'Failed to fetch saved connections');
+  return data;
+};
+
+export const fetchConnectionDetails = async (connectionId: string) => {
+  const response = await fetch(`/connections/${connectionId}/details`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || data.error || 'Failed to fetch connection details');
   return data;
 };
