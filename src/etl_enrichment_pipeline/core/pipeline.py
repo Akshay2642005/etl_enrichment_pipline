@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -139,9 +140,7 @@ def raw_json_to_canonical_schema(raw: dict) -> CanonicalSchema:
                     column_name=col["column_name"],
                     data_type=col.get("data_type", "unknown"),
                     is_nullable=(
-                        nullable_raw
-                        if isinstance(nullable_raw, bool)
-                        else True
+                        nullable_raw if isinstance(nullable_raw, bool) else True
                     ),
                 )
             )
@@ -348,43 +347,99 @@ def _describe_relationship(
     return f"each {child} references {parent} via {from_column}"
 
 
-def _relationship_label(
-    from_table: str,
-    from_column: str,
-    to_table: str,
-    to_column: str,
-) -> str:
-    """Generate a concise natural-language label for a FK relationship.
+_PREPOSITIONS = frozenset(
+    {"to", "with", "by", "for", "from", "in", "on", "at", "of", "as"}
+)
 
-    Returns a short verb phrase like "categorized by", "belongs to",
-    "reports to", or "references".
+
+def _short_name(desc: str, entity_name: str | None = None) -> str:
+    """Extract the verb phrase from a relationship description.
+
+    Handles two input formats:
+
+    * Heuristic:  ``'each employee belongs to a department'`` → ``'belongs to'``
+    * AI:         ``'An Environment belongs to exactly one Project
+    (N:1), …'`` → ``'belongs to'``
     """
-    child = _singular(from_table)
-    parent = _singular(to_table)
-    fk_lower = from_column.lower()
-    parent_lower = parent.lower()
+    if entity_name:
+        normed = _norm(entity_name)
+        new_desc = re.sub(
+            rf"^(?:each|a|an)\s+{re.escape(normed)}\s+",
+            "",
+            desc,
+            flags=re.IGNORECASE,
+        )
+        if new_desc == desc:
+            desc = re.sub(r"^(?:each|a|an)\s+\w+\s+", "", desc, flags=re.IGNORECASE)
+        else:
+            desc = new_desc
+    else:
+        desc = re.sub(r"^(?:each|a|an)\s+\w+\s+", "", desc, flags=re.IGNORECASE)
+    desc = re.sub(r"^(?:\w+\s+)*?(?:is|are)\s+", "", desc, flags=re.IGNORECASE)
+    desc = re.sub(r"\s*\([^)]*\)", "", desc)
+    desc = re.split(r"\s+(?:and|or)\s+", desc, maxsplit=1)[0]
+    desc = desc.split(",")[0]
+    desc = desc.split(";")[0]
+    desc = re.sub(r"\s+via\s+\w+(?:\s+to\s+\w+(?:\s+\w+)?)?$", "", desc)
+    desc = re.sub(
+        r"\s+(?:a|an|one|exactly\s+one|another)\s+\w+$", "", desc, flags=re.IGNORECASE
+    )
+    desc = re.sub(r"^(?:is|are)\s+", "", desc)
+    parts = desc.split()
+    while len(parts) > 1 and parts[-1].lower() not in _PREPOSITIONS:
+        parts = parts[:-1]
+    return " ".join(parts).strip()
 
-    # FK column contains parent table name — direct association
-    if fk_lower == f"{parent_lower}_id" or parent_lower in fk_lower:
-        if parent_lower in ("manager", "supervisor", "lead", "head"):
-            return "reports to"
-        return "categorized by"
 
-    # Self-referencing FK (e.g. employee.manager_id → employee.id)
-    if from_table == to_table and from_column != to_column:
-        if parent_lower in fk_lower or parent_lower in ("manager", "supervisor"):
-            return "reports to"
-        return "refers to"
+def _norm(name: str) -> str:
+    """Normalise a name for lookup matching: lowercased, no separators."""
+    return name.lower().replace("_", "").replace("-", "").replace(" ", "")
 
-    # FK column is just "id" or "{table}_id"
-    if fk_lower in ("id", f"{from_table}_id"):
-        return "associated with"
 
-    # FK column starts with parent name
-    if fk_lower.startswith(parent_lower):
-        return "categorized by"
+def _build_entity_rel_lookup(
+    entity_relationships: list[dict[str, str]],
+) -> dict[tuple[str, str], tuple[str, str]]:
+    """Build a lookup from (child_entity, parent_entity) to (business_meaning, entity).
 
-    return "references"
+    Keys are *normalised* so that e.g. ``TurnaroundOperation`` and
+    ``turnaround_operation`` match the same entry.
+    """
+    lookup: dict[tuple[str, str], tuple[str, str]] = {}
+    for er in entity_relationships:
+        entity = er.get("entity", "").strip()
+        meaning = er.get("business_meaning", "")
+        if not entity or not meaning:
+            continue
+        for rel in er.get("related_entities", "").split(","):
+            rel = rel.strip()
+            if rel:
+                lookup[(_norm(entity), _norm(rel))] = (meaning, entity)
+    return lookup
+
+
+def _find_relationship_name(
+    from_table: str,
+    to_table: str,
+    entity_rel_lookup: dict[tuple[str, str], tuple[str, str]],
+) -> tuple[str | None, str | None]:
+    """Try to find matching AI-generated business_meaning for a FK relationship.
+
+    Returns ``(short_name, business_meaning)`` or ``(None, None)`` if no match.
+    """
+    child = _norm(_singular(from_table))
+    parent = _norm(_singular(to_table))
+
+    key = (child, parent)
+    if key in entity_rel_lookup:
+        meaning, entity = entity_rel_lookup[key]
+        return _short_name(meaning, entity), meaning
+
+    rev_key = (parent, child)
+    if rev_key in entity_rel_lookup:
+        meaning, entity = entity_rel_lookup[rev_key]
+        return _short_name(meaning, entity), meaning
+
+    return None, None
 
 
 def assemble_final_output(state: PipelineState) -> dict[str, Any]:
@@ -475,24 +530,40 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
                 }
             )
 
+    # --- entity_relationships (AI-generated, used below for relationship names) -
+    er_list: list[dict[str, str]] = []
+    if state.entity_relationships:
+        rels = state.entity_relationships
+        if isinstance(rels, dict) and "entity_relationships" in rels:
+            er_list = rels["entity_relationships"]
+        elif isinstance(rels, list):
+            er_list = rels
+    entity_rel_lookup = _build_entity_rel_lookup(er_list)
+
     # --- relationships (human-readable format) ------------------------------
     relationships: list[dict[str, str]] = []
     if schema:
         for rel in schema.relationships:
+            ai_name, ai_meaning = _find_relationship_name(
+                rel.from_table,
+                rel.to_table,
+                entity_rel_lookup,
+            )
+            if ai_name is not None and ai_meaning is not None:
+                name = ai_name
+                desc = ai_meaning
+            else:
+                desc = _describe_relationship(
+                    rel.from_table,
+                    rel.from_column,
+                    rel.to_table,
+                    rel.to_column,
+                )
+                name = _short_name(desc)
             relationships.append(
                 {
-                    "name": _relationship_label(
-                        rel.from_table,
-                        rel.from_column,
-                        rel.to_table,
-                        rel.to_column,
-                    ),
-                    "description": _describe_relationship(
-                        rel.from_table,
-                        rel.from_column,
-                        rel.to_table,
-                        rel.to_column,
-                    ),
+                    "name": name,
+                    "description": desc,
                     "from_table": rel.from_table,
                     "from_column": rel.from_column,
                     "to_table": rel.to_table,
@@ -508,15 +579,6 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
     entities: list[dict[str, str]] = []
     if state.entities:
         entities = [{"name": e} for e in state.entities]
-
-    # --- entity_relationships -----------------------------------------------
-    entity_relationships: list[dict[str, str]] = []
-    if state.entity_relationships:
-        rels = state.entity_relationships
-        if isinstance(rels, dict) and "entity_relationships" in rels:
-            entity_relationships = rels["entity_relationships"]
-        elif isinstance(rels, list):
-            entity_relationships = rels
 
     # --- business_processes -------------------------------------------------
     business_processes: list[dict[str, str]] = []
@@ -576,7 +638,7 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
         views=views,
         relationships=relationships,
         entities=entities,
-        entity_relationships=entity_relationships,
+        entity_relationships=er_list,
         business_processes=business_processes,
         use_cases=use_cases,
         sample_queries=sample_queries,
@@ -586,19 +648,20 @@ def assemble_final_output(state: PipelineState) -> dict[str, Any]:
 
     try:
         from etl_enrichment_pipeline.agents.quality_agent import QualityAnalyst
+
         qa = QualityAnalyst(enriched_metadata=final_output)
         q_res = qa.assess(fast_mode=True)
-        
+
         def _fmt(val: float) -> str:
             return f"{int(val * 100)}/100"
-            
+
         final_output["metadata"]["quality_scores"] = {
             "overall": _fmt(q_res.get("overall_score", 0.0)),
             "completeness": _fmt(q_res.get("completeness", 0.0)),
             "relationships": _fmt(q_res.get("relationships", 0.0)),
             "naming": _fmt(q_res.get("naming_convention", 0.0)),
             "documentation": _fmt(q_res.get("documentation", 0.0)),
-            "normalization": _fmt(q_res.get("normalization", 0.0))
+            "normalization": _fmt(q_res.get("normalization", 0.0)),
         }
     except Exception as e:
         logger.warning(f"Quality assessment failed during final output assembly: {e}")

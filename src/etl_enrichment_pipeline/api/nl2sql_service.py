@@ -36,16 +36,31 @@ logger = logging.getLogger(__name__)
 
 
 class NL2SQLRequest(BaseModel):
-    question: str = Field(..., description="Natural-language question to convert to SQL")
-    context_limit: int = Field(default=3, ge=1, le=500, description="Max schema context items to retrieve (1–500)")
-    include_explanation: bool = Field(default=False, description="Whether to include explanation in response")
+    question: str = Field(
+        ..., description="Natural-language question to convert to SQL"
+    )
+    context_limit: int = Field(
+        default=3,
+        ge=1,
+        le=500,
+        description="Max schema context items to retrieve (1–500)",
+    )
+    include_explanation: bool = Field(
+        default=False, description="Whether to include explanation in response"
+    )
 
 
 class NL2SQLResponse(BaseModel):
     sql: str = Field(default="", description="Generated PostgreSQL SQL")
-    confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Confidence score (0.0–1.0)")
-    context_used: list[dict[str, Any]] = Field(default_factory=list, description="Schema context items used for generation")
-    explanation: str | None = Field(default=None, description="Optional explanation of the generated SQL")
+    confidence: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="Confidence score (0.0–1.0)"
+    )
+    context_used: list[dict[str, Any]] = Field(
+        default_factory=list, description="Schema context items used for generation"
+    )
+    explanation: str | None = Field(
+        default=None, description="Optional explanation of the generated SQL"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -96,38 +111,48 @@ def _build_context_summary(context_used_schema: Any) -> list[dict[str, Any]]:
     """Flatten a ``SchemaContext`` into a list of dicts for the response."""
     summary: list[dict[str, Any]] = []
     for tbl in getattr(context_used_schema, "tables", []):
-        summary.append({
-            "type": "table",
-            "name": tbl.get("table_name", ""),
-            "similarity": tbl.get("similarity", 0.0),
-        })
+        summary.append(
+            {
+                "type": "table",
+                "name": tbl.get("table_name", ""),
+                "similarity": tbl.get("similarity", 0.0),
+            }
+        )
     for col in getattr(context_used_schema, "columns", []):
-        summary.append({
-            "type": "column",
-            "table": col.get("table_name", ""),
-            "name": col.get("column_name", ""),
-            "similarity": col.get("similarity", 0.0),
-        })
+        summary.append(
+            {
+                "type": "column",
+                "table": col.get("table_name", ""),
+                "name": col.get("column_name", ""),
+                "similarity": col.get("similarity", 0.0),
+            }
+        )
     for rel in getattr(context_used_schema, "relationships", []):
-        summary.append({
-            "type": "relationship",
-            "from": f"{rel.get('from_table', '')}.{rel.get('from_column', '')}",
-            "to": f"{rel.get('to_table', '')}.{rel.get('to_column', '')}",
-            "similarity": rel.get("similarity", 0.0),
-        })
+        summary.append(
+            {
+                "type": "relationship",
+                "from": f"{rel.get('from_table', '')}.{rel.get('from_column', '')}",
+                "to": f"{rel.get('to_table', '')}.{rel.get('to_column', '')}",
+                "similarity": rel.get("similarity", 0.0),
+            }
+        )
     for jp in getattr(context_used_schema, "join_paths", []):
-        summary.append({
-            "type": "join_path",
-            "tables": jp.get("tables", []),
-            "hops": jp.get("hops", 0),
-        })
+        summary.append(
+            {
+                "type": "join_path",
+                "tables": jp.get("tables", []),
+                "hops": jp.get("hops", 0),
+            }
+        )
     for er in getattr(context_used_schema, "entity_relationships", []):
-        summary.append({
-            "type": "entity_relationship",
-            "entity": er.get("entity", ""),
-            "related_entities": er.get("related_entities", ""),
-            "business_meaning": er.get("business_meaning", ""),
-        })
+        summary.append(
+            {
+                "type": "entity_relationship",
+                "entity": er.get("entity", ""),
+                "related_entities": er.get("related_entities", ""),
+                "business_meaning": er.get("business_meaning", ""),
+            }
+        )
     return summary
 
 
@@ -176,7 +201,7 @@ async def nl2sql(request: NL2SQLRequest) -> NL2SQLResponse:
 
     except Exception as exc:
         logger.exception("NL2SQL endpoint failed")
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc))  # noqa: B904
 
 
 @router.get("/health")
@@ -217,7 +242,8 @@ async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None]:
         # to first request (embedding model, stores, services).
         load_metadata()
         loop = asyncio.get_running_loop()
-        # Initialise the heavy embedding model in a background thread to avoid blocking the event loop
+        # Initialise the heavy embedding model in a background thread
+        # to avoid blocking the event loop
         await loop.run_in_executor(None, get_embedding_service)
         await ensure_stores_initialized()
         _get_context_builder()
