@@ -61,6 +61,14 @@ class NL2SQLResponse(BaseModel):
     explanation: str | None = Field(
         default=None, description="Optional explanation of the generated SQL"
     )
+    status: str = Field(
+        default="SUCCESS",
+        description="Generation status: SUCCESS or OUT_OF_SCOPE",
+    )
+    reason: str | None = Field(
+        default=None,
+        description="Reason when status is OUT_OF_SCOPE",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -185,9 +193,36 @@ async def nl2sql(request: NL2SQLRequest) -> NL2SQLResponse:
 
         generation = _get_nl2sql_generator().generate(request.question, context)
 
+        # ── Handle OUT_OF_SCOPE from generator (pre-check or LLM) ────
+        if generation.status == "OUT_OF_SCOPE":
+            return NL2SQLResponse(
+                status="OUT_OF_SCOPE",
+                reason=generation.reason,
+                context_used=_build_context_summary(context),
+                explanation=generation.explanation
+                if request.include_explanation
+                else None,
+            )
+
         sql = generation.sql.strip()
         if sql:
             validation = _get_sql_validator().validate(sql)
+            # ── Post-generation: SQL validator found fabrications → OUT_OF_SCOPE ──
+            if not validation.is_valid and validation.errors:
+                logger.warning(
+                    "SQL validation failed — treating as OUT_OF_SCOPE: %s",
+                    validation.errors,
+                )
+                return NL2SQLResponse(
+                    status="OUT_OF_SCOPE",
+                    reason="Question cannot be answered using the available "
+                    "database schema — generated SQL references unknown "
+                    "schema elements.",
+                    context_used=_build_context_summary(context),
+                    explanation=generation.explanation
+                    if request.include_explanation
+                    else None,
+                )
             confidence = min(generation.confidence, validation.confidence)
         else:
             confidence = 0.0
