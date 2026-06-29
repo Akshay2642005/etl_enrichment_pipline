@@ -362,12 +362,17 @@ def _short_name(desc: str, entity_name: str | None = None) -> str:
     (N:1), …'`` → ``'belongs to'``
     """
     if entity_name:
-        desc = re.sub(
-            rf"^(?:each|a|an)\s+{re.escape(_norm(entity_name))}\s+",
+        normed = _norm(entity_name)
+        new_desc = re.sub(
+            rf"^(?:each|a|an)\s+{re.escape(normed)}\s+",
             "",
             desc,
             flags=re.IGNORECASE,
         )
+        if new_desc == desc:
+            desc = re.sub(r"^(?:each|a|an)\s+\w+\s+", "", desc, flags=re.IGNORECASE)
+        else:
+            desc = new_desc
     else:
         desc = re.sub(r"^(?:each|a|an)\s+\w+\s+", "", desc, flags=re.IGNORECASE)
     desc = re.sub(r"^(?:\w+\s+)*?(?:is|are)\s+", "", desc, flags=re.IGNORECASE)
