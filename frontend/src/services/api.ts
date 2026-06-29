@@ -67,3 +67,12 @@ export const fetchConnectionDetails = async (connectionId: string) => {
   if (!response.ok) throw new Error(data.detail || data.error || 'Failed to fetch connection details');
   return data;
 };
+
+export const regenerateCategoryInsights = async (connectionId: string, category: string) => {
+  const response = await fetch(`/connections/${connectionId}/regenerate-insights/${encodeURIComponent(category)}`, {
+    method: 'POST',
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || data.error || 'Failed to regenerate category insights');
+  return data;
+};

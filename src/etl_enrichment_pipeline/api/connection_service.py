@@ -21,6 +21,7 @@ Endpoints:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -479,6 +480,257 @@ class ExtractAndSaveRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Insight categories supported by the frontend
+# ---------------------------------------------------------------------------
+
+INSIGHT_CATEGORIES = [
+    "Overview",
+    "Operations",
+    "Finance",
+    "Marketing",
+    "Sales",
+    "Human Resources",
+    "IT",
+]
+
+
+# ---------------------------------------------------------------------------
+# SHA256 delta utilities for insight patching
+# ---------------------------------------------------------------------------
+
+
+def _item_sha256(item: dict[str, Any]) -> str:
+    """Return the SHA-256 hex digest of a JSON-serialised dict.
+
+    Used to detect whether an insight item (KPI, Insight, etc.) has
+    changed between regenerations.  Items whose hash stays the same
+    are kept verbatim (avoiding unnecessary writes).
+    """
+    return hashlib.sha256(
+        json.dumps(item, sort_keys=True, ensure_ascii=False, default=str)
+        .encode("utf-8")
+    ).hexdigest()
+
+
+def compute_category_delta(
+    old_items: list[dict[str, Any]],
+    new_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge old and new items for a single category sub-list (KPIs,
+    insights, opportunities, or art_of_the_possible).
+
+    Items whose SHA-256 hash is identical are kept from *old_items*
+    (no change).  Items whose hash differs — or items only present in
+    *new_items* — replace or are added.  Items only present in
+    *old_items* are removed.
+
+    This produces a minimal delta for the DB patch.
+    """
+    old_hashes: dict[str, dict[str, Any]] = {}
+    for item in old_items:
+        h = _item_sha256(item)
+        old_hashes[h] = item
+
+    new_hashes: dict[str, dict[str, Any]] = {}
+    seen: set[str] = set()
+    merged: list[dict[str, Any]] = []
+
+    for item in new_items:
+        h = _item_sha256(item)
+        new_hashes[h] = item
+        seen.add(h)
+        if h in old_hashes:
+            # Same hash → keep old version (unchanged)
+            merged.append(old_hashes[h])
+        else:
+            # New or modified → use new version
+            merged.append(item)
+
+    return merged
+
+
+def _patch_category_insights(
+    existing_category: dict[str, list[dict[str, Any]]],
+    new_category: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Compute a SHA-256 delta merge between existing and new category
+    data and return the patched result.
+
+    Each of the four sub-lists (kpis, insights, opportunities,
+    art_of_the_possible) is merged independently via
+    :func:`compute_category_delta`.
+    """
+    keys = ("kpis", "insights", "opportunities", "art_of_the_possible")
+    result: dict[str, list[dict[str, Any]]] = {}
+    for key in keys:
+        old_list = existing_category.get(key, [])
+        new_list = new_category.get(key, [])
+        result[key] = compute_category_delta(old_list, new_list)
+        logger.debug(
+            "Category delta for '%s': %d old → %d new → %d after merge",
+            key,
+            len(old_list),
+            len(new_list),
+            len(result[key]),
+        )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Multi-category insight generation
+# ---------------------------------------------------------------------------
+
+
+async def _generate_all_insights(
+    enriched_schema: dict[str, Any],
+) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    """Generate insights for all categories the frontend supports.
+
+    Calls ``InsightsGenerator.generate()`` for each category in
+    ``INSIGHT_CATEGORIES`` and returns a dict keyed by category name
+    where each value is ``{kpis, insights, opportunities, art_of_the_possible}``.
+
+    If any single category fails, it is replaced with an empty result so
+    the rest of the data is still usable.
+    """
+    from etl_enrichment_pipeline.agents.insights_agent import InsightsGenerator
+
+    generator = InsightsGenerator(
+        enriched_metadata=enriched_schema,
+    )
+
+    results: dict[str, dict[str, list[dict[str, Any]]]] = {}
+
+    for category in INSIGHT_CATEGORIES:
+        try:
+            domain = None if category == "Overview" else category
+            result = await generator.generate(domain=domain)
+            results[category] = {
+                "kpis": result.get("kpis", []),
+                "insights": result.get("insights", []),
+                "opportunities": result.get("opportunities", []),
+                "art_of_the_possible": result.get("art_of_the_possible", []),
+            }
+            logger.info(
+                "Generated %s insights: %d KPIs, %d insights, "
+                "%d opportunities, %d art_of_the_possible",
+                category,
+                len(results[category]["kpis"]),
+                len(results[category]["insights"]),
+                len(results[category]["opportunities"]),
+                len(results[category]["art_of_the_possible"]),
+            )
+        except Exception as exc:
+            logger.warning(
+                "Insights generation failed for category '%s': %s",
+                category,
+                exc,
+            )
+            results[category] = {
+                "kpis": [],
+                "insights": [],
+                "opportunities": [],
+                "art_of_the_possible": [],
+            }
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Background insight generation
+# ---------------------------------------------------------------------------
+
+
+def _generate_all_insights_sync(
+    enriched_schema: dict[str, Any],
+) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    """Synchronous wrapper around ``_generate_all_insights``.
+
+    Creates a new event loop in the calling thread so the async generator
+    can be run inside a ``ThreadPoolExecutor`` without blocking the
+    main event loop.
+    """
+    import asyncio as _asyncio
+
+    loop = _asyncio.new_event_loop()
+    _asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(
+            _generate_all_insights(enriched_schema)
+        )
+    finally:
+        loop.close()
+
+
+async def _background_generate_and_update(
+    connection_id: str,
+    enriched_schema: dict[str, Any],
+) -> None:
+    """Generate all category insights in a background thread and persist.
+
+    This is designed to be fired as an ``asyncio.create_task`` so the
+    HTTP response can be returned immediately after enrichment while
+    the (slow) LLM calls run in a ``ThreadPoolExecutor``.
+
+    On success, the ``saved_connections`` row's ``insights`` field is
+    replaced with the full multi-category result.
+    On failure, the status remains ``active`` and ``error_message`` is
+    updated — the connection data (schema) is never lost.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+        insights = await loop.run_in_executor(
+            _executor,
+            _generate_all_insights_sync,
+            enriched_schema,
+        )
+
+        pool = await _get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE saved_connections
+                SET insights = $1::jsonb,
+                    status = 'active',
+                    updated_at = now()
+                WHERE id = $2::uuid
+                """,
+                json.dumps(insights),
+                connection_id,
+            )
+
+        logger.info(
+            "Background insights complete for connection '%s' — %d categories",
+            connection_id,
+            len(insights),
+        )
+    except Exception as exc:
+        logger.exception(
+            "Background insights failed for connection '%s'",
+            connection_id,
+        )
+        try:
+            pool = await _get_pool()
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    UPDATE saved_connections
+                    SET status = 'active',
+                        error_message = $1,
+                        updated_at = now()
+                    WHERE id = $2::uuid
+                    """,
+                    f"Insights generation failed: {exc}",
+                    connection_id,
+                )
+        except Exception:
+            logger.exception(
+                "Failed to record insight failure for connection '%s'",
+                connection_id,
+            )
+
+
+# ---------------------------------------------------------------------------
 # Router
 # ---------------------------------------------------------------------------
 
@@ -662,7 +914,7 @@ async def update_connection_insights_endpoint(
     Useful when you want to regenerate insights externally and push
     them back without re-running the full pipeline.
 
-    Expected shape: ``{"kpis": [...], "insights": [...], "opportunities": [...], "art_of_the_possible": [...]}``
+    Expected shape: ``{Overview: {kpis, insights, ...}, Operations: {...}, ...}``
     """
     updated = await update_connection_insights(connection_id, body)
     if updated is None:
@@ -671,6 +923,123 @@ async def update_connection_insights_endpoint(
             detail=f"Connection '{connection_id}' not found",
         )
     return updated
+
+
+@router.post(
+    "/{connection_id}/regenerate-insights/{category:str}",
+    summary="Regenerate a single insight category and persist the delta",
+    description=(
+        "Generates fresh insights for one category (Overview, Operations, "
+        "Finance, Marketing, Sales, Human Resources, IT), computes a "
+        "SHA-256 delta against the existing data so unchanged items are "
+        "kept verbatim, and patches the saved_connections row with only "
+        "the changes."
+    ),
+)
+async def regenerate_category_insights(
+    connection_id: str,
+    category: str,
+) -> dict[str, list[dict[str, Any]]]:
+    """Regenerate insights for a single category and persist the delta.
+
+    Steps:
+        1. Load existing connection (including current insights)
+        2. Generate fresh insights for the requested category
+        3. Compute SHA-256 delta between old and new category data
+        4. Merge delta into the full insights dict
+        5. Patch the DB with the merged results
+        6. Return the refreshed category data
+    """
+    from etl_enrichment_pipeline.agents.insights_agent import InsightsGenerator
+
+    # ── Validate category ────────────────────────────────────
+    normalized = category.strip()
+    if normalized not in INSIGHT_CATEGORIES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Invalid category '{category}'. "
+                f"Must be one of: {', '.join(INSIGHT_CATEGORIES)}"
+            ),
+        )
+
+    # ── Load existing connection ─────────────────────────────
+    existing = await get_connection(connection_id)
+    if existing is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Connection '{connection_id}' not found",
+        )
+
+    enriched_schema = existing.enriched_schema or {}
+    current_insights: dict[str, Any] = existing.insights or {}
+
+    # ── Generate fresh insights for the category ─────────────
+    import asyncio as _asyncio
+
+    loop = asyncio.get_running_loop()
+    domain = None if normalized == "Overview" else normalized
+
+    def _generate_single_category() -> dict[str, list[dict[str, Any]]]:
+        """Run the async generator in a fresh event loop in this thread."""
+        inner = _asyncio.new_event_loop()
+        _asyncio.set_event_loop(inner)
+        try:
+            gen = InsightsGenerator(enriched_metadata=enriched_schema)
+            result = inner.run_until_complete(gen.generate(domain=domain))
+            return {
+                "kpis": result.get("kpis", []),
+                "insights": result.get("insights", []),
+                "opportunities": result.get("opportunities", []),
+                "art_of_the_possible": result.get("art_of_the_possible", []),
+            }
+        finally:
+            inner.close()
+
+    try:
+        new_category_data: dict[str, list[dict[str, Any]]] = await loop.run_in_executor(
+            _executor, _generate_single_category
+        )
+    except Exception as exc:
+        logger.exception(
+            "Insights generation failed for category '%s' on connection '%s'",
+            normalized,
+            connection_id,
+        )
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    # ── Compute SHA-256 delta ───────────────────────────────
+    old_category_data: dict[str, list[dict[str, Any]]] = current_insights.get(
+        normalized, {}
+    )
+    patched_category = _patch_category_insights(old_category_data, new_category_data)
+
+    changed_count = sum(
+        1
+        for key in ("kpis", "insights", "opportunities", "art_of_the_possible")
+        if old_category_data.get(key, []) != patched_category.get(key, [])
+    )
+
+    # ── Merge into full insights dict ───────────────────────
+    merged_insights = dict(current_insights)
+    merged_insights[normalized] = patched_category
+
+    # ── Persist to DB ───────────────────────────────────────
+    updated = await update_connection_insights(connection_id, merged_insights)
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Connection '{connection_id}' not found after update",
+        )
+
+    logger.info(
+        "Regenerated '%s' insights for connection '%s' — %d items changed",
+        normalized,
+        connection_id,
+        changed_count,
+    )
+
+    return patched_category
 
 
 # ---------------------------------------------------------------------------
@@ -759,36 +1128,32 @@ async def extract_and_save(request: ExtractAndSaveRequest) -> SavedConnection:
         )
         return saved
 
-    # ── Step 3: Insights (optional) ───────────────────────────
-    insights: dict[str, Any] = {}
-    if request.generate_insights:
-        try:
-            from etl_enrichment_pipeline.agents.insights_agent import InsightsGenerator
-
-            generator = InsightsGenerator(
-                enriched_metadata=enriched_schema,
-            )
-            insights_result = await generator.generate()
-            insights = {
-                "kpis": insights_result.get("kpis", []),
-                "insights": insights_result.get("insights", []),
-                "opportunities": insights_result.get("opportunities", []),
-                "art_of_the_possible": insights_result.get("art_of_the_possible", []),
-            }
-        except Exception as exc:
-            logger.warning("Insights generation failed for '%s': %s", request.name, exc)
-            insights = {"error": str(exc)}
-
-    # ── Step 4: Save ──────────────────────────────────────────
+    # ── Step 3: Save enriched schema immediately ────────────────
+    # Insights will be generated in the background so the user gets
+    # the response as fast as enrichment allows.
     saved = await save_connection(
         name=request.name,
         database_type=request.database_type,
         credentials=creds_dict,
         enriched_schema=enriched_schema,
-        insights=insights,
+        insights={},  # placeholder — filled by background task
         description=request.description,
         status="active",
     )
+
+    # ── Step 4: Fire background insight generation (non-blocking) ─
+    if request.generate_insights:
+        asyncio.create_task(
+            _background_generate_and_update(
+                saved.id,
+                enriched_schema,
+            )
+        )
+        logger.info(
+            "Background insights task launched for '%s' (id=%s)",
+            saved.name,
+            saved.id,
+        )
 
     elapsed = time.monotonic() - t_start
     logger.info(
@@ -876,44 +1241,24 @@ async def refresh_connection(
         )
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # ── Step 3: Regenerate insights (optional) ────────────────
-    insights: dict[str, Any] = {}
-    if generate_insights:
-        try:
-            from etl_enrichment_pipeline.agents.insights_agent import InsightsGenerator
-
-            generator = InsightsGenerator(
-                enriched_metadata=enriched_schema,
-            )
-            insights_result = await generator.generate()
-            insights = {
-                "kpis": insights_result.get("kpis", []),
-                "insights": insights_result.get("insights", []),
-                "opportunities": insights_result.get("opportunities", []),
-                "art_of_the_possible": insights_result.get("art_of_the_possible", []),
-            }
-        except Exception as exc:
-            logger.warning(
-                "Insights regeneration failed for '%s': %s", existing.name, exc
-            )
-
-    # ── Step 4: Update the connection directly ────────────────
+    # ── Step 3: Update enriched schema immediately ──────────────
+    # Insights will be regenerated in the background so the user
+    # gets the updated schema back as fast as enrichment allows.
     pool = await _get_pool()
     row = await pool.fetchrow(
         """
         UPDATE saved_connections
         SET enriched_schema = $1::jsonb,
-            insights        = $2::jsonb,
+            insights        = '{}'::jsonb,  -- placeholder
             status          = 'active',
             error_message   = NULL,
             updated_at      = now()
-        WHERE id = $3::uuid
+        WHERE id = $2::uuid
         RETURNING id, name, description, database_type, credentials,
                   enriched_schema, insights, status, error_message,
                   created_at, updated_at
         """,
         json.dumps(enriched_schema),
-        json.dumps(insights),
         connection_id,
     )
 
@@ -921,6 +1266,22 @@ async def refresh_connection(
         raise HTTPException(
             status_code=404,
             detail=f"Connection '{connection_id}' not found after refresh",
+        )
+
+    updated = _row_to_connection(row)
+
+    # ── Step 4: Fire background insight regeneration (non-blocking) ─
+    if generate_insights:
+        asyncio.create_task(
+            _background_generate_and_update(
+                connection_id,
+                enriched_schema,
+            )
+        )
+        logger.info(
+            "Background insights regeneration task launched for '%s' (id=%s)",
+            existing.name,
+            connection_id,
         )
 
     elapsed = time.monotonic() - t_start
@@ -931,7 +1292,7 @@ async def refresh_connection(
         elapsed,
     )
 
-    return _row_to_connection(row)
+    return updated
 
 
 __all__ = [

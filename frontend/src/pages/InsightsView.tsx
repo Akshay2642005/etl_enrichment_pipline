@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Target, Lightbulb, TrendingUp, Rocket, Loader2, RefreshCw, AlertCircle, Database, Server } from 'lucide-react';
-import { generateInsights, fetchEmbeddingStatus } from '../services/api';
+import { generateInsights, regenerateCategoryInsights, fetchEmbeddingStatus } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 
 interface KPI {
@@ -51,6 +51,7 @@ export const InsightsView = () => {
   const embeddingStatus = useAppStore((s) => s.embeddingStatus);
   const setEmbeddingStatus = useAppStore((s) => s.setEmbeddingStatus);
   const metadata = useAppStore((s) => s.metadata);
+  const currentConnectionId = useAppStore((s) => s.currentConnectionId);
   const [activeTab, setActiveTab] = useState<string>('Overview');
 
   // Normalize data so it supports both the old flat structure (defaults to Overview) and the new tabbed structure
@@ -95,9 +96,19 @@ export const InsightsView = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const domainParam = activeTab === 'Overview' ? undefined : activeTab;
-      const result = await generateInsights(domainParam);
-      setData({ ...currentTabsData, [activeTab]: result });
+      if (currentConnectionId) {
+        // Persist to DB via per-category regenerate endpoint
+        const patchedCategory = await regenerateCategoryInsights(
+          currentConnectionId,
+          activeTab,
+        );
+        setData({ ...currentTabsData, [activeTab]: patchedCategory });
+      } else {
+        // Fallback: ephemeral generation (no DB persistence)
+        const domainParam = activeTab === 'Overview' ? undefined : activeTab;
+        const result = await generateInsights(domainParam);
+        setData({ ...currentTabsData, [activeTab]: result });
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to generate insights.');
     } finally {
