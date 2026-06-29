@@ -15,7 +15,7 @@ export const MainLayout = () => {
           {!isCollapsed && (
             <img src="/logo1-removebg-preview.png" alt="HALO AI AGENT SOFTWARE" className="h-16 md:h-20 object-contain drop-shadow-[0_0_8px_rgba(0,229,255,0.3)]" />
           )}
-          <button 
+          <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-cyan-100/70 dark:hover:bg-[#081120]/50 transition-colors"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
@@ -47,10 +47,10 @@ export const MainLayout = () => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-cyan-100 border border-transparent'
               }`
             }
-            title={isCollapsed ? "Schema" : undefined}
+            title={isCollapsed ? "IQ" : undefined}
           >
             <FileJson className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span className="truncate">Schema</span>}
+            {!isCollapsed && <span className="truncate">IQ</span>}
           </NavLink>
 
           <NavLink
@@ -61,10 +61,10 @@ export const MainLayout = () => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-cyan-100 border border-transparent'
               }`
             }
-            title={isCollapsed ? "Insights" : undefined}
+            title={isCollapsed ? "Lens" : undefined}
           >
             <Lightbulb className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span className="truncate">Insights</span>}
+            {!isCollapsed && <span className="truncate">Lens</span>}
           </NavLink>
 
           <NavLink
@@ -104,7 +104,7 @@ export const MainLayout = () => {
         {/* Subtle grid background effect */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#00E5FF 1px, transparent 1px), linear-gradient(90deg, #00E5FF 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-transparent to-transparent dark:from-cyan-900/20 dark:via-[#081120]/80 dark:to-[#020617]" />
-        
+
         <div className="relative z-10 flex-1 flex flex-col overflow-auto">
           <Outlet />
         </div>
