@@ -87,6 +87,10 @@ export interface AppState {
   embeddingStatus: EmbeddingStatus;
   setEmbeddingStatus: (s: EmbeddingStatus) => void;
 
+  // Active connection tracking (for insight regeneration persistence)
+  currentConnectionId: string | null;
+  setCurrentConnectionId: (id: string | null) => void;
+
   /** Reset everything */
   reset: () => void;
 }
@@ -174,6 +178,10 @@ export const useAppStore = create<AppState>()((set) => ({
   embeddingStatus: { status: 'idle', updated_at: null, error: null },
   setEmbeddingStatus: (embeddingStatus) => set({ embeddingStatus }),
 
+  // Active connection tracking
+  currentConnectionId: null,
+  setCurrentConnectionId: (currentConnectionId) => set({ currentConnectionId }),
+
   // Reset
   reset: () =>
     set({
@@ -194,5 +202,6 @@ export const useAppStore = create<AppState>()((set) => ({
       sqlFile: null,
       connectionName: '',
       connectionDescription: '',
+      currentConnectionId: null,
     }),
 }));

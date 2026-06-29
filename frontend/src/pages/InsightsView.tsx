@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Target, Lightbulb, TrendingUp, Rocket, Loader2, RefreshCw, AlertCircle, Database, Server } from 'lucide-react';
-import { generateInsights, fetchEmbeddingStatus } from '../services/api';
+import { generateInsights, regenerateCategoryInsights, fetchEmbeddingStatus } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 
 interface KPI {
@@ -51,6 +51,7 @@ export const InsightsView = () => {
   const embeddingStatus = useAppStore((s) => s.embeddingStatus);
   const setEmbeddingStatus = useAppStore((s) => s.setEmbeddingStatus);
   const metadata = useAppStore((s) => s.metadata);
+  const currentConnectionId = useAppStore((s) => s.currentConnectionId);
   
   const MAIN_TABS = ['KPIs', 'Data-Driven Insights', 'Operational Opportunities', 'Art of the Possible'];
   const CATEGORIES = ['Operations', 'Finance', 'Marketing', 'Sales', 'Human Resources', 'IT'];

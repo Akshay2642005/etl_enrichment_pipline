@@ -37,6 +37,9 @@ export const DashboardView = () => {
     try {
       const details = await fetchConnectionDetails(id);
       
+      // Store the connection ID for later insight persistence
+      useAppStore.getState().setCurrentConnectionId(id);
+      
       // Update store with fetched data so they don't have to re-extract/generate
       if (details.enriched_schema) {
         setMetadata(details.enriched_schema);

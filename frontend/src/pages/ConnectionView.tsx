@@ -92,6 +92,9 @@ export const ConnectionView = () => {
         true // generate insights
       );
       
+      // Store the connection ID for later insight persistence
+      useAppStore.getState().setCurrentConnectionId(savedConnection.id);
+      
       setSuccessMessage("Metadata extracted and connection saved successfully!");
       
       // Fetch full details and update store so they can view insights immediately

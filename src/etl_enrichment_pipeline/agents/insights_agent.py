@@ -88,8 +88,19 @@ class InsightsResult:
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT = """You are an expert business data analyst. Given the schema context
-below, generate business intelligence across four categories. Use ONLY the tables,
-columns, and relationships from the provided context — never invent tables or columns.
+below, generate business intelligence across four categories.
+
+CRITICAL — You MUST obey ALL of these rules:
+1. Use ONLY the tables, columns, and relationships from the provided context.
+   NEVER invent tables, columns, or domains that are not present.
+2. Every SQL query in KPIs MUST reference ONLY tables and columns that exist
+   in the schema context above. If a KPI cannot be written with real columns,
+   omit it.
+3. Every Insight MUST cite specific tables/columns as supporting evidence.
+4. Every Opportunity MUST target an area that is clearly supported by the
+   actual tables and columns in the context.
+5. Do NOT add generic business platitudes — every output item must be
+   directly traceable to the provided schema.
 
 SCHEMA CONTEXT:
 {schema_context}
@@ -101,13 +112,11 @@ SCHEMA CONTEXT:
 OUTPUT REQUIREMENTS:
 
 ### KPIs (3-6 items)
-Key Performance Indicators relevant to the schema's domain (e.g. Sales, Operations,
-Workforce, Customer, Inventory, Financial, Logistics, etc.). Each KPI must include
+Key Performance Indicators relevant to the schema's domain. Each KPI MUST include
 a realistic SQL query that uses ONLY tables and columns from the context.
 
-Category must be one of the following or another domain-appropriate category:
-"Workforce", "Operations", "Equipment", "Inventory", "Sales", "Financial",
-"Customer Service", "Logistics", "Compliance", "Marketing", "Product".
+Category must be one of the domains actually present in the schema (e.g.
+the domains listed in the DOMAIN FILTER above).
 
 Potential value describes the business benefit (e.g. "Increases revenue by 15%",
 "Saves $200K/year", "Reduces churn by 10%").
@@ -293,23 +302,60 @@ def _build_domain_filter(
     entity: str | None,
     metadata: dict[str, Any],
 ) -> str:
-    """Build a domain/entity filter instruction for the LLM prompt."""
+    """Build a domain/entity filter instruction for the LLM prompt.
+
+    When *domain* is ``None`` the function discovers all unique domains
+    from the enriched metadata tables and lists them so the LLM is
+    grounded in what actually exists.
+    """
     parts: list[str] = []
+
+    # Discover all table names and domains from the actual schema
+    all_tables = metadata.get("tables", [])
+    all_table_names = [t["table_name"] for t in all_tables if t.get("table_name")]
+
     if domain:
         parts.append(f"DOMAIN FILTER: Focus on the '{domain}' domain.")
-        # List tables for this domain
         domain_tables = [
             t["table_name"]
-            for t in metadata.get("tables", [])
+            for t in all_tables
             if t.get("domain", "").lower() == domain.lower()
         ]
         if domain_tables:
             parts.append(
                 f"Relevant tables for this domain: {', '.join(domain_tables)}."
             )
+        else:
+            parts.append(
+                f"No tables are explicitly tagged with the '{domain}' domain. "
+                f"Choose the most relevant tables from: {', '.join(all_table_names)}."
+            )
+    else:
+        # Overview — list actual domains and tables found in the schema
+        unique_domains = sorted(
+            {
+                t["domain"]
+                for t in all_tables
+                if t.get("domain") and t["domain"].strip()
+            }
+        )
+        if unique_domains:
+            parts.append(
+                "DOMAIN OVERVIEW — The schema contains these actual domains: "
+                + ", ".join(unique_domains)
+                + "."
+            )
+        if all_table_names:
+            parts.append(
+                "All tables in the schema: " + ", ".join(all_table_names) + "."
+            )
+            parts.append(
+                "Generate insights that span these tables and domains — "
+                "do NOT introduce domains or tables that are not listed above."
+            )
+
     if entity:
         parts.append(f"ENTITY FOCUS: Prioritize insights related to '{entity}'.")
-        # Find entity relationships
         for er in metadata.get("entity_relationships", []):
             if er.get("entity", "").lower() == entity.lower():
                 parts.append(
@@ -317,6 +363,7 @@ def _build_domain_filter(
                     f"{er.get('related_entities', '')} "
                     f"({er.get('business_meaning', '')})."
                 )
+
     if not parts:
         return (
             "No domain or entity filter — cover all aspects of the "
