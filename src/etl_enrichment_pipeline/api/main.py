@@ -18,6 +18,15 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from etl_enrichment_pipeline.api.connection_service import (
+    close_pool as close_connections_pool,
+)
+from etl_enrichment_pipeline.api.connection_service import (
+    initialize_schema as init_connections_schema,
+)
+from etl_enrichment_pipeline.api.connection_service import (
+    router as connections_router,
+)
 from etl_enrichment_pipeline.api.extraction_service import (
     router,
 )
@@ -29,6 +38,10 @@ from etl_enrichment_pipeline.api.nl2sql_service import (
     router as nl2sql_router,
 )
 from etl_enrichment_pipeline.api.quality_service import router as quality_router
+from etl_enrichment_pipeline.api.shared_state import (
+    ensure_stores_initialized,
+    get_embedding_service,
+)
 from etl_enrichment_pipeline.core.log_buffer import buffer
 from etl_enrichment_pipeline.core.store_loader import load_enriched_metadata
 
@@ -37,11 +50,20 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Start background store population — does not block server startup."""
+    """Non-blocking lifespan — server accepts requests immediately.
+
+    All heavy initialisation (embedding model, vector store, graph store,
+    connections table) runs in a background task so the server is ready
+    to accept requests within milliseconds.
+
+    Services are lazily initialised on first request — the first NL2SQL
+    or Insights call may be slower while the embedding model finishes
+    loading, but the server itself is never blocked.
+    """
     async with nl2sql_lifespan(app):
         task = asyncio.create_task(
-            _populate_stores(),
-            name="store-loader",
+            _background_init(),
+            name="background-initializer",
         )
         try:
             yield
@@ -49,15 +71,44 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task
+            await close_connections_pool()
 
 
-async def _populate_stores() -> None:
-    """Background task: load enriched metadata into vector + graph stores.
+async def _background_init() -> None:
+    """Background task: initialise all heavy services.
 
-    The embedding model (sentence-transformers) and store connections
-    are initialised lazily here, so the server is ready to accept
-    requests immediately while this runs.
+    Runs concurrently — server is already accepting requests while this
+    executes.  Every failure is logged but never re-raised, so a single
+    unavailable service doesn't take down the whole server.
     """
+    # ── 1. Connection persistence table (fast) ────────────────
+    try:
+        await init_connections_schema()
+        logger.info("saved_connections table ready")
+    except Exception:
+        logger.warning(
+            "Failed to initialise saved_connections table — "
+            "connection persistence will be unavailable"
+        )
+
+    # ── 2. Embedding model (sentence-transformers — 15-30s) ────
+    try:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, get_embedding_service)
+        logger.info("Embedding model loaded")
+    except Exception:
+        logger.warning("Failed to load embedding model — will lazy-init on first use")
+
+    # ── 3. Vector + Graph stores (network connections) ─────────
+    try:
+        await ensure_stores_initialized()
+        logger.info("Vector + Graph stores initialised")
+    except Exception:
+        logger.warning(
+            "Failed to initialise stores — will lazy-init on first use"
+        )
+
+    # ── 4. Load enriched metadata into stores (populates data) ─
     try:
         await load_enriched_metadata()
         logger.info("Schema stores populated — all services ready")
@@ -99,6 +150,7 @@ app.include_router(router)
 app.include_router(quality_router)
 app.include_router(insights_router)
 app.include_router(nl2sql_router)
+app.include_router(connections_router)
 
 
 # ── Pipeline log endpoint ───────────────────────────────────

@@ -256,7 +256,11 @@ async def health() -> dict[str, Any]:
 
 @asynccontextmanager
 async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None]:
-    """Lifespan context manager for NL2SQL service lifecycle.
+    """Lightweight lifespan context manager for NL2SQL service lifecycle.
+
+    Does **not** block server startup — heavy initialisation (embedding model,
+    vector store, graph store) is deferred to a background task in ``main.py``.
+    Services are lazily initialised on first request via the ``_get_*`` helpers.
 
     Usage in the FastAPI app (``main.py``)::
 
@@ -273,18 +277,9 @@ async def nl2sql_lifespan(_app: Any) -> AsyncGenerator[None]:
         app.include_router(nl2sql_router)
     """
     try:
-        # Lazy-init only: validate metadata file exists, defer everything else
-        # to first request (embedding model, stores, services).
+        # Validate metadata file exists — fast, non-blocking
         load_metadata()
-        loop = asyncio.get_running_loop()
-        # Initialise the heavy embedding model in a background thread
-        # to avoid blocking the event loop
-        await loop.run_in_executor(None, get_embedding_service)
-        await ensure_stores_initialized()
-        _get_context_builder()
-        _get_nl2sql_generator()
-        _get_sql_validator()
-        logger.info("NL2SQL services initialized")
+        logger.info("NL2SQL lifespan started — heavy init deferred to background")
         yield
     finally:
         await close_shared_stores()
