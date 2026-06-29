@@ -66,7 +66,7 @@ class SQLValidator:
         errors: list[str] = []
         warnings: list[str] = []
         dangerous: list[str] = []
-        table_column_warnings: list[str] = []
+        validation_errors: list[str] = []
 
         parsed = self._parse_sql(sql, errors)
         if parsed is None:
@@ -80,12 +80,12 @@ class SQLValidator:
         columns = list(tree.find_all(exp.Column))
 
         self._check_dangerous_operations(tree, dangerous)
-        self._check_table_existence(tables, table_column_warnings)
-        self._check_column_existence(columns, table_column_warnings)
+        self._check_table_existence(tables, validation_errors)
+        self._check_column_existence(columns, validation_errors)
 
-        warnings.extend(table_column_warnings)
+        errors.extend(validation_errors)
 
-        confidence = self._compute_confidence(errors, dangerous, table_column_warnings, warnings)
+        confidence = self._compute_confidence(errors, dangerous, validation_errors, warnings)
 
         return ValidationResult(
             is_valid=not errors,
@@ -99,12 +99,12 @@ class SQLValidator:
         self,
         errors: list[str],
         dangerous: list[str],
-        table_column_warnings: list[str],
+        validation_errors: list[str],
         all_warnings: list[str],
     ) -> float:
-        if errors:
+        if errors or validation_errors:
             return 0.0
-        if dangerous or table_column_warnings:
+        if dangerous:
             return 0.5
         if all_warnings:
             return 0.8
