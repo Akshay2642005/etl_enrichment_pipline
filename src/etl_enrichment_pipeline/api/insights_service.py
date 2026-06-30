@@ -1,8 +1,23 @@
 """Insights API router — KPIs, Insights, Opportunities, Art of the Possible.
 
-Exposes a FastAPI ``APIRouter`` at ``/api/v1/insights`` that wraps the
-:class:`~etl_enrichment_pipeline.agents.insights_agent.InsightsGenerator`
-with a lazy-singleton lifecycle identical to the NL2SQL service pattern.
+Insights are scoped to a saved connection.  A ``connection_id`` is required for
+every generation request so that:
+
+* Insights are only produced from a fully-extracted and enriched schema.
+* Each connection's insights are isolated — one connection cannot accidentally
+  read another connection's data.
+* The global ``output/enriched_metadata.json`` file is never used by this
+  endpoint; the enriched schema stored in ``saved_connections`` is used instead.
+
+Flow
+----
+1. Load the connection by ``connection_id``.
+2. Guard: connection must exist, be ``active``, and have a non-empty enriched
+   schema (i.e. extraction + enrichment must be complete).
+3. Create an :class:`~etl_enrichment_pipeline.agents.insights_agent.InsightsGenerator`
+   with the connection's ``enriched_schema``.
+4. Call ``generate(domain=..., entity=...)`` for a single LLM call.
+5. Return the four insight categories as structured JSON.
 """
 
 from __future__ import annotations
@@ -14,13 +29,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from etl_enrichment_pipeline.agents.insights_agent import InsightsGenerator
-from etl_enrichment_pipeline.api.shared_state import (
-    ensure_stores_initialized,
-    get_embedding_service,
-    get_graph_store,
-    get_vector_store,
-    load_metadata,
-)
+from etl_enrichment_pipeline.api.connection_service import get_connection
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +41,18 @@ logger = logging.getLogger(__name__)
 class InsightsRequest(BaseModel):
     """Request body for the insights generation endpoint."""
 
+    connection_id: str = Field(
+        ...,
+        description=(
+            "UUID of the saved connection whose enriched schema will be used. "
+            "The connection must be active and have completed extraction + enrichment."
+        ),
+    )
     domain: str | None = Field(
         default=None,
         description=(
-            "Optional domain filter (e.g. 'Flight Operations', 'Human Resources')"
+            "Optional domain filter (e.g. 'Flight Operations', 'Human Resources'). "
+            "When omitted, insights span all domains found in the schema."
         ),
     )
     entity: str | None = Field(
@@ -47,6 +64,10 @@ class InsightsRequest(BaseModel):
 class InsightsResponse(BaseModel):
     """Response body containing all four insight categories."""
 
+    connection_id: str = Field(
+        ...,
+        description="The connection ID this response was generated from",
+    )
     kpis: list[dict[str, Any]] = Field(
         default=[],
         description="Key Performance Indicators (3-6 items)",
@@ -71,12 +92,6 @@ class InsightsResponse(BaseModel):
 
 router = APIRouter(prefix="/api/v1/insights", tags=["insights"])
 
-# ---------------------------------------------------------------------------
-# Lazy singleton state
-# ---------------------------------------------------------------------------
-
-_insights_generator: InsightsGenerator | None = None
-
 
 # ---------------------------------------------------------------------------
 # Endpoints
@@ -86,43 +101,102 @@ _insights_generator: InsightsGenerator | None = None
 @router.post("/generate", response_model=InsightsResponse)
 async def generate_insights(request: InsightsRequest) -> InsightsResponse:
     """Generate KPIs, Insights, Opportunities, and Art of the Possible from
-    enriched schema metadata.
+    the enriched schema of a specific saved connection.
 
-    Orchestrates the full insights pipeline:
+    The connection must:
 
-    1. Ensure vector + graph stores are initialised
-    2. Load enriched metadata from disk
-    3. Create an ``InsightsGenerator`` with metadata + stores
-    4. Call ``generate(domain=..., entity=...)`` for a single LLM call
-    5. Return all four insight categories as structured JSON
+    * Exist in the ``saved_connections`` table.
+    * Have ``status == 'active'`` (extraction + enrichment complete).
+    * Have a non-empty ``enriched_schema`` (at least one table).
+
+    Raises HTTP 404 if the connection is not found, HTTP 400 if the
+    connection is not ready (still processing, errored, or not yet enriched).
     """
+    # ── 1. Load the connection ───────────────────────────────────────────────
     try:
-        await ensure_stores_initialized()
+        connection = await get_connection(request.connection_id)
+    except Exception as exc:
+        logger.exception(
+            "Failed to load connection '%s' for insights generation",
+            request.connection_id,
+        )
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Connection database is unavailable — cannot load connection. "
+                f"Detail: {exc}"
+            ),
+        ) from exc
 
-        metadata = load_metadata()
-
-        generator = InsightsGenerator(
-            enriched_metadata=metadata,
-            vector_store=get_vector_store(),
-            graph_store=get_graph_store(),
-            embedding_service=get_embedding_service(),
+    if connection is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Connection '{request.connection_id}' not found.",
         )
 
+    # ── 2. Guard: connection must be active and fully enriched ───────────────
+    if connection.status != "active":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Connection '{request.connection_id}' is not active "
+                f"(current status: '{connection.status}'). "
+                "Complete extraction and enrichment before requesting insights."
+            ),
+        )
+
+    enriched_schema: dict[str, Any] = connection.enriched_schema or {}
+    tables = enriched_schema.get("tables") or []
+    if not tables:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Connection '{request.connection_id}' has no enriched schema tables. "
+                "Run extraction and enrichment first, then retry."
+            ),
+        )
+
+    # ── 3. Generate insights from the connection's enriched schema ───────────
+    logger.info(
+        "Generating insights for connection '%s' (name=%s, tables=%d, "
+        "domain=%s, entity=%s)",
+        request.connection_id,
+        connection.name,
+        len(tables),
+        request.domain or "<all>",
+        request.entity or "<none>",
+    )
+
+    try:
+        generator = InsightsGenerator(enriched_metadata=enriched_schema)
         result = await generator.generate(
             domain=request.domain,
             entity=request.entity,
         )
-
-        return InsightsResponse(
-            kpis=result.get("kpis", []),
-            insights=result.get("insights", []),
-            opportunities=result.get("opportunities", []),
-            art_of_the_possible=result.get("art_of_the_possible", []),
-        )
-
     except Exception as exc:
-        logger.exception("Insights generation endpoint failed")
+        logger.exception(
+            "Insights generation failed for connection '%s'",
+            request.connection_id,
+        )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    logger.info(
+        "Insights generated for connection '%s': %d KPIs, %d insights, "
+        "%d opportunities, %d art_of_the_possible",
+        request.connection_id,
+        len(result.get("kpis", [])),
+        len(result.get("insights", [])),
+        len(result.get("opportunities", [])),
+        len(result.get("art_of_the_possible", [])),
+    )
+
+    return InsightsResponse(
+        connection_id=request.connection_id,
+        kpis=result.get("kpis", []),
+        insights=result.get("insights", []),
+        opportunities=result.get("opportunities", []),
+        art_of_the_possible=result.get("art_of_the_possible", []),
+    )
 
 
 @router.get("/health")

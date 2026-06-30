@@ -5,9 +5,9 @@ Generates embeddings from enriched schema metadata using sentence-transformers.
 
 from __future__ import annotations
 
-import os
 import hashlib
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any
 

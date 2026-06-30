@@ -51,6 +51,10 @@ class SavedConnection(BaseModel):
         default_factory=dict,
         description="Generated insights (KPIs, insights, opportunities, art_of_the_possible)",
     )
+    insights_hash: str | None = Field(
+        default=None,
+        description="SHA-256 hex digest of the insights payload (used to skip no-op writes)",
+    )
     status: str = Field(
         default="active",
         description="Connection status: active, error, archived",
@@ -92,6 +96,7 @@ CREATE TABLE IF NOT EXISTS saved_connections (
     credentials     JSONB NOT NULL DEFAULT '{}',
     enriched_schema JSONB NOT NULL DEFAULT '{}',
     insights        JSONB NOT NULL DEFAULT '{}',
+    insights_hash   VARCHAR(64),
     status          TEXT NOT NULL DEFAULT 'active',
     error_message   TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -109,8 +114,15 @@ CREATE INDEX IF NOT EXISTS idx_saved_connections_created_at
 """
 
 
+MIGRATE_ADD_INSIGHTS_HASH_SQL = """
+ALTER TABLE saved_connections
+    ADD COLUMN IF NOT EXISTS insights_hash VARCHAR(64);
+"""
+
+
 __all__ = [
     "CREATE_SAVED_CONNECTIONS_TABLE_SQL",
+    "MIGRATE_ADD_INSIGHTS_HASH_SQL",
     "ConnectionCredentials",
     "SavedConnection",
     "SavedConnectionSummary",

@@ -5,7 +5,6 @@ Task 7 of the nl2sql-service plan.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager

@@ -38,10 +38,7 @@ class SQLValidator:
             raw = metadata
         elif metadata_path is not None:
             path = Path(metadata_path)
-            if path.is_file():
-                raw = json.loads(path.read_text(encoding="utf-8"))
-            else:
-                raw = {}
+            raw = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
         else:
             raw = {}
 
@@ -133,13 +130,13 @@ class SQLValidator:
             warnings.append("Dialect transpilation check failed")
 
     def _check_dangerous_operations(self, tree: exp.Expression, dangerous: list[str]) -> None:
-        for node in tree.find_all(exp.Drop):
+        for _ in tree.find_all(exp.Drop):
             dangerous.append("Dangerous DDL statement detected: DROP")
-        for node in tree.find_all(exp.Create):
+        for _ in tree.find_all(exp.Create):
             dangerous.append("Dangerous DDL statement detected: CREATE")
-        for node in tree.find_all(exp.Alter):
+        for _ in tree.find_all(exp.Alter):
             dangerous.append("Dangerous DDL statement detected: ALTER")
-        for node in tree.find_all(exp.TruncateTable):
+        for _ in tree.find_all(exp.TruncateTable):
             dangerous.append("Dangerous DDL statement detected: TRUNCATE")
 
         for node in tree.find_all(exp.Delete):
@@ -159,9 +156,8 @@ class SQLValidator:
         for col in columns:
             table_part = col.table
             col_name = col.name
-            if table_part and table_part in self._table_map:
-                if col_name and col_name not in self._table_map[table_part]:
-                    warnings.append(f"Column '{col_name}' not found in table '{table_part}'")
+            if table_part and table_part in self._table_map and col_name and col_name not in self._table_map[table_part]:
+                warnings.append(f"Column '{col_name}' not found in table '{table_part}'")
 
     def _build_parsed(self, tree: exp.Expression) -> dict[str, Any]:
         tables = sorted({tbl.name for tbl in tree.find_all(exp.Table) if tbl.name})

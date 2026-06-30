@@ -13,8 +13,8 @@ from etl_enrichment_pipeline.models.canonical import (
     ViewSchema,
 )
 from etl_enrichment_pipeline.models.connection_schema import (
-    ConnectionCredentials,
     CREATE_SAVED_CONNECTIONS_TABLE_SQL,
+    ConnectionCredentials,
     SavedConnection,
     SavedConnectionSummary,
 )

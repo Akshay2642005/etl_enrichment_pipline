@@ -23,8 +23,6 @@ import os
 import re
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
-
 from etl_enrichment_pipeline.agents.pattern_detection_agent import (
     pattern_detection_node,
 )
