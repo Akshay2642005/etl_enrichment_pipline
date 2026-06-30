@@ -9,7 +9,8 @@ Endpoints:
     GET    /connections                   — list saved connections (summaries)
     GET    /connections/search            — search connections by name
     GET    /connections/{id}              — get a single connection (full payload)
-    PATCH  /connections/{id}              — partial update (name, description, status, error)
+    PATCH  /connections/{id}              — partial update (
+    name, description, status, error)
     PUT    /connections/{id}/schema       — replace enriched schema only
     PUT    /connections/{id}/insights     — replace insights only
     DELETE /connections/{id}              — delete a saved connection
@@ -27,7 +28,8 @@ import logging
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC as _UTC
+from datetime import datetime
 from typing import Any
 
 import asyncpg
@@ -35,10 +37,9 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from etl_enrichment_pipeline.agents.extraction_agent import extract_schema_generic
-from etl_enrichment_pipeline.core.pipeline import run_pipeline_from_raw_json
 from etl_enrichment_pipeline.models.connection_schema import (
     CREATE_SAVED_CONNECTIONS_TABLE_SQL,
+    MIGRATE_ADD_INSIGHTS_HASH_SQL,
     ConnectionCredentials,
     SavedConnection,
     SavedConnectionSummary,
@@ -58,7 +59,10 @@ logger = logging.getLogger(__name__)
 
 _CONNECTIONS_DSN = os.getenv(
     "CONNECTIONS_DSN",
-    os.getenv("PGVECTOR_DSN", "postgresql://postgres:postgres@localhost:5432/schema_embeddings"),
+    os.getenv(
+        "PGVECTOR_DSN",
+        "postgresql://postgres:postgres@localhost:5432/schema_embeddings",
+    ),
 )
 
 # ---------------------------------------------------------------------------
@@ -86,10 +90,11 @@ async def _get_pool() -> asyncpg.Pool:
 
 
 async def initialize_schema() -> None:
-    """Create the ``saved_connections`` table if it doesn't exist."""
+    """Create / migrate the ``saved_connections`` table."""
     pool = await _get_pool()
     async with pool.acquire() as conn:
         await conn.execute(CREATE_SAVED_CONNECTIONS_TABLE_SQL)
+        await conn.execute(MIGRATE_ADD_INSIGHTS_HASH_SQL)
     logger.info("saved_connections table initialised (if not exists)")
 
 
@@ -117,16 +122,18 @@ async def save_connection(
     error_message: str | None = None,
 ) -> SavedConnection:
     """Insert a new saved connection row and return the persisted model."""
+    insights_data = insights or {}
+    new_hash = _compute_insights_hash(insights_data)
     pool = await _get_pool()
 
     row = await pool.fetchrow(
         """
         INSERT INTO saved_connections
             (name, description, database_type, credentials,
-             enriched_schema, insights, status, error_message)
-        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, $7, $8)
+             enriched_schema, insights, insights_hash, status, error_message)
+        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, $7, $8, $9)
         RETURNING id, name, description, database_type, credentials,
-                  enriched_schema, insights, status, error_message,
+                  enriched_schema, insights, insights_hash, status, error_message,
                   created_at, updated_at
         """,
         name,
@@ -134,7 +141,8 @@ async def save_connection(
         database_type,
         json.dumps(credentials),
         json.dumps(enriched_schema or {}),
-        json.dumps(insights or {}),
+        json.dumps(insights_data),
+        new_hash,
         status,
         error_message,
     )
@@ -252,7 +260,7 @@ async def get_connection(connection_id: str) -> SavedConnection | None:
     row = await pool.fetchrow(
         """
         SELECT id, name, description, database_type, credentials,
-               enriched_schema, insights, status, error_message,
+               enriched_schema, insights, insights_hash, status, error_message,
                created_at, updated_at
         FROM saved_connections
         WHERE id = $1::uuid
@@ -310,16 +318,16 @@ async def update_connection(
         return await get_connection(connection_id)
 
     set_clauses.append(f"updated_at = ${param_idx}")
-    params.append(datetime.now(timezone.utc))
+    params.append(datetime.now(_UTC))
     param_idx += 1
 
     params.append(connection_id)
     query = f"""
         UPDATE saved_connections
-        SET {', '.join(set_clauses)}
+        SET {", ".join(set_clauses)}
         WHERE id = ${param_idx}::uuid
         RETURNING id, name, description, database_type, credentials,
-                  enriched_schema, insights, status, error_message,
+                  enriched_schema, insights, insights_hash, status, error_message,
                   created_at, updated_at
     """
 
@@ -340,7 +348,7 @@ async def update_connection_schema(
         SET enriched_schema = $1::jsonb, updated_at = now()
         WHERE id = $2::uuid
         RETURNING id, name, description, database_type, credentials,
-                  enriched_schema, insights, status, error_message,
+                  enriched_schema, insights, insights_hash, status, error_message,
                   created_at, updated_at
         """,
         json.dumps(enriched_schema),
@@ -353,18 +361,44 @@ async def update_connection_insights(
     connection_id: str,
     insights: dict[str, Any],
 ) -> SavedConnection | None:
-    """Replace the insights for a saved connection."""
+    """Replace the insights for a saved connection.
+
+    Computes a SHA-256 hash of the incoming payload and skips the DB write
+    entirely when the hash matches the value already stored (i.e. nothing
+    actually changed).  This avoids redundant writes after a re-generation
+    that produced identical results.
+    """
+    new_hash = _compute_insights_hash(insights)
     pool = await _get_pool()
+
+    # Quick hash check — one cheap SELECT before the expensive UPDATE.
+    hash_row = await pool.fetchrow(
+        "SELECT insights_hash FROM saved_connections WHERE id = $1::uuid",
+        connection_id,
+    )
+    if hash_row is None:
+        return None
+
+    if hash_row["insights_hash"] == new_hash:
+        logger.debug(
+            "Insights hash unchanged for connection %s — skipping write",
+            connection_id,
+        )
+        return await get_connection(connection_id)
+
     row = await pool.fetchrow(
         """
         UPDATE saved_connections
-        SET insights = $1::jsonb, updated_at = now()
-        WHERE id = $2::uuid
+        SET insights       = $1::jsonb,
+            insights_hash  = $2,
+            updated_at     = now()
+        WHERE id = $3::uuid
         RETURNING id, name, description, database_type, credentials,
-                  enriched_schema, insights, status, error_message,
+                  enriched_schema, insights, insights_hash, status, error_message,
                   created_at, updated_at
         """,
         json.dumps(insights),
+        new_hash,
         connection_id,
     )
     return _row_to_connection(row) if row else None
@@ -383,17 +417,21 @@ def _row_to_connection(row: asyncpg.Record) -> SavedConnection:
         description=row["description"],
         database_type=row["database_type"],
         credentials=ConnectionCredentials.model_validate(
-            row["credentials"] if isinstance(row["credentials"], dict)
+            row["credentials"]
+            if isinstance(row["credentials"], dict)
             else json.loads(row["credentials"])
         ),
         enriched_schema=(
-            row["enriched_schema"] if isinstance(row["enriched_schema"], dict)
+            row["enriched_schema"]
+            if isinstance(row["enriched_schema"], dict)
             else json.loads(row["enriched_schema"])
         ),
         insights=(
-            row["insights"] if isinstance(row["insights"], dict)
+            row["insights"]
+            if isinstance(row["insights"], dict)
             else json.loads(row["insights"])
         ),
+        insights_hash=row.get("insights_hash"),
         status=row["status"],
         error_message=row["error_message"],
         created_at=row["created_at"],
@@ -499,6 +537,19 @@ INSIGHT_CATEGORIES = [
 # ---------------------------------------------------------------------------
 
 
+def _compute_insights_hash(insights: dict[str, Any]) -> str:
+    """Compute SHA-256 hex digest of the full insights dict.
+
+    Used to detect whether the insights payload has changed between
+    regenerations.  Identical hashes → no DB write needed.
+    """
+    return hashlib.sha256(
+        json.dumps(insights, sort_keys=True, ensure_ascii=False, default=str).encode(
+            "utf-8"
+        )
+    ).hexdigest()
+
+
 def _item_sha256(item: dict[str, Any]) -> str:
     """Return the SHA-256 hex digest of a JSON-serialised dict.
 
@@ -507,8 +558,9 @@ def _item_sha256(item: dict[str, Any]) -> str:
     are kept verbatim (avoiding unnecessary writes).
     """
     return hashlib.sha256(
-        json.dumps(item, sort_keys=True, ensure_ascii=False, default=str)
-        .encode("utf-8")
+        json.dumps(item, sort_keys=True, ensure_ascii=False, default=str).encode(
+            "utf-8"
+        )
     ).hexdigest()
 
 
@@ -655,9 +707,7 @@ def _generate_all_insights_sync(
     loop = _asyncio.new_event_loop()
     _asyncio.set_event_loop(loop)
     try:
-        return loop.run_until_complete(
-            _generate_all_insights(enriched_schema)
-        )
+        return loop.run_until_complete(_generate_all_insights(enriched_schema))
     finally:
         loop.close()
 
@@ -666,43 +716,82 @@ async def _background_generate_and_update(
     connection_id: str,
     enriched_schema: dict[str, Any],
 ) -> None:
-    """Generate all category insights in a background thread and persist.
+    """Generate all category insights in a background thread, apply per-category
+    SHA-256 delta against the current insights, and persist only when the hash
+    has actually changed.
 
-    This is designed to be fired as an ``asyncio.create_task`` so the
-    HTTP response can be returned immediately after enrichment while
-    the (slow) LLM calls run in a ``ThreadPoolExecutor``.
-
-    On success, the ``saved_connections`` row's ``insights`` field is
-    replaced with the full multi-category result.
-    On failure, the status remains ``active`` and ``error_message`` is
-    updated — the connection data (schema) is never lost.
+    This is designed to be fired as ``asyncio.create_task`` so the HTTP
+    response can be returned immediately while the (slow) LLM calls run in
+    a ``ThreadPoolExecutor``.
     """
     try:
         loop = asyncio.get_running_loop()
-        insights = await loop.run_in_executor(
+        new_insights = await loop.run_in_executor(
             _executor,
             _generate_all_insights_sync,
             enriched_schema,
         )
 
         pool = await _get_pool()
+
+        # Load current insights + hash for delta computation
+        current_row = await pool.fetchrow(
+            """
+            SELECT insights, insights_hash
+            FROM saved_connections
+            WHERE id = $1::uuid
+            """,
+            connection_id,
+        )
+        if current_row is None:
+            logger.warning(
+                "Background insights: connection '%s' vanished before save",
+                connection_id,
+            )
+            return
+
+        current_insights_raw = current_row["insights"]
+        current_insights: dict[str, Any] = (
+            current_insights_raw
+            if isinstance(current_insights_raw, dict)
+            else json.loads(current_insights_raw)
+        )
+        current_hash: str | None = current_row["insights_hash"]
+
+        # Per-category SHA-256 delta merge
+        merged: dict[str, Any] = dict(current_insights)
+        for category, new_data in new_insights.items():
+            old_data = current_insights.get(category, {})
+            merged[category] = _patch_category_insights(old_data, new_data)
+
+        # Skip the DB write when nothing actually changed
+        new_hash = _compute_insights_hash(merged)
+        if current_hash == new_hash:
+            logger.info(
+                "Background insights unchanged for connection '%s' — skipping write",
+                connection_id,
+            )
+            return
+
         async with pool.acquire() as conn:
             await conn.execute(
                 """
                 UPDATE saved_connections
-                SET insights = $1::jsonb,
-                    status = 'active',
-                    updated_at = now()
-                WHERE id = $2::uuid
+                SET insights      = $1::jsonb,
+                    insights_hash = $2,
+                    status        = 'active',
+                    updated_at    = now()
+                WHERE id = $3::uuid
                 """,
-                json.dumps(insights),
+                json.dumps(merged),
+                new_hash,
                 connection_id,
             )
 
         logger.info(
-            "Background insights complete for connection '%s' — %d categories",
+            "Background insights saved for connection '%s' — %d categories",
             connection_id,
-            len(insights),
+            len(merged),
         )
     except Exception as exc:
         logger.exception(
@@ -715,9 +804,9 @@ async def _background_generate_and_update(
                 await conn.execute(
                     """
                     UPDATE saved_connections
-                    SET status = 'active',
+                    SET status        = 'active',
                         error_message = $1,
-                        updated_at = now()
+                        updated_at    = now()
                     WHERE id = $2::uuid
                     """,
                     f"Insights generation failed: {exc}",
@@ -762,7 +851,7 @@ async def create_connection(request: SaveConnectionRequest) -> SaveConnectionRes
             saved.database_type,
         )
         return SaveConnectionResponse(
-            id=saved.id,
+            id=saved.id or "",  # always set after DB INSERT
             name=saved.name,
             database_type=saved.database_type,
             status=saved.status,
@@ -808,7 +897,9 @@ async def list_all_connections(
 @router.get("/search", response_model=list[SavedConnectionSummary])
 async def search_connections_endpoint(
     q: str = Query(
-        ..., min_length=1, description="Search query (matched against name and description)"
+        ...,
+        min_length=1,
+        description="Search query (matched against name and description)",
     ),
     limit: int = Query(default=20, ge=1, le=100, description="Max results"),
     offset: int = Query(default=0, ge=0, description="Pagination offset"),
@@ -926,7 +1017,7 @@ async def update_connection_insights_endpoint(
 
 
 @router.post(
-    "/{connection_id}/regenerate-insights/{category:str}",
+    "/{connection_id}/regenerate-insights/{category}",
     summary="Regenerate a single insight category and persist the delta",
     description=(
         "Generates fresh insights for one category (Overview, Operations, "
@@ -1072,6 +1163,14 @@ async def extract_and_save(request: ExtractAndSaveRequest) -> SavedConnection:
     loop = asyncio.get_running_loop()
     creds_dict = request.credentials.model_dump(mode="json")
 
+    # Lazy imports to avoid loading langgraph/agents at module level
+    from etl_enrichment_pipeline.agents.extraction_agent import (  # noqa: PLC0415
+        extract_schema_generic,
+    )
+    from etl_enrichment_pipeline.core.pipeline import (  # noqa: PLC0415
+        run_pipeline_from_raw_json,
+    )
+
     # ── Step 1: Extract ──────────────────────────────────────
     logger.info(
         "Extract-and-save: db_type=%s, host=%s, database=%s, name=%s",
@@ -1142,10 +1241,10 @@ async def extract_and_save(request: ExtractAndSaveRequest) -> SavedConnection:
     )
 
     # ── Step 4: Fire background insight generation (non-blocking) ─
-    if request.generate_insights:
+    if request.generate_insights and saved.id:
         asyncio.create_task(
             _background_generate_and_update(
-                saved.id,
+                saved.id,  # narrowed: always a real UUID after INSERT
                 enriched_schema,
             )
         )
@@ -1190,6 +1289,14 @@ async def refresh_connection(
     """
     t_start = time.monotonic()
     loop = asyncio.get_running_loop()
+
+    # Lazy imports to avoid loading langgraph/agents at module level
+    from etl_enrichment_pipeline.agents.extraction_agent import (  # noqa: PLC0415
+        extract_schema_generic,
+    )
+    from etl_enrichment_pipeline.core.pipeline import (  # noqa: PLC0415
+        run_pipeline_from_raw_json,
+    )
 
     # ── Load existing connection ──────────────────────────────
     existing = await get_connection(connection_id)
@@ -1249,13 +1356,14 @@ async def refresh_connection(
         """
         UPDATE saved_connections
         SET enriched_schema = $1::jsonb,
-            insights        = '{}'::jsonb,  -- placeholder
+            insights        = '{}'::jsonb,
+            insights_hash   = NULL,
             status          = 'active',
             error_message   = NULL,
             updated_at      = now()
         WHERE id = $2::uuid
         RETURNING id, name, description, database_type, credentials,
-                  enriched_schema, insights, status, error_message,
+                  enriched_schema, insights, insights_hash, status, error_message,
                   created_at, updated_at
         """,
         json.dumps(enriched_schema),

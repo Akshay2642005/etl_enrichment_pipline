@@ -11,7 +11,7 @@ import os
 import ssl
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urlparse, urlunparse, parse_qs
+from urllib.parse import parse_qs, urlparse, urlunparse
 
 import asyncpg
 

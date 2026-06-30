@@ -10,7 +10,7 @@ This module is independent of FastAPI — it depends only on ``core.llm``,
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 from etl_enrichment_pipeline.core.llm import get_llm
@@ -77,10 +77,10 @@ class InsightsResult:
     All four categories are produced in a single LLM call.
     """
 
-    kpis: list[KPI] = field(default_factory=list)
-    insights: list[Insight] = field(default_factory=list)
-    opportunities: list[Opportunity] = field(default_factory=list)
-    art_of_the_possible: list[ArtOfThePossible] = field(default_factory=list)
+    kpis: list[KPI] | None = None
+    insights: list[Insight] | None = None
+    opportunities: list[Opportunity] | None = None
+    art_of_the_possible: list[ArtOfThePossible] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -225,8 +225,7 @@ def _format_entity_relationships(entity_relationships: list[dict[str, Any]]) -> 
         meaning = er.get("business_meaning", "")
         extra = f"  :  {meaning}" if meaning else ""
         lines.append(
-            f"  {er.get('entity', '')}  ->  "
-            f"{er.get('related_entities', '')}{extra}"
+            f"  {er.get('entity', '')}  ->  {er.get('related_entities', '')}{extra}"
         )
     return "\n".join(lines)
 
@@ -333,11 +332,7 @@ def _build_domain_filter(
     else:
         # Overview — list actual domains and tables found in the schema
         unique_domains = sorted(
-            {
-                t["domain"]
-                for t in all_tables
-                if t.get("domain") and t["domain"].strip()
-            }
+            {t["domain"] for t in all_tables if t.get("domain") and t["domain"].strip()}
         )
         if unique_domains:
             parts.append(
@@ -471,40 +466,80 @@ class InsightsGenerator:
             schema_context=schema_context,
             domain_filter=domain_filter,
         )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": _USER_PROMPT},
+        ]
 
+        result: InsightsResult | None = None
+
+        # --- Attempt 1: function_calling (most structured) ---
+        # Use include_raw=True so we can inspect the raw message when
+        # the model returns None (e.g. malformed tool-call response).
         try:
-            structured_llm = self._llm.with_structured_output(
-                InsightsResult, method="function_calling"
-            )
-            result = cast(
-                "InsightsResult | None",
-                structured_llm.invoke(
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": _USER_PROMPT},
-                    ]
-                ),
-            )
+            raw_output = self._llm.with_structured_output(
+                InsightsResult,
+                method="function_calling",
+                include_raw=True,
+            ).invoke(messages)
 
-            if result is None:
-                logger.warning("LLM returned None — returning empty InsightsResult")
-                return self._empty_result()
+            if isinstance(raw_output, dict):
+                result = cast("InsightsResult | None", raw_output.get("parsed"))
+                if result is None:
+                    _err = raw_output.get("parsing_error")
+                    _raw = raw_output.get("raw")
+                    _content_len = len(getattr(_raw, "content", "") or "")
+                    logger.warning(
+                        "function_calling returned None — "
+                        "parsing_error=%s, raw_content_len=%d",
+                        _err,
+                        _content_len,
+                    )
+            else:
+                result = cast("InsightsResult | None", raw_output)
 
-            # Handle dict result (some providers return dict instead of dataclass)
-            if isinstance(result, dict):
-                result = self._dict_to_insights_result(result)
+        except Exception as _exc:
+            logger.warning("function_calling attempt failed: %s", _exc)
 
-        except Exception:
-            logger.exception(
-                "Insights generation failed — returning graceful degradation"
+        # --- Attempt 2: json_mode fallback ---
+        # Broader model support — works with Ollama models that don’t
+        # reliably implement tool-use (e.g. qwen2.5:3b, llama3 etc.).
+        if result is None:
+            try:
+                result = cast(
+                    "InsightsResult | None",
+                    self._llm.with_structured_output(
+                        InsightsResult, method="json_mode"
+                    ).invoke(messages),
+                )
+                if result is not None:
+                    logger.info(
+                        "json_mode fallback succeeded for domain=%s",
+                        domain or "<all>",
+                    )
+                else:
+                    logger.warning(
+                        "json_mode fallback also returned None for domain=%s",
+                        domain or "<all>",
+                    )
+            except Exception as _exc:
+                logger.warning("json_mode attempt failed: %s", _exc)
+
+        if result is None:
+            logger.warning(
+                "All LLM attempts returned None for domain=%s — returning empty result",
+                domain or "<all>",
             )
             return self._empty_result()
 
+        # Handle dict result (some providers return dict instead of dataclass)
+        if isinstance(result, dict):
+            result = self._dict_to_insights_result(result)
+
         # --- 5. Serialise to plain dicts ---
-        return {
+        raw_output = {
             "kpis": [
-                self._dataclass_to_dict(k, _KPI_FIELDS)
-                for k in (result.kpis or [])
+                self._dataclass_to_dict(k, _KPI_FIELDS) for k in (result.kpis or [])
             ],
             "insights": [
                 self._dataclass_to_dict(i, _INSIGHT_FIELDS)
@@ -519,6 +554,13 @@ class InsightsGenerator:
                 for a in (result.art_of_the_possible or [])
             ],
         }
+
+        # --- 6. Post-generation grounding validation ---
+        # Strip any items referencing tables not in the actual schema.
+        # This catches LLM hallucinations even when the model ignores
+        # the grounding rules in the system prompt.
+        validated = self._validate_grounding(raw_output)
+        return validated
 
     # ------------------------------------------------------------------
     # Internal: retrieval
@@ -571,11 +613,13 @@ class InsightsGenerator:
                 for r in rel_results:
                     meta = r.metadata
                     if meta.get("relationship_type") == "entity_relationship":
-                        retrieved_entities.append({
-                            "entity": meta.get("entity", ""),
-                            "related_entities": meta.get("related_entities", ""),
-                            "business_meaning": meta.get("business_meaning", ""),
-                        })
+                        retrieved_entities.append(
+                            {
+                                "entity": meta.get("entity", ""),
+                                "related_entities": meta.get("related_entities", ""),
+                                "business_meaning": meta.get("business_meaning", ""),
+                            }
+                        )
             except Exception:
                 logger.warning(
                     "VectorStore query failed — skipping vector context",
@@ -602,8 +646,7 @@ class InsightsGenerator:
         context_parts: list[str] = []
         if retrieved_tables:
             context_parts.append(
-                "Tables retrieved by vector similarity: "
-                + ", ".join(retrieved_tables)
+                "Tables retrieved by vector similarity: " + ", ".join(retrieved_tables)
             )
         if retrieved_entities:
             er_lines = ["Entity relationships from retrieval:"]
@@ -635,12 +678,284 @@ class InsightsGenerator:
                     pair_key = f"{tables[i]}->{tables[i + 1]}"
                     if pair_key not in seen_pairs:
                         seen_pairs.add(pair_key)
-                        entities.append({
-                            "entity": tables[i],
-                            "related_entities": tables[i + 1],
-                            "business_meaning": "Discovered via FK join path",
-                        })
+                        entities.append(
+                            {
+                                "entity": tables[i],
+                                "related_entities": tables[i + 1],
+                                "business_meaning": "Discovered via FK join path",
+                            }
+                        )
         return entities
+
+    # ------------------------------------------------------------------
+    # Internal: post-generation grounding validation
+    # ------------------------------------------------------------------
+
+    def _get_real_table_names(self) -> set[str]:
+        """Return the set of actual table names from the enriched schema.
+
+        These are the ONLY tables the LLM is allowed to reference in SQL.
+        """
+        return {
+            t["table_name"].lower()
+            for t in (self._metadata.get("tables") or [])
+            if t.get("table_name")
+        }
+
+    def _get_valid_identifiers(self) -> set[str]:
+        """Return all valid identifiers: table names AND column names.
+
+        Used for text-field grounding validation so that the LLM is not
+        penalised for correctly referencing column names in descriptions,
+        supporting evidence, or suggested approaches.  SQL-query validation
+        still uses the stricter :meth:`_get_real_table_names` set.
+        """
+        valid: set[str] = set()
+        for t in self._metadata.get("tables") or []:
+            if t.get("table_name"):
+                valid.add(t["table_name"].lower())
+            for col in t.get("columns", []):
+                if col.get("column_name"):
+                    valid.add(col["column_name"].lower())
+        return valid
+
+    @staticmethod
+    def _extract_sql_tables(sql: str) -> set[str]:
+        """Extract table names from a SQL query.
+
+        Looks for identifiers immediately after ``FROM``, ``JOIN``,
+        ``UPDATE``, ``INTO``, and ``TABLE`` keywords — these are
+        unambiguously table references in SQL.
+        """
+        if not sql:
+            return set()
+
+        import re
+
+        table_refs: set[str] = set()
+        patterns = [
+            r"\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)",
+            r"\bJOIN\s+([A-Za-z_][A-Za-z0-9_]*)",
+            r"\bUPDATE\s+([A-Za-z_][A-Za-z0-9_]*)",
+            r"\bINTO\s+([A-Za-z_][A-Za-z0-9_]*)",
+            r"\bTABLE\s+([A-Za-z_][A-Za-z0-9_]*)",
+        ]
+        for pattern in patterns:
+            for match in re.finditer(pattern, sql, re.IGNORECASE):
+                name = match.group(1).lower()
+                if name in (
+                    "select",
+                    "where",
+                    "set",
+                    "values",
+                    "key",
+                    "index",
+                    "constraint",
+                    "primary",
+                    "foreign",
+                    "unique",
+                    "check",
+                    "default",
+                    "null",
+                    "true",
+                    "false",
+                    "on",
+                    "as",
+                    "and",
+                    "or",
+                    "not",
+                    "in",
+                    "is",
+                    "like",
+                    "between",
+                    "exists",
+                ):
+                    continue
+                table_refs.add(name)
+
+        return table_refs
+
+    @staticmethod
+    def _extract_identifier_tokens(text: str) -> set[str]:
+        """Extract tokens that LOOK like database identifiers from free text.
+
+        Picks out snake_case, PascalCase, and UPPER_CASE sequences
+        that are at least 3 characters — these are likely to be table
+        or column references rather than plain English words.
+        """
+        if not text:
+            return set()
+
+        import re
+
+        candidates: set[str] = set()
+        for match in re.finditer(
+            r"\b[a-z]+_[a-z][a-z0-9_]*(?:_[a-z][a-z0-9_]*)*\b", text
+        ):
+            candidates.add(match.group(0))
+        for match in re.finditer(r"\b[A-Z][A-Z]+(?:_[A-Z][A-Z]+)+\b", text):
+            candidates.add(match.group(0).lower())
+        for match in re.finditer(r"\b[A-Z][a-z]+[A-Z][a-zA-Z]*\b", text):
+            candidates.add(match.group(0).lower())
+
+        return candidates
+
+    def _validate_item_tables(
+        self,
+        item: dict[str, Any],
+        real_tables: set[str],
+        sql_field: str | None,
+        text_fields: list[str],
+        item_type: str,
+        valid_identifiers: set[str] | None = None,
+    ) -> bool:
+        """Return True if the item's SQL query references only real tables.
+
+        Two validation passes are applied:
+
+        1. **SQL validation (strict)** — if *sql_field* is provided, every
+           table name in the query is checked against *real_tables*.  Items
+           whose SQL references non-existent tables are rejected.
+
+        2. **Text validation (informational)** — identifier-like tokens in
+           *text_fields* are checked against *valid_identifiers* (table names
+           **plus** column names).  Mismatches are logged as DEBUG messages
+           only; items are **never rejected** solely because of text tokens.
+           This prevents false positives when the LLM correctly cites column
+           names (e.g. ``crew_id``, ``departure_time``) in descriptions.
+        """
+        real_lower = {t.lower() for t in real_tables}
+        # Broader set for text validation: tables + columns.
+        # Falls back to real_tables if caller doesn't provide it.
+        valid_id_lower = (
+            valid_identifiers if valid_identifiers is not None else real_lower
+        )
+
+        # ── SQL validation — strict, reject on bad table references ──────
+        if sql_field:
+            sql_text = str(item.get(sql_field, "") or "")
+            sql_tables = self._extract_sql_tables(sql_text)
+            bad_sql = sql_tables - real_lower
+            if bad_sql:
+                logger.warning(
+                    "[grounding] %s SQL references non-existent tables %s — "
+                    "schema has: %s",
+                    item_type,
+                    sorted(bad_sql),
+                    sorted(real_lower),
+                )
+                return False
+
+        # ── Text validation — informational only, never rejects ───────────
+        all_text = " ".join(str(item.get(f, "") or "") for f in text_fields)
+        identifier_tokens = self._extract_identifier_tokens(all_text)
+        bad_tokens = identifier_tokens - valid_id_lower
+        if bad_tokens:
+            logger.debug(
+                "[grounding] %s text has unrecognized identifiers %s "
+                "(informational — not filtering item)",
+                item_type,
+                sorted(bad_tokens),
+            )
+
+        return True
+
+    def _validate_grounding(
+        self,
+        result: dict[str, list[dict[str, Any]]],
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Post-generation validation pass.
+
+        **Only SQL queries are validated strictly** — KPIs whose ``sql_query``
+        field references tables that do NOT exist in the actual enriched schema
+        are removed.  Text-field tokens (insights, opportunities, etc.) are
+        checked against the broader valid-identifiers set (table names + column
+        names) and produce DEBUG-level log entries only; no items are removed
+        solely because of text mismatches.
+
+        This design prevents false positives when the LLM correctly cites
+        column names (e.g. ``crew_id``, ``departure_time``) or business terms
+        in free-text descriptions.
+        """
+        real_tables = self._get_real_table_names()
+        if not real_tables:
+            logger.warning(
+                "[grounding] No real tables found in metadata — "
+                "skipping grounding validation"
+            )
+            return result
+
+        # Build the broader valid-identifier set (tables + all column names).
+        valid_identifiers = self._get_valid_identifiers()
+
+        validated: dict[str, list[dict[str, Any]]] = {}
+
+        # KPIs: SQL is validated strictly; text fields are informational.
+        validated["kpis"] = [
+            item
+            for item in (result.get("kpis") or [])
+            if self._validate_item_tables(
+                item,
+                real_tables,
+                sql_field="sql_query",
+                text_fields=["name", "description"],
+                item_type="KPI",
+                valid_identifiers=valid_identifiers,
+            )
+        ]
+
+        # Insights/Opportunities/ArtOfThePossible: no SQL field → never rejected.
+        validated["insights"] = [
+            item
+            for item in (result.get("insights") or [])
+            if self._validate_item_tables(
+                item,
+                real_tables,
+                sql_field=None,
+                text_fields=["finding", "supporting_evidence", "impact"],
+                item_type="Insight",
+                valid_identifiers=valid_identifiers,
+            )
+        ]
+
+        validated["opportunities"] = [
+            item
+            for item in (result.get("opportunities") or [])
+            if self._validate_item_tables(
+                item,
+                real_tables,
+                sql_field=None,
+                text_fields=["area", "description", "suggested_approach"],
+                item_type="Opportunity",
+                valid_identifiers=valid_identifiers,
+            )
+        ]
+
+        validated["art_of_the_possible"] = [
+            item
+            for item in (result.get("art_of_the_possible") or [])
+            if self._validate_item_tables(
+                item,
+                real_tables,
+                sql_field=None,
+                text_fields=["title", "description", "technologies_needed"],
+                item_type="ArtOfThePossible",
+                valid_identifiers=valid_identifiers,
+            )
+        ]
+
+        for key in ("kpis", "insights", "opportunities", "art_of_the_possible"):
+            before = len(result.get(key, []))
+            after = len(validated.get(key, []))
+            if before != after:
+                logger.info(
+                    "[grounding] %s: %d → %d KPIs removed (bad SQL table refs)",
+                    key,
+                    before,
+                    after,
+                )
+
+        return validated
 
     # ------------------------------------------------------------------
     # Internal: serialisation helpers

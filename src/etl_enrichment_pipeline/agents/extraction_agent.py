@@ -57,8 +57,8 @@ def extract_postgres_schema(creds: dict) -> dict:
     result_tables = []
 
     cursor.execute("""
-        SELECT table_name 
-        FROM information_schema.tables 
+        SELECT table_name
+        FROM information_schema.tables
         WHERE table_schema='public' AND table_type='BASE TABLE';
     """)
     tables = [row[0] for row in cursor.fetchall()]
@@ -121,7 +121,7 @@ def extract_postgres_schema(creds: dict) -> dict:
         WHERE table_schema='public';
     """)
     views = cursor.fetchall()
-    
+
     for view_name, view_def in views:
         cursor.execute(f"""
             SELECT column_name, data_type, is_nullable
@@ -162,8 +162,8 @@ def extract_mysql_schema(creds: dict) -> dict:
     result_tables = []
 
     cursor.execute(f"""
-        SELECT TABLE_NAME 
-        FROM information_schema.tables 
+        SELECT TABLE_NAME
+        FROM information_schema.tables
         WHERE table_schema='{db_name}' AND table_type='BASE TABLE';
     """)
     tables = [row[0] for row in cursor.fetchall()]
@@ -222,7 +222,7 @@ def extract_mysql_schema(creds: dict) -> dict:
         WHERE table_schema='{db_name}';
     """)
     views = cursor.fetchall()
-    
+
     for view_name, view_def in views:
         cursor.execute(f"""
             SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
@@ -257,8 +257,8 @@ def extract_sqlserver_schema(creds: dict) -> dict:
     result_tables = []
 
     cursor.execute("""
-        SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.TABLES 
+        SELECT TABLE_NAME
+        FROM INFORMATION_SCHEMA.TABLES
         WHERE TABLE_TYPE='BASE TABLE';
     """)
     tables = [row[0] for row in cursor.fetchall()]
@@ -292,7 +292,7 @@ def extract_sqlserver_schema(creds: dict) -> dict:
         ]
 
         cursor.execute(f"""
-            SELECT 
+            SELECT
                 fk.name AS constraint_name,
                 tp.name AS parent_table,
                 cp.name AS parent_column,
@@ -326,7 +326,7 @@ def extract_sqlserver_schema(creds: dict) -> dict:
         FROM INFORMATION_SCHEMA.VIEWS;
     """)
     views = cursor.fetchall()
-    
+
     for view_name, view_def in views:
         cursor.execute(f"""
             SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
@@ -366,8 +366,8 @@ def extract_oracle_schema(creds: dict) -> dict:
 
     for table in tables:
         cursor.execute(f"""
-            SELECT COLUMN_NAME, DATA_TYPE, NULLABLE 
-            FROM USER_TAB_COLUMNS 
+            SELECT COLUMN_NAME, DATA_TYPE, NULLABLE
+            FROM USER_TAB_COLUMNS
             WHERE TABLE_NAME = '{table}'
         """)
         columns = [
@@ -376,8 +376,8 @@ def extract_oracle_schema(creds: dict) -> dict:
         ]
 
         cursor.execute(f"""
-            SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE 
-            FROM USER_CONSTRAINTS 
+            SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE
+            FROM USER_CONSTRAINTS
             WHERE TABLE_NAME = '{table}' AND CONSTRAINT_TYPE IN ('P', 'R', 'U')
         """)
         constraints = []
@@ -427,14 +427,14 @@ def extract_oracle_schema(creds: dict) -> dict:
     result_views = []
     cursor.execute("SELECT VIEW_NAME, TEXT FROM USER_VIEWS")
     views_raw = cursor.fetchall()
-    
+
     for row in views_raw:
         view_name = row[0]
         view_def = row[1].read() if hasattr(row[1], 'read') else row[1]
-        
+
         cursor.execute(f"""
-            SELECT COLUMN_NAME, DATA_TYPE, NULLABLE 
-            FROM USER_TAB_COLUMNS 
+            SELECT COLUMN_NAME, DATA_TYPE, NULLABLE
+            FROM USER_TAB_COLUMNS
             WHERE TABLE_NAME = '{view_name}'
         """)
         columns = [
@@ -510,7 +510,7 @@ def extract_sqlite_schema(creds: dict) -> dict:
     result_views = []
     cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
     views = cursor.fetchall()
-    
+
     for view_name, view_def in views:
         cursor.execute(f"PRAGMA table_info('{view_name}');")
         columns = []
@@ -520,7 +520,7 @@ def extract_sqlite_schema(creds: dict) -> dict:
                 "data_type": row[2],
                 "nullable": row[3] == 0,
             })
-            
+
         result_views.append({
             "view_name": view_name,
             "columns": columns,

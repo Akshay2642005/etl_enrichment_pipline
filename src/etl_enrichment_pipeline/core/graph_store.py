@@ -12,8 +12,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from neo4j import AsyncGraphDatabase, AsyncDriver
-
+from neo4j import AsyncDriver, AsyncGraphDatabase
 
 _NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 _NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
@@ -201,11 +200,11 @@ class GraphStore:
         driver = await self._get_driver()
         async with driver.session() as session:
             result = await session.run(
-                (
+
                     "MATCH (c1:Column)-[r:FK_TO]->(c2:Column) "
                     "RETURN c1.table AS src_tbl, c1.name AS src_col, "
                     "       c2.table AS tgt_tbl, c2.name AS tgt_col"
-                )
+
             )
             fk_edges = [
                 (record["src_tbl"], record["src_col"], record["tgt_tbl"], record["tgt_col"])
