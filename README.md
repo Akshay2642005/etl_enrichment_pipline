@@ -1,3 +1,12 @@
+> [!CAUTION]
+> **This repository is no longer actively maintained.**
+>
+> Development has been moved to a new repository under the company's GitHub organization. This repository is retained for historical reference and archival purposes only.
+>
+> No new features, bug fixes, or security updates will be applied here. Please use the new organization-hosted repository for all future development and contributions.
+>
+> If you require access to the active repository, contact the project maintainers or your organization administrator.
+
 # ETL Schema Intelligence
 
 AI-powered pipeline that ingests raw database metadata and enriches it with business context — descriptions, domains, semantic types, business roles, entity relationships, sample queries, and more.
